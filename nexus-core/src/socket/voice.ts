@@ -1,0 +1,191 @@
+import { Server, Socket } from 'socket.io'
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
+export interface VoicePeer {
+  socketId:  string
+  userId:    string
+  username:  string
+  avatar:    string | null
+  seatIndex: number
+}
+
+// ── Seat management ───────────────────────────────────────────────────────────
+
+const _voiceSeats = new Map<string, Map<string, number>>()
+
+function assignSeat(channelId: string, socketId: string): number {
+  if (!_voiceSeats.has(channelId)) _voiceSeats.set(channelId, new Map())
+  const seats = _voiceSeats.get(channelId)!
+  const taken = new Set(seats.values())
+  let seat = 0
+  while (taken.has(seat) && seat < 8) seat++
+  seats.set(socketId, seat)
+  return seat
+}
+
+function freeSeat(channelId: string, socketId: string): void {
+  _voiceSeats.get(channelId)?.delete(socketId)
+  if (_voiceSeats.get(channelId)?.size === 0) _voiceSeats.delete(channelId)
+}
+
+function getChannelSeats(channelId: string): Map<string, number> {
+  return _voiceSeats.get(channelId) ?? new Map()
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+function voiceRoom(channelId: string): string {
+  return `voice:${channelId}`
+}
+
+async function broadcastVoiceChannelUpdate(
+  server: Server, channelId: string, excludeSocketId?: string
+): Promise<void> {
+  const sockets = await server.in(voiceRoom(channelId)).fetchSockets()
+  const seatsMap = getChannelSeats(channelId)
+  const members = sockets
+    .filter(s => s.id !== excludeSocketId)
+    .map(s => ({
+      userId:    s.data.userId,
+      username:  s.data.username,
+      avatar:    s.data.avatar ?? null,
+      seatIndex: seatsMap.get(s.id) ?? 0,
+    }))
+  // Emit to presence (sidebar overview) AND voice room (handles presence-join timing edge cases)
+  server.to('presence').to(voiceRoom(channelId)).emit('voice:channel_update', { channelId, members })
+}
+
+// ── Registration ──────────────────────────────────────────────────────────────
+
+export function registerVoiceHandlers(socket: Socket, server: Server): void {
+  const { userId, username } = socket.data
+
+  // ── voice:join ────────────────────────────────────────────────────────────
+  socket.on('voice:join', async (channelId: string) => {
+    if (!channelId) return
+
+    const room = voiceRoom(channelId)
+
+    // Évacue les anciens sockets du même userId (page refresh, reconnexion rapide)
+    // Sans ça, l'utilisateur apparaît en double le temps que l'ancien socket se déconnecte
+    const stale = await server.in(room).fetchSockets()
+    for (const s of stale) {
+      if (s.data.userId === userId && s.id !== socket.id) {
+        freeSeat(channelId, s.id)
+        s.leave(room)
+        server.to(room).emit('voice:peer_left', { channelId, socketId: s.id })
+      }
+    }
+
+    // Assign seat BEFORE any await to prevent race condition when two users join simultaneously
+    const mySeat = assignSeat(channelId, socket.id)
+
+    // Collect current peers (exclude self — handles rejoin case)
+    const existing = await server.in(room).fetchSockets()
+    const seatsMap = getChannelSeats(channelId)
+    const peers: VoicePeer[] = existing
+      .filter(s => s.id !== socket.id && s.data.userId !== userId)
+      .map(s => ({
+        socketId:  s.id,
+        userId:    s.data.userId,
+        username:  s.data.username,
+        avatar:    s.data.avatar ?? null,
+        seatIndex: seatsMap.get(s.id) ?? 0,
+      }))
+
+    // Join the room
+    socket.join(room)
+
+    // Broadcast updated member list to presence room
+    await broadcastVoiceChannelUpdate(server, channelId)
+
+    // Send current peer list to the joiner (with their seat index)
+    socket.emit('voice:init', { channelId, peers, mySeatIndex: mySeat })
+
+    // Notify existing peers about the newcomer
+    socket.to(room).emit('voice:peer_joined', {
+      channelId,
+      peer: {
+        socketId:  socket.id,
+        userId,
+        username,
+        avatar:    socket.data.avatar ?? null,
+        seatIndex: mySeat,
+      },
+    })
+  })
+
+  // ── voice:leave ───────────────────────────────────────────────────────────
+  socket.on('voice:leave', async (channelId: string) => {
+    if (!channelId) return
+    const room = voiceRoom(channelId)
+    socket.leave(room)
+    freeSeat(channelId, socket.id)
+    server.to(room).emit('voice:peer_left', { channelId, socketId: socket.id })
+    await broadcastVoiceChannelUpdate(server, channelId)
+  })
+
+  // ── WebRTC signaling — forwarded to target socket only ───────────────────
+  socket.on('voice:offer', ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+    server.to(to).emit('voice:offer', { from: socket.id, sdp, channelId })
+  })
+
+  socket.on('voice:answer', ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+    server.to(to).emit('voice:answer', { from: socket.id, sdp, channelId })
+  })
+
+  socket.on('voice:ice', ({ to, candidate, channelId }: { to: string; candidate: unknown; channelId: string }) => {
+    server.to(to).emit('voice:ice', { from: socket.id, candidate, channelId })
+  })
+
+  // ── voice:speaking — VAD indicator ───────────────────────────────────────
+  socket.on('voice:speaking', ({ channelId, speaking }: { channelId: string; speaking: boolean }) => {
+    socket.to(voiceRoom(channelId)).emit('voice:speaking', { socketId: socket.id, userId, speaking })
+  })
+
+  // ── voice:ping — keep presence alive + refresh sidebar for caller ──────────
+  socket.on('voice:ping', async (channelId: string) => {
+    if (!channelId) return
+    await broadcastVoiceChannelUpdate(server, channelId)
+  })
+
+  // ── voice:stats — relay RTT broadcast to room peers ───────────────────────
+  socket.on('voice:stats', ({ channelId, rtt }: { channelId: string; rtt: number | null }) => {
+    if (!channelId) return
+    socket.to(voiceRoom(channelId)).emit('voice:stats', { from: socket.id, rtt })
+  })
+
+  // ── Cleanup on disconnect ─────────────────────────────────────────────────
+  socket.on('disconnect', async () => {
+    // Leave all voice rooms and notify peers
+    const allRooms = [...socket.rooms]
+    for (const room of allRooms) {
+      if (room.startsWith('voice:')) {
+        const channelId = room.slice(6)
+        freeSeat(channelId, socket.id)
+        server.to(room).emit('voice:peer_left', { channelId, socketId: socket.id })
+        // Exclude this socket manually — socket.rooms not yet cleared at disconnect
+        await broadcastVoiceChannelUpdate(server, channelId, socket.id)
+      }
+    }
+  })
+}
+
+// ── Initial voice snapshot for newly connected sockets ────────────────────────
+// Called after a socket joins the 'presence' room so they see who's already in voice
+
+export async function sendVoiceSnapshot(socket: Socket, server: Server): Promise<void> {
+  for (const [channelId] of _voiceSeats) {
+    const sockets = await server.in(voiceRoom(channelId)).fetchSockets()
+    if (sockets.length === 0) continue
+    const seatsMap = getChannelSeats(channelId)
+    const members = sockets.map(s => ({
+      userId:    s.data.userId,
+      username:  s.data.username,
+      avatar:    s.data.avatar ?? null,
+      seatIndex: seatsMap.get(s.id) ?? 0,
+    }))
+    socket.emit('voice:channel_update', { channelId, members })
+  }
+}

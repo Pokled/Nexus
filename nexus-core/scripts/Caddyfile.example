@@ -1,0 +1,53 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  NEXUS — Exemple de configuration Caddy
+#  Caddy gère automatiquement les certificats SSL via Let's Encrypt.
+#  Remplacez "mondomaine.fr" par votre domaine.
+# ══════════════════════════════════════════════════════════════════════════════
+
+# ── Frontend SvelteKit (SSR via node) ────────────────────────────────────────
+mondomaine.fr {
+    reverse_proxy localhost:5173
+
+    # Headers de sécurité
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+
+    # Cache pour les assets statiques
+    @static path /_app/* /favicon.ico /robots.txt /sitemap.xml
+    header @static Cache-Control "public, max-age=31536000, immutable"
+
+    encode gzip
+}
+
+# ── API Backend Fastify ───────────────────────────────────────────────────────
+# Option A : API sur un sous-domaine dédié
+api.mondomaine.fr {
+    reverse_proxy localhost:3000
+    encode gzip
+}
+
+# ── Option B : API sur le même domaine, chemin /api/v1 ───────────────────────
+# (Commentez le bloc api.mondomaine.fr ci-dessus et décommentez celui-ci)
+#
+# mondomaine.fr {
+#     # Frontend
+#     reverse_proxy localhost:5173
+#
+#     # API — routes /api/v1/* vers le backend
+#     handle /api/* {
+#         reverse_proxy localhost:3000
+#     }
+#
+#     encode gzip
+# }
+
+# ── Mode développement (HTTP uniquement, sans domaine) ───────────────────────
+# Utile pour tester en local avec Caddy comme proxy :
+#
+# :80 {
+#     reverse_proxy /api/* localhost:3000
+#     reverse_proxy * localhost:5173
+# }

@@ -1,0 +1,99 @@
+import Fastify from 'fastify'
+import { Server } from 'socket.io'
+import fastifyStatic from '@fastify/static'
+import fastifyMultipart from '@fastify/multipart'
+import fastifyCors from '@fastify/cors'
+import path from 'path'
+import { getRandomFortune } from './fortunes'
+import { db, redis } from './config/database'
+import authRoutes          from './routes/auth'
+import adminRoutes         from './routes/admin'
+import communityRoutes     from './routes/communities'
+import forumRoutes         from './routes/forums'
+import instanceRoutes      from './routes/instance'
+import userRoutes          from './routes/users'
+import searchRoutes        from './routes/search'
+import notificationRoutes  from './routes/notifications'
+import chatRoutes          from './routes/chat'
+import { setIO }           from './socket/io'
+import { registerSocketIO } from './socket/index'
+
+const server = Fastify({ logger: true })
+
+// ── CORS (pour les appels fetch client-side : upload, chat, mentions) ────────
+server.register(fastifyCors, {
+  origin:      process.env.FRONTEND_URL || true, // true = accepte toutes les origines en dev
+  credentials: true,
+  methods:     ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+})
+
+// ── Static files (uploads) ───────────────────────────────────
+server.register(fastifyStatic, {
+  root:       path.join(process.cwd(), 'uploads'),
+  prefix:     '/uploads/',
+  decorateReply: false,
+})
+
+// ── Multipart (file uploads) ─────────────────────────────────
+server.register(fastifyMultipart, {
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+})
+
+// ── Root & health ────────────────────────────────────────────
+
+server.get('/', async () => {
+  return {
+    name: 'Nexus',
+    version: '0.1.0',
+    message: getRandomFortune(),
+    status: 'alive'
+  }
+})
+
+server.get('/api/v1/health', async () => {
+  try {
+    await db.query('SELECT 1')
+    await redis.ping()
+    return { status: 'ok',    database: 'connected',    cache: 'connected'    }
+  } catch {
+    return { status: 'error', database: 'disconnected', cache: 'disconnected' }
+  }
+})
+
+// ── Routes ───────────────────────────────────────────────────
+
+server.register(authRoutes,      { prefix: '/api/v1/auth' })
+server.register(adminRoutes,     { prefix: '/api/v1/admin' })
+server.register(communityRoutes, { prefix: '/api/v1/communities' })
+server.register(forumRoutes,     { prefix: '/api/v1/forums' })
+server.register(instanceRoutes,  { prefix: '/api/v1/instance' })
+server.register(userRoutes,      { prefix: '/api/v1/users' })
+server.register(searchRoutes,        { prefix: '/api/v1/search' })
+server.register(notificationRoutes,  { prefix: '/api/v1/notifications' })
+server.register(chatRoutes,          { prefix: '/api/v1/chat' })
+
+const start = async () => {
+  try {
+    await server.listen({
+      port: Number(process.env.PORT) || 3000,
+      host: process.env.HOST || '0.0.0.0'
+    })
+    console.log('🚀 Nexus Core démarré sur http://localhost:3000')
+
+    // Attach Socket.IO after listen() — fastify-socket.io is incompatible with Fastify v5
+    const io = new Server(server.server, {
+      cors: {
+        origin:      process.env.FRONTEND_URL || 'http://localhost:5173',
+        credentials: true,
+      },
+    })
+    setIO(io)
+    registerSocketIO(io)
+    console.log('⚡ Socket.IO prêt')
+  } catch (err) {
+    server.log.error(err)
+    process.exit(1)
+  }
+}
+
+start()

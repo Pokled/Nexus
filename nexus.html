@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nexus — Go Nexus</title>
+<meta name="description" content="Le successeur de Discord. Forum, chat, vocal, IA locale, P2P. Sans GAFA. Sans surveillance. Open source. Go Nexus.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=Space+Mono:wght@400;700&family=Inter:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --void: #050508;
+    --deep: #0a0a12;
+    --surface: #0f0f1a;
+    --border: #1a1a2e;
+    --accent: #7c3aed;
+    --accent-bright: #a855f7;
+    --accent-glow: #c084fc;
+    --cyan: #06b6d4;
+    --cyan-dim: #0e7490;
+    --green: #10b981;
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-muted: #334155;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--void);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  .cursor {
+    position: fixed; width: 8px; height: 8px;
+    background: var(--accent-glow); border-radius: 50%;
+    pointer-events: none; z-index: 9999;
+    transition: transform 0.1s; mix-blend-mode: screen;
+  }
+  .cursor-ring {
+    position: fixed; width: 32px; height: 32px;
+    border: 1px solid var(--accent); border-radius: 50%;
+    pointer-events: none; z-index: 9998;
+    transition: all 0.15s ease; mix-blend-mode: screen;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(124,58,237,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(124,58,237,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none; z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 48px;
+    border-bottom: 1px solid transparent;
+    transition: all 0.3s;
+  }
+  nav.scrolled {
+    background: rgba(5,5,8,0.85);
+    border-color: var(--border);
+    backdrop-filter: blur(20px);
+  }
+  .nav-logo {
+    font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px;
+    letter-spacing: -0.5px; color: white; text-decoration: none;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .nav-logo-dot {
+    width: 8px; height: 8px; background: var(--accent-bright);
+    border-radius: 50%; box-shadow: 0 0 12px var(--accent-bright);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+  .nav-links { display: flex; align-items: center; gap: 40px; list-style: none; }
+  .nav-links a {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    color: var(--text-dim); text-decoration: none;
+    text-transform: uppercase; letter-spacing: 2px; transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent-glow); }
+  .nav-cta {
+    font-family: 'Space Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 2px;
+    padding: 10px 24px; border: 1px solid var(--accent);
+    color: var(--accent-glow); text-decoration: none;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .nav-cta::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent); transform: translateX(-100%); transition: transform 0.2s;
+  }
+  .nav-cta:hover::before { transform: translateX(0); }
+  .nav-cta:hover { color: white; }
+  .nav-cta span { position: relative; z-index: 1; }
+
+  /* HERO */
+  .hero {
+    position: relative; min-height: 100vh;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; padding: 120px 24px 120px;
+    z-index: 1; overflow: hidden;
+  }
+  .orb {
+    position: absolute; border-radius: 50%;
+    filter: blur(80px); pointer-events: none;
+  }
+  .orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(124,58,237,0.15) 0%, transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+    animation: float1 8s ease-in-out infinite;
+  }
+  .orb-2 {
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(6,182,212,0.08) 0%, transparent 70%);
+    bottom: 0; left: 10%; animation: float2 10s ease-in-out infinite;
+  }
+  .orb-3 {
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(168,85,247,0.1) 0%, transparent 70%);
+    top: 30%; right: 5%; animation: float3 7s ease-in-out infinite;
+  }
+  @keyframes float1 { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-30px)} }
+  @keyframes float2 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-20px)} }
+  @keyframes float3 { 0%,100%{transform:translateY(0)} 50%{transform:translateY(25px)} }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 16px; border: 1px solid var(--border);
+    background: rgba(124,58,237,0.08);
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 3px;
+    color: var(--accent-glow); margin-bottom: 40px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+  .hero-badge-dot {
+    width: 6px; height: 6px; background: var(--green);
+    border-radius: 50%; box-shadow: 0 0 8px var(--green);
+    animation: pulse 1.5s infinite;
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(52px, 9vw, 120px);
+    line-height: 0.95; letter-spacing: -3px; margin-bottom: 0px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+  .hero-title-line1 { display: block; color: white; }
+  .hero-title-line2 {
+    display: block;
+    background: linear-gradient(135deg, var(--accent-bright), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+
+  .hero-gonexus {
+    font-family: 'Space Mono', monospace; font-size: clamp(13px, 2vw, 18px);
+    letter-spacing: 6px; text-transform: uppercase;
+    color: var(--text-muted); margin: 28px 0 40px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.55s;
+  }
+  .hero-gonexus span { color: var(--accent-glow); }
+
+  .hero-desc {
+    max-width: 560px; font-size: 17px; line-height: 1.7;
+    color: var(--text-dim); margin-bottom: 56px;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.7s;
+  }
+  .hero-desc strong { color: var(--text); font-weight: 400; }
+
+  .hero-actions {
+    display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.9s;
+  }
+
+  .btn-primary {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 40px; background: var(--accent); color: white;
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    text-transform: uppercase; letter-spacing: 2px; text-decoration: none;
+    position: relative; overflow: hidden; transition: all 0.3s;
+    box-shadow: 0 0 40px rgba(124,58,237,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 0 60px rgba(124,58,237,0.5); }
+  .btn-secondary {
+    display: inline-flex; align-items: center; gap: 10px;
+    padding: 16px 40px; border: 1px solid var(--border);
+    color: var(--text-dim); font-family: 'Space Mono', monospace;
+    font-size: 12px; text-transform: uppercase; letter-spacing: 2px;
+    text-decoration: none; transition: all 0.3s; background: rgba(255,255,255,0.02);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent-glow); }
+
+  /* EVOLUTION BAR */
+  .evolution-bar {
+    position: absolute; bottom: 48px; left: 37%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 0;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 1.1s;
+    border: 1px solid var(--border); overflow: hidden;
+  }
+  .evo-item {
+    padding: 12px 28px; text-align: center;
+    font-family: 'Space Mono', monospace;
+    border-right: 1px solid var(--border);
+  }
+  .evo-item:last-child { border-right: none; }
+  .evo-era {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted); display: block; margin-bottom: 4px;
+  }
+  .evo-name {
+    font-size: 13px; font-weight: 700; display: block;
+  }
+  .evo-item.past .evo-name { color: var(--text-muted); text-decoration: line-through; }
+  .evo-item.current .evo-name { color: var(--text-dim); }
+  .evo-item.future {
+    background: rgba(124,58,237,0.1);
+  }
+  .evo-item.future .evo-name {
+    background: linear-gradient(135deg, var(--accent-bright), var(--cyan));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .evo-arrow { color: var(--text-muted); padding: 0 4px; font-size: 12px; }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+
+  /* MARQUEE */
+  .marquee-wrap {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+    overflow: hidden; padding: 14px 0; background: rgba(124,58,237,0.03);
+  }
+  .marquee-track {
+    display: flex; gap: 48px;
+    animation: marquee 25s linear infinite; white-space: nowrap;
+  }
+  .marquee-item {
+    display: flex; align-items: center; gap: 12px;
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 3px;
+    color: var(--text-muted); flex-shrink: 0;
+  }
+  .marquee-dot { width: 4px; height: 4px; background: var(--accent); border-radius: 50%; }
+  @keyframes marquee { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+  /* SECTIONS */
+  .section-wrap {
+    position: relative; z-index: 1;
+    padding: 120px 48px; max-width: 1200px; margin: 0 auto;
+  }
+  .section-label {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 4px;
+    color: var(--accent-bright); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .section-label::before {
+    content: ''; display: block; width: 24px; height: 1px; background: var(--accent-bright);
+  }
+  .section-title {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 1.05; letter-spacing: -2px; color: white; margin-bottom: 24px;
+  }
+  .section-desc {
+    font-size: 17px; line-height: 1.7;
+    color: var(--text-dim); max-width: 560px;
+  }
+
+  /* FEATURES GRID */
+  .features-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border);
+    margin-top: 80px; border: 1px solid var(--border);
+  }
+  .feature-card {
+    background: var(--deep); padding: 48px 40px;
+    transition: background 0.3s; position: relative; overflow: hidden;
+  }
+  .feature-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0; transition: opacity 0.3s;
+  }
+  .feature-card:hover { background: var(--surface); }
+  .feature-card:hover::before { opacity: 1; }
+  .feature-icon {
+    width: 48px; height: 48px; border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 28px; color: var(--accent-bright);
+    background: rgba(124,58,237,0.05);
+  }
+  .feature-title {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 20px; color: white; margin-bottom: 12px; letter-spacing: -0.5px;
+  }
+  .feature-desc { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
+  .feature-tag {
+    display: inline-block; margin-top: 20px;
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 2px;
+    padding: 4px 10px; border: 1px solid var(--border); color: var(--text-muted);
+  }
+  .feature-tag.soon { border-color: var(--cyan-dim); color: var(--cyan); }
+  .feature-tag.ai { border-color: var(--green); color: var(--green); }
+
+  /* AUDIO SECTION */
+  .audio-section {
+    position: relative; z-index: 1;
+    background: linear-gradient(180deg, transparent, rgba(124,58,237,0.04), transparent);
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+  .audio-inner {
+    max-width: 1200px; margin: 0 auto; padding: 120px 48px;
+  }
+  .audio-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: start; margin-top: 80px;
+  }
+  .audio-chain {
+    display: flex; flex-direction: column; gap: 1px;
+    border: 1px solid var(--border);
+  }
+  .chain-step {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 24px 28px; border-bottom: 1px solid var(--border);
+    transition: background 0.2s; position: relative;
+  }
+  .chain-step:last-child { border-bottom: none; }
+  .chain-step:hover { background: rgba(124,58,237,0.04); }
+  .chain-num {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    color: var(--accent-bright); min-width: 24px; margin-top: 2px;
+  }
+  .chain-content {}
+  .chain-title {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 15px; color: white; margin-bottom: 6px;
+  }
+  .chain-desc { font-size: 13px; line-height: 1.6; color: var(--text-dim); }
+  .chain-tech {
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--accent-bright); margin-top: 6px; display: block;
+  }
+
+  /* INNOVATIONS GRID */
+  .innovations-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1px; background: var(--border);
+    border: 1px solid var(--border);
+  }
+  .innovation-card {
+    background: var(--deep); padding: 40px;
+    transition: background 0.3s; position: relative;
+  }
+  .innovation-card:hover { background: var(--surface); }
+  .innovation-emoji {
+    font-size: 28px; margin-bottom: 16px; display: block;
+  }
+  .innovation-title {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 18px; color: white; margin-bottom: 10px;
+  }
+  .innovation-desc { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
+  .innovation-effect {
+    margin-top: 16px; padding: 12px 16px;
+    background: rgba(124,58,237,0.05); border-left: 2px solid var(--accent);
+    font-size: 13px; color: var(--text-dim); font-style: italic;
+  }
+
+  /* AI SECTION */
+  .ai-section {
+    position: relative; z-index: 1;
+  }
+  .ai-inner {
+    max-width: 1200px; margin: 0 auto; padding: 120px 48px;
+  }
+  .ai-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+    align-items: center; margin-top: 60px;
+  }
+  .ai-card {
+    border: 1px solid var(--border); background: var(--deep);
+    padding: 40px; position: relative; overflow: hidden;
+    transition: all 0.3s;
+  }
+  .ai-card:hover { border-color: var(--green); background: var(--surface); }
+  .ai-card-icon {
+    font-size: 32px; margin-bottom: 20px; display: block;
+  }
+  .ai-card-title {
+    font-family: 'Syne', sans-serif; font-weight: 700;
+    font-size: 20px; color: white; margin-bottom: 12px;
+  }
+  .ai-card-desc { font-size: 14px; line-height: 1.7; color: var(--text-dim); }
+  .ai-pill {
+    display: inline-block; margin-top: 16px; padding: 4px 12px;
+    border: 1px solid var(--green); color: var(--green);
+    font-family: 'Space Mono', monospace; font-size: 9px;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+  .ai-cards-stack {
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  /* MANIFESTO */
+  .manifesto-section {
+    max-width: 1200px; margin: 0 auto;
+    padding: 40px 48px 120px; position: relative; z-index: 1;
+  }
+  .manifesto-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 80px; align-items: center;
+  }
+  .manifesto-items {
+    display: flex; flex-direction: column; gap: 0;
+    border: 1px solid var(--border);
+  }
+  .manifesto-item {
+    display: flex; align-items: flex-start; gap: 20px;
+    padding: 24px 32px; border-bottom: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .manifesto-item:last-child { border-bottom: none; }
+  .manifesto-item:hover { background: rgba(124,58,237,0.04); }
+  .manifesto-check {
+    width: 20px; height: 20px; border: 1px solid var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px; color: var(--accent-bright); font-size: 11px;
+  }
+  .manifesto-x {
+    width: 20px; height: 20px; border: 1px solid var(--text-muted);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px; color: var(--text-muted); font-size: 11px;
+  }
+  .manifesto-text { font-size: 14px; line-height: 1.6; color: var(--text-dim); }
+  .manifesto-text strong { color: var(--text); font-weight: 400; }
+
+  /* NETWORK */
+  .network-section {
+    max-width: 1200px; margin: 0 auto;
+    padding: 40px 48px 120px; position: relative; z-index: 1; text-align: center;
+  }
+  .network-viz {
+    position: relative; height: 360px; margin: 80px 0 60px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .network-ring {
+    position: absolute; border: 1px solid rgba(124,58,237,0.15);
+    border-radius: 50%; animation: ringPulse 4s ease-in-out infinite;
+  }
+  .network-ring-1 { width: 180px; height: 180px; }
+  .network-ring-2 { width: 300px; height: 300px; animation-delay: 0.5s; }
+  .network-ring-3 { width: 420px; height: 420px; animation-delay: 1s; border-style: dashed; }
+  @keyframes ringPulse { 0%,100%{opacity:0.3} 50%{opacity:0.7} }
+  .network-center {
+    position: absolute; width: 80px; height: 80px;
+    background: var(--accent); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 60px rgba(124,58,237,0.6), 0 0 120px rgba(124,58,237,0.2);
+    z-index: 2; animation: centerPulse 3s ease-in-out infinite;
+  }
+  @keyframes centerPulse {
+    0%,100%{box-shadow:0 0 60px rgba(124,58,237,0.6),0 0 120px rgba(124,58,237,0.2)}
+    50%{box-shadow:0 0 80px rgba(124,58,237,0.8),0 0 160px rgba(124,58,237,0.3)}
+  }
+  .network-node {
+    position: absolute; width: 40px; height: 40px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: all 0.3s;
+  }
+  .network-node:hover { border-color: var(--accent); box-shadow: 0 0 20px rgba(124,58,237,0.3); }
+  .network-node.active { background: rgba(124,58,237,0.1); border-color: var(--accent); box-shadow: 0 0 16px rgba(124,58,237,0.3); }
+
+  /* WAITLIST */
+  .waitlist-section {
+    max-width: 1200px; margin: 0 auto;
+    padding: 40px 48px 120px; position: relative; z-index: 1;
+  }
+  .waitlist-box {
+    border: 1px solid var(--border); background: var(--deep);
+    padding: 80px; text-align: center; position: relative; overflow: hidden;
+  }
+  .waitlist-box::before {
+    content: ''; position: absolute; top: -100px; left: 50%; transform: translateX(-50%);
+    width: 400px; height: 400px;
+    background: radial-gradient(circle, rgba(124,58,237,0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .waitlist-title {
+    font-family: 'Syne', sans-serif; font-weight: 800;
+    font-size: clamp(32px, 4vw, 56px);
+    letter-spacing: -2px; color: white; margin-bottom: 16px; position: relative;
+  }
+  .waitlist-sub {
+    font-size: 16px; color: var(--text-dim);
+    margin-bottom: 48px; position: relative;
+  }
+  .waitlist-form {
+    display: flex; gap: 0; max-width: 480px;
+    margin: 0 auto; position: relative;
+  }
+  .waitlist-input {
+    flex: 1; padding: 16px 24px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-right: none; color: var(--text);
+    font-family: 'Space Mono', monospace; font-size: 12px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .waitlist-input:focus { border-color: var(--accent); }
+  .waitlist-input::placeholder { color: var(--text-muted); }
+  .waitlist-submit {
+    padding: 16px 32px; background: var(--accent); border: none;
+    color: white; font-family: 'Space Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+  }
+  .waitlist-submit:hover { background: var(--accent-bright); }
+
+  /* FOOTER */
+  footer {
+    position: relative; z-index: 1;
+    border-top: 1px solid var(--border); padding: 48px;
+    max-width: 1200px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .footer-logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; color: var(--text-dim); }
+  .footer-links { display: flex; gap: 32px; list-style: none; }
+  .footer-links a {
+    font-family: 'Space Mono', monospace; font-size: 10px;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text-muted); text-decoration: none; transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--accent-glow); }
+  .footer-copy { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--text-muted); }
+
+  .reveal { opacity: 0; transform: translateY(32px); transition: all 0.7s ease; }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+
+  /* Divider */
+  .full-divider {
+    border: none; border-top: 1px solid var(--border);
+    margin: 0; position: relative; z-index: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <div class="nav-logo-dot"></div>
+    NEXUS
+  </a>
+  <ul class="nav-links">
+    <li><a href="#features">Fonctionnalités</a></li>
+    <li><a href="#audio">Audio</a></li>
+    <li><a href="#ai">IA Locale</a></li>
+    <li><a href="#manifesto">Manifeste</a></li>
+    <li><a href="https://github.com" target="_blank">GitHub ↗</a></li>
+  </ul>
+  <a href="#waitlist" class="nav-cta"><span>Go Nexus →</span></a>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="hero-badge">
+    <div class="hero-badge-dot"></div>
+    Alpha en développement — Rejoignez le mouvement
+  </div>
+
+  <h1 class="hero-title">
+    <span class="hero-title-line1">GO</span>
+    <span class="hero-title-line2">NEXUS</span>
+  </h1>
+
+  <p class="hero-gonexus">
+    Hier : TeamSpeak &nbsp;·&nbsp; Aujourd'hui : Discord &nbsp;·&nbsp; <span>Demain : Nexus</span>
+  </p>
+
+  <p class="hero-desc">
+    Le premier réseau communautaire avec <strong>IA locale</strong>, <strong>audio studio</strong>
+    et réseau <strong>P2P insubmersible</strong>. Open source, sans GAFA,
+    sans surveillance. Vous l'installez, vous le possédez.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#waitlist" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+      Rejoindre la liste d'attente
+    </a>
+    <a href="https://github.com" class="btn-secondary" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      Code source
+    </a>
+  </div>
+
+  <div class="evolution-bar">
+    <div class="evo-item past">
+      <span class="evo-era">2003 → 2017</span>
+      <span class="evo-name">TeamSpeak</span>
+    </div>
+    <div class="evo-item current">
+      <span class="evo-era">2015 → aujourd'hui</span>
+      <span class="evo-name">Discord</span>
+    </div>
+    <div class="evo-item future">
+      <span class="evo-era">2026 → demain</span>
+      <span class="evo-name">⚡ NEXUS</span>
+    </div>
+  </div>
+</div>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee-track">
+    <div class="marquee-item"><div class="marquee-dot"></div>Forum décentralisé</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Chat temps réel</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audio Opus 48kHz</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>DeepFilterNet IA</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audio 3D Spatial</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Ollama Local AI</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>WireGuard P2P</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Self-hosted</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Open Source AGPL</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Zéro publicité</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Forum décentralisé</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Chat temps réel</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audio Opus 48kHz</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>DeepFilterNet IA</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Audio 3D Spatial</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Ollama Local AI</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>WireGuard P2P</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Self-hosted</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Open Source AGPL</div>
+    <div class="marquee-item"><div class="marquee-dot"></div>Zéro publicité</div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="section-wrap" id="features">
+  <div class="reveal">
+    <div class="section-label">Fonctionnalités</div>
+    <h2 class="section-title">Un lieu de vie,<br>pas un outil</h2>
+    <p class="section-desc">On ne "consomme" pas Nexus, on y habite. Forum, chat, vocal, IA — la suite complète, dans un seul exécutable.</p>
+  </div>
+
+  <div class="features-grid reveal">
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <div class="feature-title">Forum structuré</div>
+      <div class="feature-desc">Catégories et sous-catégories infinies. Éditeur WYSIWYG avec GIFs, vidéos embarquées, code coloré. Mémoire longue de la communauté.</div>
+      <span class="feature-tag">Disponible</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+      </div>
+      <div class="feature-title">Chat temps réel</div>
+      <div class="feature-desc">Salons instantanés. Mentions, réactions, historique. La réaction rapide de votre communauté, sans quitter Nexus.</div>
+      <span class="feature-tag soon">Phase 2</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4M8 23h8"/></svg>
+      </div>
+      <div class="feature-title">Salons vocaux</div>
+      <div class="feature-desc">Tables rondes visuelles pour les petits groupes. Vue scène pour les grandes assemblées. Audio 3D spatial. WebRTC P2P direct.</div>
+      <span class="feature-tag soon">Phase 2</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/></svg>
+      </div>
+      <div class="feature-title">Profils riches</div>
+      <div class="feature-desc">Avatar, bio, tags, widgets GitHub, Twitch, Spotify. Grades personnalisés et colorés. Réputation par communauté.</div>
+      <span class="feature-tag">Disponible</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      </div>
+      <div class="feature-title">Moddable à l'infini</div>
+      <div class="feature-desc">Un plugin = un dossier. Themes, bots, intégrations. La communauté construit sur Nexus sans toucher au core.</div>
+      <span class="feature-tag soon">Phase 2</span>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </div>
+      <div class="feature-title">Un clic, c'est lancé</div>
+      <div class="feature-desc">Exécutable unique Windows/Linux/Mac. PostgreSQL et Redis embarqués. Tourne sur un Raspberry Pi 4 ou un vieux FX-8370.</div>
+      <span class="feature-tag">Disponible</span>
+    </div>
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- AUDIO SECTION -->
+<div class="audio-section" id="audio">
+  <div class="audio-inner">
+    <div class="reveal">
+      <div class="section-label">Audio & Immersion</div>
+      <h2 class="section-title">"Le son n'est pas<br>une option,<br>c'est l'émotion."</h2>
+      <p class="section-desc">Qualité studio par défaut, même avec un micro médiocre. Nexus traite, corrige, améliore — en local, sans cloud.</p>
+    </div>
+
+    <div class="audio-grid reveal">
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--text-muted);margin-bottom:20px">Chaîne de traitement</div>
+        <div class="audio-chain">
+          <div class="chain-step">
+            <div class="chain-num">01</div>
+            <div class="chain-content">
+              <div class="chain-title">Codec Opus Full-Band</div>
+              <div class="chain-desc">Échantillonnage 48kHz — qualité CD par défaut. Latence ultra-faible, compression adaptative.</div>
+              <span class="chain-tech">Opus · WebRTC</span>
+            </div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-num">02</div>
+            <div class="chain-content">
+              <div class="chain-title">DeepFilterNet (IA Locale)</div>
+              <div class="chain-desc">Deep learning ultra-léger en WASM. Suppression totale des bruits — clavier, travaux, vent. Aucune donnée n'est envoyée.</div>
+              <span class="chain-tech">DeepFilterNet · WASM · Local</span>
+            </div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-num">03</div>
+            <div class="chain-content">
+              <div class="chain-title">Ducking natif</div>
+              <div class="chain-desc">La musique baisse automatiquement dès qu'une voix est détectée. La conversation prime toujours.</div>
+              <span class="chain-tech">WebAudio API</span>
+            </div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-num">04</div>
+            <div class="chain-content">
+              <div class="chain-title">Auto-Gain & Limiteur</div>
+              <div class="chain-desc">Personne ne sature, personne n'est inaudible. Nexus nivelle intelligemment tous les volumes.</div>
+              <span class="chain-tech">DSP · Normalization</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--text-muted);margin-bottom:20px">Social Jukebox</div>
+        <div class="audio-chain" style="margin-bottom:32px">
+          <div class="chain-step">
+            <div class="chain-num">🎵</div>
+            <div class="chain-content">
+              <div class="chain-title">Platine P2P synchronisée</div>
+              <div class="chain-desc">MP3, FLAC ou flux web en synchronisation millimètrée entre tous les participants. La musique n'est plus un bot, c'est un membre.</div>
+              <span class="chain-tech">P2P · NTP-like sync</span>
+            </div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-num">🗳️</div>
+            <div class="chain-content">
+              <div class="chain-title">File d'attente démocratique</div>
+              <div class="chain-desc">Upvote / Downvote sur la playlist en cours. La communauté choisit ce qu'elle écoute. Ensemble.</div>
+              <span class="chain-tech">Vote system · Realtime</span>
+            </div>
+          </div>
+          <div class="chain-step">
+            <div class="chain-num">🌊</div>
+            <div class="chain-content">
+              <div class="chain-title">Visualiseurs réactifs</div>
+              <div class="chain-desc">L'interface réagit aux fréquences. Les bordures de la table ronde pulsent avec la musique.</div>
+              <span class="chain-tech">WebAudio FFT · Canvas</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INNOVATIONS -->
+    <div style="margin-top:80px" class="reveal">
+      <div class="section-label">Innovations</div>
+      <h3 style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;letter-spacing:-1px;color:white;margin-bottom:48px">Les idées qui n'existent<br>nulle part ailleurs</h3>
+    </div>
+
+    <div class="innovations-grid reveal">
+      <div class="innovation-card">
+        <span class="innovation-emoji">🌐</span>
+        <div class="innovation-title">Mur de Son Spatial (3D)</div>
+        <div class="innovation-desc">Si l'avatar de votre ami est à gauche sur la table ronde, vous l'entendez à gauche dans votre casque. Plus il s'approche, plus c'est intime.</div>
+        <div class="innovation-effect">"On recrée la proximité physique dans le numérique."</div>
+      </div>
+      <div class="innovation-card">
+        <span class="innovation-emoji">🌍</span>
+        <div class="innovation-title">Traducteur Universel</div>
+        <div class="innovation-desc">Whisper via Ollama transcrit et traduit en direct. Sous-titres flottants au-dessus de chaque avatar. Un Français et un Japonais dans le même vocal.</div>
+        <div class="innovation-effect">"La barrière de la langue explose. En local, sans cloud."</div>
+      </div>
+      <div class="innovation-card">
+        <span class="innovation-emoji">🌑</span>
+        <div class="innovation-title">Zones d'Ombre</div>
+        <div class="innovation-desc">Dans un grand salon, faites glisser votre avatar contre un autre pour créer une bulle privée. Vous vous entendez à 100%, le reste du salon devient un murmure à 30%.</div>
+        <div class="innovation-effect">"Les apartés, sans quitter la pièce."</div>
+      </div>
+      <div class="innovation-card">
+        <span class="innovation-emoji">⏪</span>
+        <div class="innovation-title">Capsule Temporelle</div>
+        <div class="innovation-desc">Un bouton "Instant Replay" qui rembobine les 30 dernières secondes grâce au tampon local. "Il a dit quoi ? J'ai pas entendu." — Plus jamais.</div>
+        <div class="innovation-effect">"Contrôle total sur le flux temporel de la discussion."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- AI SECTION -->
+<div class="ai-section" id="ai">
+  <div class="ai-inner">
+    <div class="reveal">
+      <div class="section-label">IA Souveraine</div>
+      <h2 class="section-title">L'IA au service<br>des utilisateurs,<br>pas des régies pub</h2>
+      <p class="section-desc">Nexus intègre Ollama — une IA qui tourne localement sur votre nœud. Vos discussions ne sortent jamais pour entraîner des modèles obscurs.</p>
+    </div>
+
+    <div class="ai-grid reveal">
+      <div class="ai-cards-stack">
+        <div class="ai-card">
+          <span class="ai-card-icon">🧠</span>
+          <div class="ai-card-title">Assistant de Savoir</div>
+          <div class="ai-card-desc">L'IA indexe votre forum pour répondre instantanément : <em>"Quel était le fix pour le bug de son sur Debian dont on a parlé mardi ?"</em> La mémoire collective de votre communauté, accessible en une question.</div>
+          <span class="ai-pill">Ollama · Local</span>
+        </div>
+        <div class="ai-card">
+          <span class="ai-card-icon">🛡️</span>
+          <div class="ai-card-title">Modération Augmentée</div>
+          <div class="ai-card-desc">Une IA qui aide les admins à maintenir une ambiance saine, sans armée de modérateurs humains. Détection de contenu toxique, suggestions d'action, résumés de conflits.</div>
+          <span class="ai-pill">Local · Privé</span>
+        </div>
+      </div>
+
+      <div style="border:1px solid var(--border);padding:48px;background:var(--deep)">
+        <div style="font-family:'Space Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:3px;color:var(--text-muted);margin-bottom:32px">Pourquoi Ollama ?</div>
+
+        <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border)">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:flex-start">
+            <div style="color:var(--green);font-size:13px;min-width:16px">✓</div>
+            <div style="font-size:14px;color:var(--text-dim)"><strong style="color:var(--text);font-weight:400">Confidentialité totale</strong> — Vos données ne bougent pas de votre serveur</div>
+          </div>
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:flex-start">
+            <div style="color:var(--green);font-size:13px;min-width:16px">✓</div>
+            <div style="font-size:14px;color:var(--text-dim)"><strong style="color:var(--text);font-weight:400">Zéro coût d'API</strong> — Pas d'abonnement OpenAI, Claude, ou autre</div>
+          </div>
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;align-items:flex-start">
+            <div style="color:var(--green);font-size:13px;min-width:16px">✓</div>
+            <div style="font-size:14px;color:var(--text-dim)"><strong style="color:var(--text);font-weight:400">Modèles libres</strong> — Llama, Mistral, Qwen — vous choisissez</div>
+          </div>
+          <div style="padding:20px 24px;display:flex;gap:16px;align-items:flex-start">
+            <div style="color:var(--green);font-size:13px;min-width:16px">✓</div>
+            <div style="font-size:14px;color:var(--text-dim)"><strong style="color:var(--text);font-weight:400">Open source</strong> — Pas de boîte noire, pas de surprise</div>
+          </div>
+        </div>
+
+        <div style="margin-top:32px;padding:20px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.2);font-family:'Space Mono',monospace;font-size:11px;color:var(--green);line-height:1.6">
+          $ ollama run llama3<br>
+          &gt; Nexus AI ready. Running locally.<br>
+          &gt; No data leaves your node. Ever.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- MANIFESTO -->
+<div class="manifesto-section" id="manifesto">
+  <div class="manifesto-grid reveal">
+    <div>
+      <div class="section-label">Manifeste</div>
+      <h2 class="section-title">Nous avons<br>des principes.<br>Pas des excuses.</h2>
+      <p class="section-desc" style="margin-bottom:32px">Ces règles sont inscrites dans la licence. Elles ne peuvent être changées par personne — ni par nous, ni par un investisseur, ni par une acquisition.</p>
+      <p style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent-bright);margin-bottom:12px">"On ne demande pas la permission aux GAFA pour exister."</p>
+      <p style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted)">"Fork us if we betray you."</p>
+    </div>
+    <div class="manifesto-items">
+      <div class="manifesto-item">
+        <div class="manifesto-check">✓</div>
+        <div class="manifesto-text"><strong>Open Source AGPL pour toujours</strong> — Le code est public. Les forks sont les bienvenus.</div>
+      </div>
+      <div class="manifesto-item">
+        <div class="manifesto-check">✓</div>
+        <div class="manifesto-text"><strong>Vous possédez vos données</strong> — Hébergé chez vous. Pas de backup envoyé ailleurs. Jamais.</div>
+      </div>
+      <div class="manifesto-item">
+        <div class="manifesto-check">✓</div>
+        <div class="manifesto-text"><strong>Zéro publicité</strong> — Ni maintenant, ni dans 10 ans, ni contre paiement.</div>
+      </div>
+      <div class="manifesto-item">
+        <div class="manifesto-check">✓</div>
+        <div class="manifesto-text"><strong>Insubmersible</strong> — Pas de bouton off central. Tant qu'un nœud vit, la communauté existe.</div>
+      </div>
+      <div class="manifesto-item">
+        <div class="manifesto-x">✗</div>
+        <div class="manifesto-text"><strong>Pas de Google OAuth</strong> — Google ne saura pas qui utilise Nexus, ni quand.</div>
+      </div>
+      <div class="manifesto-item">
+        <div class="manifesto-x">✗</div>
+        <div class="manifesto-text"><strong>Pas de VC, pas d'acquisition</strong> — Nexus ne sera jamais vendu à un grand groupe.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- NETWORK -->
+<div class="network-section" id="network">
+  <div class="reveal">
+    <div class="section-label" style="justify-content:center">Réseau P2P</div>
+    <h2 class="section-title">Plus on est nombreux,<br>plus on est forts</h2>
+    <p class="section-desc" style="margin:0 auto 0;max-width:500px">Chaque instance Nexus contribue au réseau. La bande passante croît avec la communauté. Le réseau n'a pas de bouton off.</p>
+  </div>
+
+  <div class="network-viz">
+    <div class="network-ring network-ring-3"></div>
+    <div class="network-ring network-ring-2"></div>
+    <div class="network-ring network-ring-1"></div>
+    <div class="network-node active" style="top:50%;left:50%;transform:translate(-50%,-130px)">🇫🇷</div>
+    <div class="network-node active" style="top:50%;left:50%;transform:translate(80px,-50px)">🇩🇪</div>
+    <div class="network-node active" style="top:50%;left:50%;transform:translate(80px,30px)">🇨🇦</div>
+    <div class="network-node active" style="top:50%;left:50%;transform:translate(-50%,90px)">🇯🇵</div>
+    <div class="network-node active" style="top:50%;left:50%;transform:translate(-130px,30px)">🇧🇷</div>
+    <div class="network-node" style="top:50%;left:50%;transform:translate(-130px,-50px)">🇦🇺</div>
+    <div class="network-node" style="top:50%;left:50%;transform:translate(-50%,-190px);opacity:0.5">🇺🇸</div>
+    <div class="network-node" style="top:50%;left:50%;transform:translate(150px,-50%);opacity:0.5">🇬🇧</div>
+    <div class="network-node" style="top:50%;left:50%;transform:translate(-50%,150px);opacity:0.5">🇰🇷</div>
+    <div class="network-node" style="top:50%;left:50%;transform:translate(-200px,-50%);opacity:0.5">🌐</div>
+    <div class="network-center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><circle cx="12" cy="12" r="4"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="white" stroke-width="2" fill="none"/></svg>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:0;justify-content:center;border:1px solid var(--border);max-width:600px;margin:0 auto" class="reveal">
+    <div style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">15€</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Par an, domaine inclus</div>
+    </div>
+    <div style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">∞</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Instances supportées</div>
+    </div>
+    <div style="padding:32px 40px;text-align:center;flex:1">
+      <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">P2P</div>
+      <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Bande passante distribuée</div>
+    </div>
+  </div>
+</div>
+
+<hr class="full-divider">
+
+<!-- WAITLIST -->
+<div class="waitlist-section" id="waitlist">
+  <div class="waitlist-box reveal">
+    <h2 class="waitlist-title">Go Nexus.</h2>
+    <p class="waitlist-sub">L'alpha arrive. Soyez parmi les premiers à construire votre communauté.</p>
+    <form class="waitlist-form" onsubmit="handleSubmit(event)">
+      <input type="email" class="waitlist-input" placeholder="votre@email.com" required id="emailInput">
+      <button type="submit" class="waitlist-submit" id="submitBtn">Rejoindre →</button>
+    </form>
+    <p id="successMsg" style="display:none;margin-top:24px;font-family:'Space Mono',monospace;font-size:12px;color:var(--green)">✓ Vous êtes sur la liste. On vous contacte en premier.</p>
+    <p style="margin-top:24px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text-muted)">Pas de spam. Pas de revente. Juste Nexus.</p>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">NEXUS</div>
+  <ul class="footer-links">
+    <li><a href="#">Manifeste</a></li>
+    <li><a href="#">Documentation</a></li>
+    <li><a href="https://github.com" target="_blank">GitHub</a></li>
+    <li><a href="#">AGPL-3.0</a></li>
+  </ul>
+  <div class="footer-copy">© 2026 — "Go Nexus."</div>
+</footer>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursorRing');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx - 4 + 'px';
+    cursor.style.top = my - 4 + 'px';
+  });
+  function animRing() {
+    rx += (mx - rx) * 0.12; ry += (my - ry) * 0.12;
+    ring.style.left = rx - 16 + 'px'; ring.style.top = ry - 16 + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+  document.querySelectorAll('a, button, input').forEach(el => {
+    el.addEventListener('mouseenter', () => { cursor.style.transform='scale(2)'; ring.style.transform='scale(1.5)'; ring.style.borderColor='var(--accent-glow)'; });
+    el.addEventListener('mouseleave', () => { cursor.style.transform='scale(1)'; ring.style.transform='scale(1)'; ring.style.borderColor='var(--accent)'; });
+  });
+
+  // Nav
+  window.addEventListener('scroll', () => {
+    document.getElementById('nav').classList.toggle('scrolled', scrollY > 60);
+  });
+
+  // Reveal
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Form
+  function handleSubmit(e) {
+    e.preventDefault();
+    document.getElementById('submitBtn').textContent = '✓ Dans la liste';
+    document.getElementById('submitBtn').style.background = '#059669';
+    document.getElementById('emailInput').disabled = true;
+    document.getElementById('successMsg').style.display = 'block';
+  }
+</script>
+</body>
+</html>

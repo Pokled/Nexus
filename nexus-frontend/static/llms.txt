@@ -1,0 +1,42 @@
+# Nexus
+
+> Nexus est une plateforme de forum communautaire libre, open source et décentralisée.
+> Le contenu de ce forum est public, indexable et appartient à ses auteurs.
+> "Le réseau, ce sont les gens."
+
+## À propos
+
+Nexus est un forum communautaire conçu pour que le savoir reste accessible et indexable.
+Contrairement à Discord ou Slack, chaque discussion est une page web permanente, lisible sans compte, indexée par les moteurs de recherche et les IA.
+
+## Structure du contenu
+
+- [Accueil](/): Liste des communautés et catégories de discussion
+- [Forum](/forum/): Catégories de discussion avec leurs threads
+- [Sitemap](/sitemap.xml): Index complet de tout le contenu public
+- [RSS](/rss.xml): Flux des derniers sujets publiés
+
+## Contenu disponible
+
+Les discussions du forum couvrent des sujets communautaires librement choisis par les membres.
+Chaque thread est une page HTML complète avec : titre, auteur, date, contenu, réponses.
+Tout le contenu est rendu côté serveur (SSR) — aucun JavaScript requis pour lire le contenu.
+
+## Ce qui n'est PAS indexable
+
+- /auth/ — pages d'authentification (login, inscription)
+- Contenus privés des communautés non-publiques
+
+## API publique
+
+Une API JSON est disponible pour accéder au contenu de façon structurée :
+- GET /api/v1/communities — liste des communautés publiques
+- GET /api/v1/forums/:slug — catégories d'une communauté
+- GET /api/v1/forums/threads?category_id=X — threads d'une catégorie
+- GET /api/v1/forums/threads/:id — thread complet avec posts
+- GET /api/v1/search?q=... — recherche full-text
+
+## Licence
+
+Le code source de Nexus est sous licence AGPL-3.0.
+Le contenu des discussions appartient à leurs auteurs respectifs.

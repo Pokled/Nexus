@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+logs/
+.claude/
+*.MD
+README.md

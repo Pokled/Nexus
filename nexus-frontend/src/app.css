@@ -1,0 +1,262 @@
+@import "tailwindcss";
+
+/* ════════════════════════════════════════════════════════════════════════════
+   NEXUS PROSE — styles partagés entre l'éditeur et l'affichage des posts
+   Utilisé par :
+     · div.nexus-prose  (affichage thread/posts)
+     · div.nexus-content .tiptap  (éditeur Tiptap)
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+.nexus-prose,
+.nexus-content .tiptap {
+    color: rgb(229 231 235);
+    font-size: 0.875rem;
+    line-height: 1.625;
+    word-break: break-word;
+}
+
+/* ── Titres ───────────────────────────────────────────────────────────────── */
+.nexus-prose h1,
+.nexus-content .tiptap h1 {
+    font-size: 1.5rem; font-weight: 700; color: white;
+    margin-top: 1.25rem; margin-bottom: 0.75rem;
+    line-height: 1.25;
+}
+.nexus-prose h2,
+.nexus-content .tiptap h2 {
+    font-size: 1.25rem; font-weight: 700; color: white;
+    margin-top: 1rem; margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+.nexus-prose h3,
+.nexus-content .tiptap h3 {
+    font-size: 1.125rem; font-weight: 600; color: rgb(243 244 246);
+    margin-top: 0.75rem; margin-bottom: 0.5rem;
+}
+
+/* ── Paragraphe ───────────────────────────────────────────────────────────── */
+.nexus-prose p,
+.nexus-content .tiptap p {
+    margin-bottom: 0.75rem;
+}
+
+/* ── Formatage inline ─────────────────────────────────────────────────────── */
+.nexus-prose strong,
+.nexus-content .tiptap strong { font-weight: 700; color: white; }
+.nexus-prose em,
+.nexus-content .tiptap em     { font-style: italic; }
+.nexus-prose u,
+.nexus-content .tiptap u      { text-decoration: underline; text-underline-offset: 2px; }
+.nexus-prose s,
+.nexus-content .tiptap s      { text-decoration: line-through; color: rgb(156 163 175); }
+
+/* ── Code inline ──────────────────────────────────────────────────────────── */
+.nexus-prose code,
+.nexus-content .tiptap code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.75rem;
+    background-color: rgb(31 41 55);
+    border: 1px solid rgb(55 65 81);
+    color: rgb(165 180 252);
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+}
+
+/* ── Bloc de code ─────────────────────────────────────────────────────────── */
+.nexus-prose pre,
+.nexus-content .tiptap pre {
+    background-color: rgb(3 7 18);
+    border: 1px solid rgb(31 41 55);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+    overflow-x: auto;
+}
+.nexus-prose pre code,
+.nexus-content .tiptap pre code {
+    background: transparent;
+    border: none;
+    color: rgb(209 213 219);
+    font-size: 0.75rem;
+    padding: 0;
+}
+
+/* ── Citation ─────────────────────────────────────────────────────────────── */
+.nexus-prose blockquote,
+.nexus-content .tiptap blockquote {
+    border-left: 4px solid rgb(79 70 229);
+    padding-left: 1rem;
+    margin: 0.75rem 0;
+    color: rgb(156 163 175);
+    font-style: italic;
+}
+
+/* ── Listes ───────────────────────────────────────────────────────────────── */
+.nexus-prose ul,
+.nexus-content .tiptap ul { list-style: disc;    padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.nexus-prose ol,
+.nexus-content .tiptap ol { list-style: decimal; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+.nexus-prose li,
+.nexus-content .tiptap li { color: rgb(229 231 235); }
+.nexus-prose li + li,
+.nexus-content .tiptap li + li { margin-top: 0.25rem; }
+
+/* ── Séparateur ───────────────────────────────────────────────────────────── */
+.nexus-prose hr,
+.nexus-content .tiptap hr {
+    border: none;
+    border-top: 1px solid rgb(55 65 81);
+    margin: 1.25rem 0;
+}
+
+/* ── Liens ────────────────────────────────────────────────────────────────── */
+.nexus-prose a,
+.nexus-content .tiptap a {
+    color: rgb(129 140 248);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    transition: color 150ms;
+}
+.nexus-prose a:hover,
+.nexus-content .tiptap a:hover { color: rgb(165 180 252); }
+
+/* ── Images ───────────────────────────────────────────────────────────────── */
+.nexus-prose img,
+.nexus-content .tiptap img {
+    border-radius: 0.5rem;
+    max-width: 100%;
+    height: auto;
+    margin-top: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.nexus-prose img[data-align="left"],
+.nexus-content .tiptap img[data-align="left"]   { float: left;  margin-right: 1rem; max-width: 45%; }
+.nexus-prose img[data-align="right"],
+.nexus-content .tiptap img[data-align="right"]  { float: right; margin-left: 1rem;  max-width: 45%; }
+.nexus-prose img[data-align="center"],
+.nexus-content .tiptap img[data-align="center"] { margin-left: auto; margin-right: auto; display: block; }
+.nexus-prose img[data-align="full"],
+.nexus-content .tiptap img[data-align="full"]   { width: 100%; display: block; float: none; }
+
+/* ── Vidéo / iframe ───────────────────────────────────────────────────────── */
+.nexus-prose iframe,
+.nexus-content .tiptap iframe {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 0.75rem;
+    aspect-ratio: 16 / 9;
+    border: 1px solid rgb(55 65 81);
+    margin: 0.75rem 0;
+}
+/* Wrapper YouTube injecté par l'extension */
+.nexus-prose .youtube-wrapper,
+.nexus-content .tiptap .youtube-wrapper {
+    position: relative;
+    margin: 1rem 0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    border: 1px solid rgb(55 65 81);
+    aspect-ratio: 16 / 9;
+}
+.nexus-prose .youtube-wrapper iframe,
+.nexus-content .tiptap .youtube-wrapper iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+    margin: 0;
+    border-radius: 0;
+    aspect-ratio: unset;
+}
+
+/* ── Tableaux ─────────────────────────────────────────────────────────────── */
+.nexus-prose table,
+.nexus-content .tiptap table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.875rem;
+    table-layout: auto;
+}
+.nexus-prose th,
+.nexus-content .tiptap th {
+    background-color: rgb(31 41 55);
+    color: rgb(209 213 219);
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border: 1px solid rgb(55 65 81);
+}
+.nexus-prose td,
+.nexus-content .tiptap td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgb(55 65 81);
+    color: rgb(229 231 235);
+    vertical-align: top;
+}
+.nexus-prose tr:nth-child(even) td,
+.nexus-content .tiptap tr:nth-child(even) td {
+    background-color: rgb(17 24 39 / 0.4);
+}
+/* Cellule sélectionnée dans l'éditeur */
+.nexus-content .tiptap .selectedCell::after {
+    background: rgb(99 102 241 / 0.2);
+    content: "";
+    left: 0; right: 0; top: 0; bottom: 0;
+    pointer-events: none;
+    position: absolute;
+    z-index: 2;
+}
+.nexus-content .tiptap td,
+.nexus-content .tiptap th {
+    position: relative;
+}
+
+/* ── Mise en page 2 colonnes ──────────────────────────────────────────────── */
+.nexus-prose .nexus-two-cols,
+.nexus-content .tiptap .nexus-two-cols {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 1rem;
+    margin: 0.75rem 0;
+    align-items: start;
+}
+.nexus-prose .nexus-col,
+.nexus-content .tiptap .nexus-col {
+    display: block !important;
+    min-width: 0; /* évite l'overflow dans la grille */
+    border-radius: 0.5rem;
+    border: 1px solid rgb(55 65 81 / 0.5);
+    background-color: rgb(31 41 55 / 0.2);
+    padding: 0.75rem;
+    min-height: 80px;
+}
+/* iframes dans une colonne : pas d'aspect-ratio forcé */
+.nexus-prose .nexus-col iframe,
+.nexus-content .tiptap .nexus-col iframe {
+    aspect-ratio: 16 / 9;
+    height: auto;
+}
+
+/* ── Clearfix flottants ───────────────────────────────────────────────────── */
+.nexus-prose::after,
+.nexus-content .tiptap::after {
+    content: '';
+    display: table;
+    clear: both;
+}
+
+/* ── Placeholder éditeur ──────────────────────────────────────────────────── */
+.nexus-content .tiptap p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: rgb(75 85 99);
+    pointer-events: none;
+    float: left;
+    height: 0;
+}
+.nexus-content .tiptap { outline: none; }
