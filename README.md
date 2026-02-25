@@ -78,45 +78,8 @@ Réseau P2P → WireGuard + WebRTC
 IA locale → Ollama
 Licence → AGPL-3.0
 
-text
 
----
 
-## 🚀 **Premiers pas**
-
-### **Option 1 : Essayer l'instance de démonstration**
-
-👉 [**https://pokled.ddns.net**](https://pokled.ddns.net)
-
-Compte de test : `demo / demo` (ou créez le vôtre)
-
-### **Option 2 : Installer en local**
-
-**Prérequis :** Docker, Docker Compose
-
-```bash
-# Cloner le dépôt
-git clone https://github.com/Pokled/Nexus.git
-cd Nexus
-
-# Lancer avec Docker
-docker-compose up -d
-
-# Accéder à l'application
-# http://localhost:3000
-Installation manuelle (sans Docker) :
-
-bash
-# Backend
-cd nexus-core
-npm install
-cp .env.example .env  # Configurez votre base de données
-npm run dev
-
-# Frontend (dans un autre terminal)
-cd nexus-frontend
-npm install
-npm run dev
 🤝 Contribuer
 Nexus appartient à sa communauté. Les contributions sont les bienvenues !
 
