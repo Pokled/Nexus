@@ -100,6 +100,11 @@ export type NetQuality = 'excellent' | 'good' | 'fair' | 'poor' | 'unknown'
 
 export const peerStatsStore = writable<Map<string, PeerStats>>(new Map())
 
+// ── Screen share stores ────────────────────────────────────────────
+export const screenShareStore  = writable<boolean>(false)
+export const localScreenStore  = writable<MediaStream | null>(null)
+export const remoteScreenStore = writable<Map<string, MediaStream>>(new Map())
+
 export function getQuality(stats: PeerStats | undefined): NetQuality {
   if (!stats) return 'unknown'
   const rtt  = stats.rtt ?? stats.theirRtt
@@ -182,6 +187,7 @@ function _stopStatsPolling(socketId: string): void {
 
 let _socket:        Socket | null = null
 let _localStream:   MediaStream | null = null
+let _screenStream:  MediaStream | null = null
 let _peerConns:     Map<string, RTCPeerConnection> = new Map()
 let _iceQueues:     Map<string, RTCIceCandidateInit[]> = new Map()
 
@@ -341,13 +347,24 @@ function createPeerConn(
 
   pc.ontrack = ({ track, streams }) => {
     const stream = (streams && streams.length > 0) ? streams[0] : new MediaStream([track])
-    voiceStore.update(s => ({
-      ...s,
-      peers: s.peers.map(p =>
-        p.socketId === remoteSocketId ? { ...p, stream } : p
-      ),
-    }))
-    createPeerAudio(remoteSocketId, stream)
+
+    if (track.kind === 'audio') {
+      voiceStore.update(s => ({
+        ...s,
+        peers: s.peers.map(p =>
+          p.socketId === remoteSocketId ? { ...p, stream } : p
+        ),
+      }))
+      createPeerAudio(remoteSocketId, stream)
+    } else if (track.kind === 'video') {
+      remoteScreenStore.update(map => {
+        map.set(remoteSocketId, stream)
+        return new Map(map)
+      })
+      track.onended = () => {
+        remoteScreenStore.update(map => { map.delete(remoteSocketId); return new Map(map) })
+      }
+    }
   }
 
   if (isInitiator) {
@@ -559,6 +576,13 @@ export function leaveVoice(): void {
 
   _localStream?.getTracks().forEach(t => t.stop())
   _localStream = null
+
+  _screenStream?.getTracks().forEach(t => t.stop())
+  _screenStream = null
+  screenShareStore.set(false)
+  localScreenStore.set(null)
+  remoteScreenStore.set(new Map())
+
   _socket = null
 
   inputLevel.set(0)
@@ -614,6 +638,74 @@ export function stopPTT(): void {
   voiceStore.update(s => ({ ...s, muted: true }))
 }
 
+// ── Screen sharing ────────────────────────────────────────────────
+
+export async function startScreenShare(): Promise<void> {
+  const { channelId } = get(voiceStore)
+  if (!channelId || !_socket) return
+
+  try {
+    const displayStream = await navigator.mediaDevices.getDisplayMedia({
+      video: { cursor: 'always' } as any,
+      audio: false,
+    })
+
+    _screenStream = displayStream
+    localScreenStore.set(displayStream)
+    screenShareStore.set(true)
+
+    const videoTrack = displayStream.getVideoTracks()[0]
+    videoTrack.onended = () => stopScreenShare()
+
+    for (const [socketId, pc] of _peerConns) {
+      try {
+        pc.addTrack(videoTrack, displayStream)
+        if (pc.signalingState === 'stable') {
+          const offer    = await pc.createOffer()
+          const tunedSdp = applyOpusTuning(offer.sdp ?? '')
+          await pc.setLocalDescription({ type: 'offer', sdp: tunedSdp })
+          _socket?.emit('voice:offer', { to: socketId, sdp: pc.localDescription, channelId })
+        }
+      } catch (e) {
+        console.warn('[voice] Screen share: addTrack failed for', socketId, e)
+      }
+    }
+  } catch (err: any) {
+    if (err.name !== 'NotAllowedError') {
+      console.error('[voice] Screen share error:', err)
+    }
+    screenShareStore.set(false)
+    localScreenStore.set(null)
+  }
+}
+
+export function stopScreenShare(): void {
+  const { channelId } = get(voiceStore)
+
+  if (_screenStream) {
+    _screenStream.getTracks().forEach(t => t.stop())
+    _screenStream = null
+  }
+
+  screenShareStore.set(false)
+  localScreenStore.set(null)
+
+  if (!channelId) return
+
+  for (const [socketId, pc] of _peerConns) {
+    const videoSenders = pc.getSenders().filter(s => s.track?.kind === 'video')
+    for (const sender of videoSenders) {
+      try { pc.removeTrack(sender) } catch { /* ignore */ }
+    }
+    if (pc.signalingState === 'stable') {
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription({ type: 'offer', sdp: applyOpusTuning(offer.sdp ?? '') }))
+        .then(() => { _socket?.emit('voice:offer', { to: socketId, sdp: pc.localDescription, channelId }) })
+        .catch(() => { /* peer may have disconnected */ })
+    }
+  }
+}
+
 // ── Socket event handlers ─────────────────────────────────────────
 
 function onVoiceInit({ channelId, peers, mySeatIndex }: {
@@ -655,6 +747,7 @@ function onPeerLeft({ socketId }: { channelId: string; socketId: string }): void
   pc?.close()
   _peerConns.delete(socketId)
   _iceQueues.delete(socketId)
+  remoteScreenStore.update(map => { map.delete(socketId); return new Map(map) })
   voiceStore.update(s => ({ ...s, peers: s.peers.filter(p => p.socketId !== socketId) }))
 }
 
