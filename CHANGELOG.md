@@ -9,6 +9,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [0.3.0] — 2026-02-27
+
+### Added
+- **`docker-compose.yml`** — full stack in one command: PostgreSQL 16 + Redis 7 + API + Frontend
+  - PostgreSQL healthcheck ensures API waits for DB before starting
+  - Volumes for persistent data (`postgres_data`, `redis_data`) and uploads bind-mount
+- **`.env.example`** (root) — `DB_PASSWORD` for docker-compose
+- **`nexus-core/src/scripts/migrate.ts`** — idempotent SQL migration runner
+  - Creates `schema_migrations` tracking table on first run
+  - Skips already-applied migrations — safe to call on every boot
+- **`nexus-frontend/Dockerfile`** — multi-stage Node.js build (builder → runner, PORT=3001)
+
+### Changed
+- **`nexus-core/src/index.ts`** — `runMigrations()` called before `server.listen()`
+- **`nexus-core/Dockerfile`** — `src/migrations/` copied into runner image; `uploads/` subdirs created
+
+---
+
 ## [0.2.0] — 2026-02-27
 
 ### Added
