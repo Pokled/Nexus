@@ -128,20 +128,61 @@ export default async function forumRoutes(app: FastifyInstance) {
     return reply.code(201).send({ category })
   })
 
-  // GET /api/v1/forums/threads
-  app.get('/threads', {
-    preHandler: [rateLimit, validate({ query: ThreadsQuery })],
-  }, async (request, reply) => {
-    const { category_id, limit, offset } = request.query as z.infer<typeof ThreadsQuery>
-    const threads = await ThreadModel.listByCategory(category_id, { limit, offset })
+// GET /api/v1/forums/threads
+app.get('/threads', {
+  preHandler: [rateLimit, validate({ query: ThreadsQuery })],
+}, async (request, reply) => {
+  const { category_id, limit, offset } = request.query as z.infer<typeof ThreadsQuery>
+  
+  // Version modifiée : on fait une jointure pour récupérer les infos de catégorie
+  const { rows } = await db.query(`
+    SELECT 
+      t.*,
+      c.name as category_name,
+      c.slug as category_slug,
+      c.description as category_description,
+      u.username as author_username,
+      u.avatar as author_avatar,
+      (SELECT COUNT(*)::int FROM posts p WHERE p.thread_id = t.id) as post_count
+    FROM threads t
+    LEFT JOIN categories c ON t.category_id = c.id
+    LEFT JOIN users u ON t.author_id = u.id
+    WHERE t.category_id = $1
+    ORDER BY 
+      t.is_pinned DESC,
+      COALESCE(
+        (SELECT MAX(p.created_at) FROM posts p WHERE p.thread_id = t.id),
+        t.created_at
+      ) DESC
+    LIMIT $2 OFFSET $3
+  `, [category_id, limit || 50, offset || 0])
 
-    // Enrich with tags (bulk)
-    const threadIds = threads.map(t => t.id)
-    const tagsMap   = await TagModel.getTagsForThreads(threadIds)
-    const enriched  = threads.map(t => ({ ...t, tags: tagsMap.get(t.id) ?? [] }))
+  // Récupérer les tags (comme avant)
+  const threadIds = rows.map(t => t.id)
+  const tagsMap = await TagModel.getTagsForThreads(threadIds)
+  const enriched = rows.map(t => ({ 
+    ...t, 
+    tags: tagsMap.get(t.id) ?? [] 
+  }))
 
-    return reply.send({ threads: enriched })
+  // Récupérer les infos de la catégorie pour la réponse
+  const [categoryInfo] = rows.length > 0 ? [{
+    id: category_id,
+    name: rows[0].category_name || 'Discussions',
+    slug: rows[0].category_slug || category_id,
+    description: rows[0].category_description || null
+  }] : [{
+    id: category_id,
+    name: 'Discussions',
+    slug: category_id,
+    description: null
+  }]
+
+  return reply.send({ 
+    threads: enriched,
+    category: categoryInfo  // ← On ajoute les infos de catégorie !
   })
+})
 
   // POST /api/v1/forums/threads
   app.post('/threads', {

@@ -9,6 +9,7 @@
 	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT, togglePTTMode, setPeerVolume, configureICE } from '$lib/voice';
 	import { PUBLIC_TURN_URL, PUBLIC_TURN_USERNAME, PUBLIC_TURN_CREDENTIAL } from '$env/static/public';
 	import type { Socket } from 'socket.io-client';
+	import MediaCenter from '$lib/components/MediaCenter.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -617,7 +618,8 @@
 									style="left:calc(50% + {px}px - 28px);top:calc(50% + {py}px - 28px);">
 									{#if peer.avatar}
 										<img src={peer.avatar} alt={peer.username}
-											class="w-14 h-14 rounded-full object-cover ring-2 transition-all {peer.speaking ? 'ring-green-400 ring-offset-2 ring-offset-gray-950' : 'ring-gray-700'}" />
+											
+											class="w-14 h-14 rounded-full object-cover ring-2 transition-all {peer.speaking ? 'ring-green-400 ring-offset-2 ring-offset-gray-950 speaking-active' : 'ring-gray-700'}"/>
 									{:else}
 										<div class="w-14 h-14 rounded-full bg-indigo-700 flex items-center justify-center text-lg font-bold text-white ring-2 transition-all {peer.speaking ? 'ring-green-400 ring-offset-2 ring-offset-gray-950' : 'ring-gray-700'}">
 											{peer.username.charAt(0).toUpperCase()}
@@ -895,6 +897,7 @@
 				<p class="text-sm">Aucun canal disponible pour le moment.</p>
 				<p class="text-xs">Un admin peut en créer depuis le panneau Administration → Canaux texte.</p>
 			</div>
+			
 		{/if}
 	</div>
 </div>
@@ -906,14 +909,22 @@
 {#if showRichModal}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
-		onclick={(e) => { if (e.target === e.currentTarget) showRichModal = false; }}
-	>
-		<div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]">
+    class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+    role="presentation"
+    onclick={(e) => { if (e.target === e.currentTarget) showRichModal = false; }}
+    onkeydown={(e) => { if (e.key === 'Escape') showRichModal = false; }}
+>
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-3xl flex flex-col max-h-[90vh]"
+		 onclick={(e) => e.stopPropagation()}>
 			<div class="flex items-center justify-between px-6 py-4 border-b border-gray-800">
+			 
+			
 				<h2 class="text-lg font-semibold text-white">Composer un message riche</h2>
 				<button onclick={() => { showRichModal = false; }} class="text-gray-400 hover:text-white text-xl leading-none">×</button>
 			</div>
+			
+			
 			<div class="flex-1 overflow-y-auto p-4">
 				{#key editorKey}
 					<NexusEditor
@@ -1002,7 +1013,47 @@
         50% { opacity: 0.7; transform: scale(1.05); }
     }
 
-    .speaking-active {
-        animation: pulse-subtle 2s infinite ease-in-out;
+/* Animation de pulsation pour le vocal */
+@keyframes breath {
+    0%, 100% {
+        transform: scale(1);
+        filter: brightness(1);
     }
+    50% {
+        transform: scale(1.03);
+        filter: brightness(1.2);
+    }
+}
+
+@keyframes sound-wave {
+    0% {
+        opacity: 0.7;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(2.2);
+    }
+}
+
+.speaking-active {
+    position: relative;
+    animation: breath 2s infinite ease-in-out;
+    z-index: 2;  /* L'avatar au-dessus */
+}
+
+.speaking-active::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(222, 74, 215, 0.6) 0%, transparent 70%);
+    animation: sound-wave 1.5s infinite;
+    pointer-events: none;
+    z-index: 1;  /* L'onde juste derrière l'avatar */
+}
 </style>

@@ -305,58 +305,73 @@ Avant de proposer quoi que ce soit, pose-toi ces questions :
 
 ## 12. ÉTAT D'AVANCEMENT ACTUEL
 
-*Dernière mise à jour : 19 février 2026*
+*Dernière mise à jour : 27 février 2026*
 
 ### Fait ✅
+
+#### Infrastructure & base
 - Vision produit définie et validée
 - Stack technique arrêtée définitivement
 - MANIFESTO.md écrit (FR + EN)
-- NEXUS_CONTEXT.md écrit et maintenu à jour
 - Structure dossiers H: et N: créée
 - Git initialisé — commits propres et sémantiques
 - PostgreSQL connecté (nexus_user, DB nexus)
 - Redis connecté (sessions, cache, rate limiting, heartbeat online)
 - Iris nommée superviseure officielle 🐱
-- **Backend API — 20+ routes** (auth, users, communities, forum, grades, instance, admin)
-- **Migrations SQL** : 001 tables de base, 002 user_profiles, 003 grades, 004 social links, 005 categories parent_id (récursif)
-- **Instance = Communauté** — `NEXUS_COMMUNITY_NAME/DESCRIPTION/LANGUAGE/COUNTRY/SLUG` via `.env`
-- **Routes instance publiques** — `/instance/info`, `/instance/categories`, `/instance/threads/recent`
-- **Catégories infinies** — `parent_id` auto-référencé, CTE récursive PostgreSQL, arbre JS
-- **SvelteKit frontend** — SSR + SEO, Tailwind v4, 15+ pages
-  - Homepage = communauté de l'instance (stats live, arbre catégories, activité récente)
-  - Forum : catégories → threads → thread view avec replies
-  - Auth : login (redirectTo), register, logout
-  - SEO : sitemap.xml, rss.xml, robots.txt, llms.txt, JSON-LD Schema.org
-- **Profils utilisateurs** — avatar, bio, tags, links, status, location, banner, social fields
-- **Système de grades** — grades personnalisés, couleurs hex, permissions JSONB, attribution par membre
-- **GitHub widget** — API GitHub publique, cache Redis 1h, top 3 repos triés par étoiles
-- **ProfileCard** — variants forum/full/chat/vocal, badge grade coloré, fallback initiales
-- **Annuaire (mock)** — `/communities` = preview nexus-directory avec 12 instances fictives, filtres
-- **Script seed** — 5 users, 2 communautés, 10 threads, 36 posts, idempotent, --reset flag
 - **Docker** — docker-compose.yml (postgres:16 + redis:7 + nexus multi-stage build), migrations auto-run
-- **Panneau d'administration complet** :
-  - `adminOnly` middleware (JWT + session Redis + rôle owner/admin)
-  - Backend : `/admin/stats`, `/admin/members`, `/admin/threads`, `/admin/categories` (CRUD + modération)
-  - Frontend `/admin` : dashboard (stats, bar chart 7j, top contributeurs)
-  - Frontend `/admin/members` : table complète, changement rôle inline, kick
-  - Frontend `/admin/grades` : CRUD grades + assignation membre
-  - Frontend `/admin/categories` : arbre + create/edit/delete
-  - Frontend `/admin/moderation` : pin/lock/delete threads, filtre catégorie, pagination
-  - Frontend `/admin/channels/text|voice` : prévisualisation Phase 2/3 (disabled)
-  - Frontend `/admin/settings` : valeurs .env read-only + stats live + statut réseau P2P
-  - Navbar : lien "Admin" visible uniquement pour owner/admin
-- **Tracking online** — heartbeat Redis `nexus:heartbeat:{userId}` 900s TTL sur chaque requête auth
+- **Script seed** — 5 users, 2 communautés, 10 threads, 36 posts, idempotent, --reset flag
+
+#### Backend — 13 migrations SQL
+001 tables de base · 002 user_profiles · 003 grades · 004 social_links · 005 categories_parent ·
+006 featured_threads · 007 reactions_thanks · 008 tags · 009 search_vector · 010 notifications ·
+011 channels+messages · 012 chat_polish (édition/soft-delete) · 013 voice_channels
+
+#### Backend — Routes API complètes
+- **Auth** : register, login, logout (JWT + sessions Redis 7j, rate limiting)
+- **Users** : profil complet, avatar/banner upload local, GitHub widget (cache Redis 1h)
+- **Communities** : CRUD communautés, membres, grades (permissions JSONB)
+- **Forum** : catégories hiérarchiques (CTE récursive), threads, posts, réactions emoji, thanks, tags (max 5), pin/lock/feature, HTML sanitization, mentions @
+- **Chat REST** : channels (text+voice), historique paginé, autocomplete mentions
+- **Notifications** : thread_reply, mention, post_thanks — liste, unread count, mark read
+- **Search** : full-text PostgreSQL FTS (search_vector GiST, tsquery French locale, headlines)
+- **Instance** : info publique, category tree, threads récents, tags CRUD, featured threads
+- **Admin** : stats dashboard (activity 7j, top contributors), membres (rôle/kick), catégories CRUD, threads modération, channels CRUD + réordonner, branding upload (logo/banner)
+
+#### Backend — Temps réel Socket.io
+- **Chat WebSocket** : join/leave channel, send/edit/delete message, réactions toggle, typing indicator, mentions @username avec notifications, historique 50 derniers messages au join
+- **Vocal WebRTC** : signaling P2P complet (SDP offer/answer, ICE candidates), seat management 8 max par channel, VAD (speaking detection), stats réseau (RTT/jitter/packet loss/P2P vs TURN), reconnexion/double-tab géré
+- **Présence** : online/offline broadcast, liste initiale au connect, dedup par userId
+
+#### Frontend — 20+ pages SvelteKit
+- Homepage (stats live, arbre catégories, activité récente, featured threads)
+- Forum : catégories → threads → thread view + replies (refonte visuelle complète)
+- Auth : login (redirectTo), register, logout
+- Chat : channels text + voice, typing, réactions, édition inline, mentions autocomplete, scroll infini, éditeur WYSIWYG modal (Ctrl+Maj+E)
+- Profils : `/users/[username]` public, `/users/me/edit` édition
+- Notifications : liste avec mark-read
+- Search : résultats full-text avec highlights
+- Admin : dashboard, membres, catégories, grades, tags, channels text/voice, settings, modération, AI settings
+- Communities : annuaire (mock nexus-directory)
+- SEO : sitemap.xml, rss.xml, robots.txt, llms.txt, JSON-LD Schema.org
+
+#### Frontend — Composants
+- **VoicePanel** — barre flottante : mute/deafen, PTT, avatars circulaires avec speaking animations, stats réseau live (RTT/jitter/perte/P2P vs TURN), volume peer-by-peer
+- **MediaCenter** — screen sharing (`getDisplayMedia`), clip recording 60s rolling buffer, snapshots PNG
+- **NexusEditor** — éditeur WYSIWYG rich text intégré
+- **ProfileCard** — variants forum/full/chat/vocal, badge grade coloré
+- **CategoryTree**, **PostReactions**, **NetworkDoctor**, **GitHubWidget**
+
+#### Spec rédigée
+- **Node** (`.specify/specs/013-node/`) — concept forum augmenté : états (actif/lent/stabilisé/archivé), anchors navigables (URL stables), résumé versionné, vue synthèse. À implémenter.
 
 ### En cours 🔨
-- Design system frontend (cohérence visuelle entre les pages)
+- Cohérence visuelle forum (pages catégorie et thread en refonte)
 - README.md self-hosting
 
 ### Pas encore commencé ⏳
-- Chat temps réel (Phase 2 — Socket.io)
-- Salons vocaux (Phase 3 — WebRTC)
+- Meilisearch (actuellement : PostgreSQL FTS natif)
 - nexus-directory vrai (annuaire global + sous-domaines nexus.io)
-- Meilisearch (recherche full-text)
-- Éditeur WYSIWYG Tiptap
+- Implémentation concept Node (spec rédigée, code à faire)
 - NexusPoints (réputation communautaire)
 - Réseau P2P WireGuard (Phase 3)
 - Apps desktop Tauri / mobile Capacitor
@@ -391,10 +406,10 @@ Quand le réseau de nœuds est stable.
 - Chat/vocal P2P direct (zéro transit serveur)
 
 ### Phase 4 — Enrichissement
-- Voix / vidéo WebRTC
+- ~~Voix / vidéo WebRTC~~ ✅ WebRTC vocal P2P implémenté
 - Whiteboard collaboratif
 - Trello intégré
-- Ollama IA locale
+- Ollama IA locale (UI admin `/admin/ai` faite, intégration backend à compléter)
 
 ### Phase 5 — Mobile & Scale
 - Apps iOS/Android via Capacitor
@@ -433,18 +448,21 @@ Dis-le clairement. "Je ne suis pas sûr de la direction à prendre sur ce point.
 
 ## 15. PROCHAINE TÂCHE RECOMMANDÉE
 
-**Continuer Phase 1 MVP — Chat temps réel (Socket.io)**
+Le MVP communautaire est fonctionnellement complet (forum + chat texte + chat vocal WebRTC).
 
-Le forum est opérationnel. Le panneau admin est complet. La prochaine brique naturelle pour rendre l'instance vraiment vivante est le chat temps réel par canaux textuels.
+Priorités possibles selon décision du Chef de Projet :
 
-Ou selon les priorités du Chef de Projet :
-- Amélioration de l'UX forum (éditeur WYSIWYG, réactions, mentions)
-- Meilisearch (rendre le contenu trouvable)
-- nexus-directory (permettre aux premières vraies instances de s'enregistrer)
+1. **Implémenter le concept Node** — spec rédigée (`.specify/specs/013-node/`), prête à coder. Enrichissement forum avec états, anchors, résumé versionné, vue synthèse. Ne casse rien de l'existant.
+
+2. **nexus-directory** — permettre aux premières vraies instances de s'enregistrer et apparaître dans l'annuaire public.
+
+3. **Meilisearch** — remplacer le FTS PostgreSQL par Meilisearch pour une recherche plus rapide et pertinente.
+
+4. **README self-hosting** — documenter l'installation Docker pour les premières communautés externes.
 
 ---
 
 *Ce fichier est mis à jour après chaque session de travail.*
-*Version : 2.0 — Février 2026*
+*Version : 3.0 — Février 2026*
 *Projet : Nexus — L'internet communautaire libre*
 *"Le réseau, ce sont les gens."*

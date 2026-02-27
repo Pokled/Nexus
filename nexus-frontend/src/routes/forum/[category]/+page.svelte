@@ -1,88 +1,759 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import { fly, fade } from 'svelte/transition';
+	import type { FlyParams, FadeParams } from 'svelte/transition';
 
 	let { data }: { data: PageData } = $props();
+	console.log('🎯 category reçue:', data.category);
+	console.log('🎯 category.name:', data.category?.name);
 
-	function formatDate(iso: string) {
+	// ── Données typées ────────────────────────────────────────────────
+	const threads = $derived(data.threads as Thread[] || []);
+	const categoryId = $derived(data.categoryId as string);
+	const user = $derived((data as any).user as any); // Si user est passé
+
+	// Pour le moment, pas de category, on utilise un nom par défaut
+	// Mais tu pourrais ajouter un appel API pour récupérer les infos de la catégorie
+	const categoryName = $derived(
+	data.category?.name || 
+	// Si pas de catégorie, on utilise un nom générique
+	`Catégorie`
+); // À remplacer quand l'API fournira la catégorie
+
+	// ── Types ──────────────────────────────────────────────────────────
+	type Tag = {
+		id: string;
+		name: string;
+		color: string;
+	};
+
+	type Thread = {
+		id: string;
+		title: string;
+		content?: string;
+		author_id: string;
+		author_username: string;
+		author_avatar?: string | null;
+		author_points?: number;
+		author_grade_name?: string | null;
+		author_grade_color?: string | null;
+		author_member_since?: string;
+		created_at: string;
+		updated_at?: string;
+		post_count: number;
+		views: number;
+		is_pinned: boolean;
+		is_locked: boolean;
+		is_featured: boolean;
+		tags?: Tag[];
+		posts?: Post[];
+	};
+
+	type Post = {
+		id: string;
+		author_id: string;
+		author_username: string;
+		author_avatar?: string | null;
+		created_at: string;
+	};
+
+	// ── État pour le tri ──────────────────────────────────────────────
+	type SortOption = 'recent' | 'popular' | 'views' | 'lastReply';
+	// AJOUT DE $state ICI
+	let sortBy = $state<SortOption>('recent'); 
+	let sortDropdownOpen = $state(false);
+	let sortButtonRef: HTMLDivElement | null = $state(null);
+
+	// --- État pour les filtres ---
+	type FilterType = 'all' | 'pinned' | 'unanswered' | 'popular' | 'today';
+	// AJOUT DE $state ICI
+	let filterBy = $state<FilterType>('all');
+	let filterDropdownOpen = $state(false);
+	let filterButtonRef: HTMLDivElement | null = $state(null);
+
+	// ── État pour la recherche ────────────────────────────────────────
+	let searchQuery = $state('');
+	let searchInputRef: HTMLInputElement | null = $state(null);
+
+	// ── État pour la pagination ───────────────────────────────────────
+	let currentPage = $state(1);
+	let itemsPerPage = $state(20);
+	let pageInputValue = $state('1');
+
+	// ── Gestion du tri ───────────────────────────────────────────────
+	function getFilteredAndSortedThreads(): Thread[] {
+		let filtered = [...threads];
+		
+		// Application des filtres
+		switch(filterBy) {
+			case 'pinned':
+				filtered = filtered.filter(t => t.is_pinned);
+				break;
+			case 'unanswered':
+				filtered = filtered.filter(t => (t.post_count || 0) === 0);
+				break;
+			case 'popular':
+				filtered = filtered.filter(t => (t.post_count || 0) >= 10);
+				break;
+			case 'today':
+				const today = new Date();
+				today.setHours(0, 0, 0, 0);
+				filtered = filtered.filter(t => new Date(t.created_at) >= today);
+				break;
+		}
+		
+		// Recherche textuelle
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase();
+			filtered = filtered.filter(t => 
+				t.title.toLowerCase().includes(query) ||
+				t.author_username.toLowerCase().includes(query) ||
+				(t.tags || []).some(tag => tag.name.toLowerCase().includes(query))
+			);
+		}
+		
+		// Tri
+		switch(sortBy) {
+			case 'recent':
+				return filtered.sort((a, b) => 
+					new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+				);
+			case 'popular':
+				return filtered.sort((a, b) => (b.post_count || 0) - (a.post_count || 0));
+			case 'views':
+				return filtered.sort((a, b) => (b.views || 0) - (a.views || 0));
+			case 'lastReply':
+				return filtered.sort((a, b) => 
+					new Date(b.updated_at || b.created_at).getTime() - 
+					new Date(a.updated_at || a.created_at).getTime()
+				);
+			default:
+				return filtered;
+		}
+	}
+
+	const filteredThreads = $derived(getFilteredAndSortedThreads());
+	
+	// Pagination
+	const totalPages = $derived(Math.ceil(filteredThreads.length / itemsPerPage));
+	const paginatedThreads = $derived(
+		filteredThreads.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+	);
+
+	// ── Gestionnaires d'événements ───────────────────────────────────
+	$effect(() => {
+		if (sortDropdownOpen) {
+			const handler = (e: MouseEvent) => {
+				if (sortButtonRef && !sortButtonRef.contains(e.target as Node)) {
+					sortDropdownOpen = false;
+				}
+			};
+			document.addEventListener('click', handler);
+			return () => document.removeEventListener('click', handler);
+		}
+	});
+
+	$effect(() => {
+		if (filterDropdownOpen) {
+			const handler = (e: MouseEvent) => {
+				if (filterButtonRef && !filterButtonRef.contains(e.target as Node)) {
+					filterDropdownOpen = false;
+				}
+			};
+			document.addEventListener('click', handler);
+			return () => document.removeEventListener('click', handler);
+		}
+	});
+
+	// Reset page when filters change
+	$effect(() => {
+		currentPage = 1;
+		pageInputValue = '1';
+	});
+
+	// ── Formatage ────────────────────────────────────────────────────
+	function formatDate(iso: string): string {
 		return new Date(iso).toLocaleDateString('fr-FR', {
 			day: '2-digit', month: 'short', year: 'numeric'
 		});
 	}
+
+	function formatRelativeTime(iso: string): string {
+		const now = new Date();
+		const date = new Date(iso);
+		const diffMs = now.getTime() - date.getTime();
+		const diffMins = Math.floor(diffMs / 60000);
+		const diffHours = Math.floor(diffMins / 60);
+		const diffDays = Math.floor(diffHours / 24);
+
+		if (diffMins < 1) return "À l'instant";
+		if (diffMins < 60) return `Il y a ${diffMins} min`;
+		if (diffHours < 24) return `Il y a ${diffHours} h`;
+		if (diffDays === 1) return "Hier";
+		if (diffDays < 7) return `Il y a ${diffDays} jours`;
+		return formatDate(iso);
+	}
+
+	// ── Dernier posteur ─────────────────────────────────────────────
+	function getLastPoster(thread: Thread): Post | null {
+		if (!thread.posts || thread.posts.length === 0) return null;
+		return thread.posts[thread.posts.length - 1];
+	}
+
+	// ── Labels ───────────────────────────────────────────────────────
+	const sortLabels: Record<SortOption, string> = {
+		recent: 'Plus récents',
+		popular: 'Plus populaires',
+		views: 'Plus vus',
+		lastReply: 'Dernière réponse'
+	};
+
+	const filterLabels: Record<FilterType, string> = {
+		all: 'Tous les sujets',
+		pinned: 'Épinglés uniquement',
+		unanswered: 'Sans réponse',
+		popular: 'Populaires (+10 réponses)',
+		today: "Créés aujourd'hui"
+	};
+
+	// ── Stats de la catégorie ────────────────────────────────────────
+	const categoryStats = $derived({
+		total: threads.length,
+		pinned: threads.filter(t => t.is_pinned).length,
+		unanswered: threads.filter(t => (t.post_count || 0) === 0).length,
+		popular: threads.filter(t => (t.post_count || 0) >= 10).length,
+		today: threads.filter(t => {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			return new Date(t.created_at) >= today;
+		}).length
+	});
+
+	// ── Gestionnaire de page ─────────────────────────────────────────
+	function goToPage(page: number): void {
+		currentPage = Math.max(1, Math.min(page, totalPages));
+		pageInputValue = currentPage.toString();
+	}
+
+	// ── Icône de catégorie (basée sur l'ID) ─────────────────────────
+	function getCategoryIcon(): string {
+		// Pour l'instant, on utilise une icône par défaut
+		// Plus tard, on pourra avoir une map categoryId -> icône
+		return '📋';
+	}
 </script>
 
 <svelte:head>
-	<title>Forum — Nexus</title>
-	<meta name="description" content="Liste des discussions — forum Nexus" />
-	<meta property="og:title"       content="Forum — Nexus" />
-	<meta property="og:type"        content="website" />
-	{@html `<script type="application/ld+json">${JSON.stringify({
-		"@context": "https://schema.org",
-		"@type": "CollectionPage",
-		"name": "Forum — Nexus",
-		"description": "Liste des discussions",
-		"hasPart": data.threads.map((t: any) => ({
-			"@type": "DiscussionForumPosting",
-			"headline": t.title,
-			"author": { "@type": "Person", "name": t.author_username },
-			"datePublished": t.created_at,
-			"commentCount": t.post_count
-		}))
-	})}</script>`}
+	<title>{categoryName} — Nexus</title>
+    <meta name="description" content="Liste des discussions dans {categoryName} — forum Nexus" />
 </svelte:head>
 
-<div class="mb-6 flex items-center justify-between">
-	<div>
-		<a href="/" class="text-sm text-gray-500 hover:text-gray-300">← Accueil</a>
-		<h1 class="mt-1 text-2xl font-bold text-white">Discussions</h1>
+<!-- EN-TÊTE DE CATÉGORIE -->
+<div class="relative mb-8 overflow-hidden rounded-2xl border border-gray-800 bg-gradient-to-br from-gray-900 via-gray-900 to-indigo-950/30 p-8 shadow-xl">
+	<!-- Effets de lumière -->
+	<div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+	<div class="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl"></div>
+	<div class="absolute -bottom-20 -left-20 w-80 h-80 bg-violet-600/10 rounded-full blur-3xl"></div>
+	
+	<div class="relative flex flex-wrap items-start justify-between gap-6">
+		<div class="flex items-start gap-6">
+			<!-- Icône de catégorie -->
+			<div class="relative">
+				<div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 
+							flex items-center justify-center text-4xl shadow-xl shadow-indigo-600/30
+							ring-4 ring-indigo-500/20">
+					{getCategoryIcon()}
+				</div>
+			</div>
+
+			<div>
+				<!-- Fil d'Ariane -->
+				<div class="flex items-center gap-2 mb-2">
+					<a href="/" class="text-sm text-gray-500 hover:text-indigo-400 transition-colors">Accueil</a>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+					</svg>
+					<span class="text-sm font-medium text-indigo-400">{categoryName}</span> 
+				</div>
+
+				<h1 class="text-4xl font-bold text-white tracking-tight mb-2">{categoryName}</h1>
+
+				<!-- Stats de la catégorie -->
+				<div class="flex flex-wrap items-center gap-4 mt-4">
+					<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-800/60 border border-gray-700">
+						<span class="text-xs text-gray-400">Total</span>
+						<span class="text-sm font-bold text-white">{categoryStats.total}</span>
+					</div>
+					{#if categoryStats.pinned > 0}
+						<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-900/20 border border-indigo-800/50">
+							<span class="text-xs text-indigo-400">📌 Épinglés</span>
+							<span class="text-sm font-bold text-indigo-400">{categoryStats.pinned}</span>
+						</div>
+					{/if}
+					{#if categoryStats.unanswered > 0}
+						<div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-yellow-900/20 border border-yellow-800/50">
+							<span class="text-xs text-yellow-400">❓ Sans réponse</span>
+							<span class="text-sm font-bold text-yellow-400">{categoryStats.unanswered}</span>
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
 	</div>
-	{#if data.user}
-		<a
-			href="/forum/{data.categoryId}/new"
-			class="rounded bg-indigo-600 hover:bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition-colors"
-		>
-			+ Nouveau sujet
-		</a>
-	{:else}
-		<a href="/auth/login" class="text-sm text-gray-500 hover:text-gray-300">
-			Connectez-vous pour poster
-		</a>
-	{/if}
 </div>
 
-{#if data.threads.length === 0}
-	<p class="text-gray-500">Aucun sujet dans cette catégorie.</p>
+<!-- BARRE D'OUTILS (identique) -->
+<div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+	<!-- Recherche et légende -->
+	<div class="flex flex-wrap items-center gap-4">
+		<!-- Barre de recherche -->
+		<div class="relative w-full sm:w-80">
+			<input
+				bind:this={searchInputRef}
+				type="text"
+				placeholder="Rechercher un sujet..."
+				bind:value={searchQuery}
+				class="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-800/80 border border-gray-700 
+					   text-sm text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500
+					   transition-colors"
+			/>
+			<svg xmlns="http://www.w3.org/2000/svg" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+			</svg>
+			{#if searchQuery}
+				<button 
+					onclick={() => searchQuery = ''}
+					class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+					</svg>
+				</button>
+			{/if}
+		</div>
+
+		<!-- Légende compacte -->
+		<div class="flex items-center gap-3 text-xs">
+			<div class="flex items-center gap-1.5">
+				<span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+				<span class="text-gray-500">Actif</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<span class="w-2 h-2 rounded-full bg-yellow-500"></span>
+				<span class="text-gray-500">Épinglé</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<span class="w-2 h-2 rounded-full bg-green-500"></span>
+				<span class="text-gray-500">Nouveau</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- Filtres et tri -->
+	<div class="flex flex-wrap items-center gap-2">
+		<!-- Filtre dropdown -->
+		<div class="relative" bind:this={filterButtonRef}>
+			<button 
+				onclick={() => filterDropdownOpen = !filterDropdownOpen}
+				class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/80 border border-gray-700 
+					   text-gray-300 hover:text-white hover:border-indigo-500/50 transition-all duration-200"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+				</svg>
+				<span class="text-sm hidden sm:inline">Filtre : {filterLabels[filterBy]}</span>
+				<span class="text-sm sm:hidden">Filtre</span>
+				<span class="ml-1 px-1.5 py-0.5 rounded-full bg-indigo-600/30 text-indigo-400 text-xs">
+					{filterBy !== 'all' ? filteredThreads.length : ''}
+				</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1 text-gray-500 transition-transform duration-200 {filterDropdownOpen ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+
+			{#if filterDropdownOpen}
+				<div 
+					class="absolute right-0 mt-2 w-64 rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
+					transition:fly={{ y: -10, duration: 200 }}
+				>
+					<div class="py-1">
+						{#each Object.entries(filterLabels) as [value, label]}
+							<button
+								onclick={() => {
+									filterBy = value as FilterType;
+									filterDropdownOpen = false;
+								}}
+								class="w-full text-left px-4 py-3 text-sm transition-colors
+									   {filterBy === value 
+										   ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' 
+										   : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
+							>
+								<div class="flex items-center justify-between">
+									<span>{label}</span>
+									{#if filterBy === value}
+										<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+										</svg>
+									{/if}
+								</div>
+								<span class="block text-[10px] text-gray-600 mt-0.5">
+									{value === 'all' ? 'Aucun filtre' :
+									 value === 'pinned' ? 'Sujets épinglés uniquement' :
+									 value === 'unanswered' ? 'Sujets sans réponse' :
+									 value === 'popular' ? 'Plus de 10 réponses' :
+									 'Créés aujourd\'hui'}
+								</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Tri dropdown -->
+		<div class="relative" bind:this={sortButtonRef}>
+			<button 
+				onclick={() => sortDropdownOpen = !sortDropdownOpen}
+				class="flex items-center gap-2 px-4 py-2 rounded-lg bg-gray-800/80 border border-gray-700 
+					   text-gray-300 hover:text-white hover:border-indigo-500/50 transition-all duration-200"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M3 4h13M3 8h9m-9 4h6m4 0h4m-4-4v12m0 0l-4-4m4 4l4-4" />
+				</svg>
+				<span class="text-sm hidden sm:inline">Tri : {sortLabels[sortBy]}</span>
+				<span class="text-sm sm:hidden">Tri</span>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-1 text-gray-500 transition-transform duration-200 {sortDropdownOpen ? 'rotate-180' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+				</svg>
+			</button>
+
+			{#if sortDropdownOpen}
+				<div 
+					class="absolute right-0 mt-2 w-56 rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
+					transition:fly={{ y: -10, duration: 200 }}
+				>
+					<div class="py-1">
+						{#each Object.entries(sortLabels) as [value, label]}
+							<button
+								onclick={() => {
+									sortBy = value as SortOption;
+									sortDropdownOpen = false;
+								}}
+								class="w-full text-left px-4 py-3 text-sm transition-colors
+									   {sortBy === value 
+										   ? 'bg-indigo-600/20 text-indigo-400 border-l-2 border-indigo-500' 
+										   : 'text-gray-300 hover:bg-gray-800 hover:text-white'}"
+							>
+								<div class="flex items-center justify-between">
+									<span>{label}</span>
+									{#if sortBy === value}
+										<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+											<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+										</svg>
+									{/if}
+								</div>
+								<span class="block text-[10px] text-gray-600 mt-0.5">
+									{value === 'recent' ? 'Date de création' :
+									 value === 'popular' ? 'Nombre de réponses' :
+									 value === 'views' ? 'Nombre de vues' :
+									 'Dernière activité'}
+								</span>
+							</button>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		</div>
+
+		<!-- Bouton Nouveau sujet -->
+		{#if user}
+			<a
+				href="/forum/{categoryId}/new"
+				class="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 
+					   hover:from-indigo-500 hover:to-violet-500 px-5 py-2 text-sm font-semibold text-white 
+					   transition-all duration-200 shadow-lg shadow-indigo-600/30 hover:shadow-indigo-500/50 
+					   transform hover:scale-105"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+				</svg>
+				Nouveau sujet
+			</a>
+		{/if}
+	</div>
+</div>
+
+<!-- RÉSULTATS DE RECHERCHE -->
+{#if searchQuery}
+	<div class="mb-4 flex items-center justify-between">
+		<p class="text-sm text-gray-400">
+			🔍 Recherche pour "<span class="text-white font-medium">{searchQuery}</span>" · 
+			{filteredThreads.length} résultat{filteredThreads.length > 1 ? 's' : ''}
+		</p>
+		<button 
+			onclick={() => searchQuery = ''}
+			class="text-xs text-gray-600 hover:text-gray-400 transition-colors"
+		>
+			Effacer la recherche
+		</button>
+	</div>
+{/if}
+
+<!-- LISTE DES SUJETS -->
+{#if paginatedThreads.length === 0}
+	<div class="flex flex-col items-center justify-center py-20 px-4 rounded-2xl border border-dashed border-gray-800 bg-gray-900/50">
+		<div class="w-24 h-24 rounded-full bg-gray-800 flex items-center justify-center mb-4">
+			<svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+			</svg>
+		</div>
+		<h3 class="text-xl font-semibold text-white mb-2">
+			{#if searchQuery}
+				Aucun résultat pour "{searchQuery}"
+			{:else if filterBy !== 'all'}
+				Aucun sujet avec ce filtre
+			{:else}
+				Aucune discussion dans cette catégorie
+			{/if}
+		</h3>
+		<p class="text-sm text-gray-500 text-center max-w-sm mb-6">
+			{#if searchQuery}
+				Essayez d'autres mots-clés ou modifiez vos filtres
+			{:else}
+				Soyez le premier à lancer une discussion !
+			{/if}
+		</p>
+		{#if user && !searchQuery}
+			<a href="/forum/{categoryId}/new" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 px-5 py-2.5 text-sm font-semibold text-white transition-colors">
+				Créer le premier sujet
+			</a>
+		{/if}
+	</div>
 {:else}
 	<div class="space-y-2">
-		{#each data.threads as thread}
+		{#each paginatedThreads as thread, index (thread.id)}
+			<!-- En-tête épinglés -->
+			{#if index === 0 && thread.is_pinned && filterBy === 'all' && currentPage === 1}
+				<div class="flex items-center gap-2 mt-2 mb-3">
+					<div class="h-px flex-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+					<span class="text-xs font-medium text-indigo-400 px-3 py-1 rounded-full bg-indigo-900/20 border border-indigo-800/50 flex items-center gap-1">
+						📌 Sujets épinglés
+					</span>
+					<div class="h-px flex-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
+				</div>
+			{/if}
+
+			{@const lastPoster = getLastPoster(thread)}
+			{@const isNew = new Date(thread.updated_at || thread.created_at) > new Date(Date.now() - 24*60*60*1000)}
+			
+			<!-- CORRECTION ICI : utilisation de categoryId au lieu de category?.id -->
 			<a
-				href="/forum/{data.categoryId}/{thread.id}"
-				class="flex items-center gap-4 rounded-lg border border-gray-800 bg-gray-900 px-5 py-4 hover:border-indigo-700 transition-colors"
+				href="/forum/{categoryId}/{thread.id}"
+				class="group relative flex flex-wrap sm:flex-nowrap items-center gap-4 rounded-xl 
+					   border border-gray-800 bg-gradient-to-r from-gray-900 to-gray-900/80
+					   px-5 py-4 hover:border-indigo-700/50 hover:shadow-lg hover:shadow-indigo-600/10 
+					   transition-all duration-300 overflow-hidden"
 			>
+				<!-- ... reste du code identique ... -->
+				<!-- Avatar créateur -->
+				<div class="relative flex-shrink-0 hidden sm:block">
+					{#if thread.author_avatar}
+						<img 
+							src={thread.author_avatar} 
+							alt={thread.author_username}
+							class="w-10 h-10 rounded-full object-cover ring-2 ring-gray-700 group-hover:ring-indigo-500/30 transition-all"
+						/>
+					{:else}
+						<div class="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 
+									flex items-center justify-center text-sm font-bold text-white
+									ring-2 ring-gray-700 group-hover:ring-indigo-500/30 transition-all">
+							{thread.author_username.charAt(0).toUpperCase()}
+						</div>
+					{/if}
+					
+					<!-- Badges sur avatar -->
+					{#if thread.is_pinned}
+						<div class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-indigo-600 
+									flex items-center justify-center text-[10px] border-2 border-gray-900
+									shadow-lg shadow-indigo-600/50">
+							📌
+						</div>
+					{:else if isNew}
+						<div class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 
+									flex items-center justify-center text-[8px] border-2 border-gray-900
+									shadow-lg shadow-green-500/50 animate-pulse">
+							NEW
+						</div>
+					{/if}
+				</div>
+
+				<!-- Contenu principal -->
 				<div class="flex-1 min-w-0">
-					<div class="flex flex-wrap items-center gap-1.5 mb-1">
-						{#if thread.is_pinned}
-							<span class="text-xs font-medium text-indigo-400">📌 Épinglé</span>
-						{/if}
+					<!-- Badges -->
+					<div class="flex flex-wrap items-center gap-1.5 mb-1.5">
 						{#if thread.is_locked}
-							<span class="text-xs font-medium text-gray-500">🔒 Verrouillé</span>
+							<span class="inline-flex items-center gap-0.5 text-xs font-medium text-gray-400 bg-gray-800 border border-gray-700 px-2 py-0.5 rounded-full">
+								🔒 Verrouillé
+							</span>
 						{/if}
-						{#each (thread.tags ?? []) as tag}
-							<span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium"
+						
+						{#if thread.is_featured}
+							<span class="inline-flex items-center gap-0.5 text-xs font-medium text-yellow-400 bg-yellow-900/30 border border-yellow-800/50 px-2 py-0.5 rounded-full">
+								⭐ À la une
+							</span>
+						{/if}
+						
+						{#each (thread.tags || []).slice(0, 2) as tag}
+							<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
 								style="background-color: {tag.color}22; color: {tag.color}; border: 1px solid {tag.color}44">
 								{tag.name}
 							</span>
 						{/each}
+						{#if (thread.tags?.length || 0) > 2}
+							<span class="text-xs text-gray-600">+{(thread.tags?.length || 0) - 2}</span>
+						{/if}
 					</div>
-					<p class="font-medium text-white truncate">{thread.title}</p>
-					<p class="mt-0.5 text-xs text-gray-500">
-						Par {thread.author_username} · {formatDate(thread.created_at)}
+
+					<!-- Titre -->
+					<p class="text-base font-semibold text-white group-hover:text-indigo-400 transition-colors line-clamp-1">
+						{thread.title}
 					</p>
+
+					<!-- Métadonnées -->
+					<div class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
+						<!-- Auteur -->
+						<div class="flex items-center gap-1 text-gray-500">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+							</svg>
+							<span class="text-gray-400">{thread.author_username}</span>
+						</div>
+
+						<!-- Date -->
+						<div class="flex items-center gap-1 text-gray-600">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+							</svg>
+							<span>{formatRelativeTime(thread.created_at)}</span>
+						</div>
+
+						<!-- Vues -->
+						<div class="flex items-center gap-1 text-gray-600">
+							<svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+								<path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+							</svg>
+							<span>{thread.views || 0} vues</span>
+						</div>
+					</div>
 				</div>
-				<div class="text-right shrink-0">
-					<p class="text-sm font-medium text-gray-300">{thread.post_count}</p>
-					<p class="text-xs text-gray-500">réponses</p>
+
+				<!-- Stats et dernier posteur -->
+				<div class="flex items-center gap-4 shrink-0">
+					<!-- Compteur de réponses -->
+					<div class="flex flex-col items-center px-3 py-1.5 rounded-lg bg-gray-800/80 border border-gray-700 group-hover:border-indigo-700/50 transition-colors min-w-[60px]">
+						<span class="text-lg font-bold text-indigo-400 leading-none">{thread.post_count}</span>
+						<span class="text-[10px] text-gray-500 uppercase tracking-wider">réponses</span>
+					</div>
+
+					<!-- Dernier posteur -->
+					{#if lastPoster}
+						<div class="flex items-center gap-2 pl-2 border-l border-gray-800">
+							<div class="text-right hidden sm:block">
+								<p class="text-[10px] text-gray-600">Dernière réponse</p>
+								<p class="text-xs font-medium text-gray-300">{lastPoster.author_username}</p>
+								<p class="text-[9px] text-gray-700">{formatRelativeTime(lastPoster.created_at)}</p>
+							</div>
+							{#if lastPoster.author_avatar}
+								<img src={lastPoster.author_avatar} alt="" class="w-8 h-8 rounded-full object-cover ring-1 ring-gray-700" />
+							{:else}
+								<div class="w-8 h-8 rounded-full bg-indigo-800 flex items-center justify-center text-xs font-bold text-white">
+									{lastPoster.author_username.charAt(0).toUpperCase()}
+								</div>
+							{/if}
+						</div>
+					{/if}
 				</div>
+
+				<!-- Flèche -->
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-700 group-hover:text-indigo-500 transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+				</svg>
 			</a>
 		{/each}
+	</div>
+
+	<!-- PAGINATION PROFESSIONNELLE -->
+	<div class="mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+		<div class="text-sm text-gray-600 order-2 sm:order-1">
+			Affichage de <span class="text-white font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> 
+			à <span class="text-white font-medium">{Math.min(currentPage * itemsPerPage, filteredThreads.length)}</span> 
+			sur <span class="text-white font-medium">{filteredThreads.length}</span> sujets
+		</div>
+		
+		<div class="flex items-center gap-2 order-1 sm:order-2">
+			<!-- Page précédente -->
+			<button 
+				onclick={() => goToPage(currentPage - 1)}
+				disabled={currentPage === 1}
+				class="w-9 h-9 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-indigo-600 
+					   disabled:opacity-30 disabled:cursor-not-allowed transition-all 
+					   flex items-center justify-center"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+				</svg>
+			</button>
+			
+			<!-- Pages -->
+			<div class="flex items-center gap-1">
+				{#each { length: Math.min(5, totalPages) } as _, i}
+					{@const pageNum = (() => {
+						if (totalPages <= 5) return i + 1;
+						if (currentPage <= 3) return i + 1;
+						if (currentPage >= totalPages - 2) return totalPages - 4 + i;
+						return currentPage - 2 + i;
+					})()}
+					<button
+						onclick={() => goToPage(pageNum)}
+						class="w-9 h-9 rounded-lg text-sm font-medium transition-all
+							   {currentPage === pageNum 
+								   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30' 
+								   : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'}"
+					>
+						{pageNum}
+					</button>
+				{/each}
+			</div>
+			
+			<!-- Page suivante -->
+			<button 
+				onclick={() => goToPage(currentPage + 1)}
+				disabled={currentPage === totalPages}
+				class="w-9 h-9 rounded-lg bg-gray-800 text-gray-400 hover:text-white hover:bg-indigo-600 
+					   disabled:opacity-30 disabled:cursor-not-allowed transition-all 
+					   flex items-center justify-center"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+				</svg>
+			</button>
+		</div>
+		
+		<!-- Sélecteur d'éléments par page -->
+		<div class="flex items-center gap-2 order-3">
+			<span class="text-xs text-gray-600 hidden sm:inline">Afficher</span>
+			<select 
+				bind:value={itemsPerPage}
+				onchange={() => goToPage(1)}
+				class="bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-300 
+					   focus:outline-none focus:border-indigo-500 cursor-pointer"
+			>
+				<option value="10">10 par page</option>
+				<option value="20">20 par page</option>
+				<option value="50">50 par page</option>
+				<option value="100">100 par page</option>
+			</select>
+		</div>
 	</div>
 {/if}
