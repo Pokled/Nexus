@@ -17,6 +17,7 @@ import notificationRoutes  from './routes/notifications'
 import chatRoutes          from './routes/chat'
 import { setIO }           from './socket/io'
 import { registerSocketIO } from './socket/index'
+import { runMigrations }    from './scripts/migrate'
 
 const server = Fastify({ logger: true })
 
@@ -73,6 +74,8 @@ server.register(notificationRoutes,  { prefix: '/api/v1/notifications' })
 server.register(chatRoutes,          { prefix: '/api/v1/chat' })
 
 const start = async () => {
+  await runMigrations()
+
   try {
     await server.listen({
       port: Number(process.env.PORT) || 3000,

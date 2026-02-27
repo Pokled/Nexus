@@ -6,9 +6,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 
-COPY tsconfig.json ./
-COPY src/ ./src/
-
+COPY . .
 RUN npm run build
 
 # ── Production stage ─────────────────────────────────────────────────────────
@@ -17,20 +15,15 @@ FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+ENV PORT=3001
 
 # Only production dependencies
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy compiled output
-COPY --from=builder /app/dist ./dist
+# Copy the compiled SvelteKit output
+COPY --from=builder /app/build ./build
 
-# Copy SQL migrations (read at runtime by the migration runner)
-COPY src/migrations/ ./src/migrations/
+EXPOSE 3001
 
-# Create uploads directories
-RUN mkdir -p uploads/avatars uploads/banners uploads/logos
-
-EXPOSE 3000
-
-CMD ["node", "dist/index.js"]
+CMD ["node", "build"]
