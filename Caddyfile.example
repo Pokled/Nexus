@@ -1,13 +1,13 @@
-pokled.ddns.net {
+yourdomain.example.com {
     # WebSocket Socket.IO (Signalement TURN/Appels)
     @socketio path /socket.io/*
     reverse_proxy @socketio localhost:3000
 
-    # --- IA Ollama (Sécurisée) ---
+    # IA Ollama (Sécurisée)
     handle_path /ollama/* {
         reverse_proxy localhost:11434 {
             header_up Host {host}
-            header_up Origin "" # Évite certains rejets d'Ollama
+            header_up Origin ""
         }
     }
 
@@ -19,7 +19,7 @@ pokled.ddns.net {
     reverse_proxy * localhost:5173 {
         header_up Host {host}
         header_up X-Real-IP {remote_host}
-        header_up Upgrade {>Upgrade} # Crucial pour SvelteKit Dev
+        header_up Upgrade {>Upgrade}
         header_up Connection {>Connection}
     }
 

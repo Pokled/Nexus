@@ -11,6 +11,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "dotenv": "^16.0.0",
     "node-turn": "^0.0.6"
   }
 }

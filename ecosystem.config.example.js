@@ -1,41 +1,38 @@
+/**
+ * PM2 ecosystem config — copy to ecosystem.config.js and adapt paths
+ */
 module.exports = {
   apps: [
     {
       name: 'nexus-core',
       script: 'dist/index.js',
-      cwd: 'H:/Projets/Nexus/nexus-core',
+      cwd: './nexus-core',
       watch: false,
       env: { NODE_ENV: 'production' },
     },
     {
       name: 'nexus-frontend',
       script: 'node_modules/vite/bin/vite.js',
-      args: 'dev --host',
-      cwd: 'H:/Projets/Nexus/nexus-frontend',
+      args: 'preview --host',
+      cwd: './nexus-frontend',
       watch: false,
       interpreter: 'node',
-      env: { NODE_ENV: 'development' },
+      env: { NODE_ENV: 'production' },
     },
     {
       name: 'caddy',
-      script: 'C:/caddy/caddy.exe',
-      args: 'run --config H:/Projets/Nexus/Caddyfile.dev --adapter caddyfile',
-      cwd: 'H:/Projets/Nexus',
+      script: '/usr/bin/caddy',           // Linux: /usr/bin/caddy | Windows: C:/caddy/caddy.exe
+      args: 'run --config ./Caddyfile.example --adapter caddyfile',
+      cwd: './',
       watch: false,
       interpreter: 'none',
     },
     {
       name: 'nexus-turn',
       script: 'server.js',
-      cwd: 'H:/Projets/Nexus/turn-server',
+      cwd: './turn-server',
       watch: false,
       env: { NODE_ENV: 'production' },
     },
-    {
-      name: 'ollama-service',
-      script: 'C:/Users/Administrateur/ollama-runner.js',
-      cwd: 'C:/Users/Administrateur',
-      watch: false,
-    }
   ],
 }
