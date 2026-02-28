@@ -74,8 +74,8 @@ Réseau P2P                  ○  Phase 3 (WireGuard mesh)
 La méthode la plus simple. Nécessite Docker Desktop ou Docker Engine.
 
 ```bash
-git clone https://github.com/nexus-community/nexus-core
-cd nexus-core
+git clone https://github.com/Pokled/Nexus
+cd Nexus/nexus-core
 cp .env.example .env
 # Éditez .env avec les informations de votre communauté
 docker-compose up -d
@@ -111,8 +111,8 @@ Le script installe et configure automatiquement :
 **Prérequis :** Node.js 20+, PostgreSQL 16+, Redis 7+
 
 ```bash
-git clone https://github.com/nexus-community/nexus-core
-cd nexus-core
+git clone https://github.com/Pokled/Nexus
+cd Nexus/nexus-core
 npm install
 cp .env.example .env
 ```
