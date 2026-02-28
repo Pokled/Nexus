@@ -15,6 +15,8 @@
 
 > **[→ Live demo: pokled.ddns.net](https://pokled.ddns.net)** *(self-hosted instance — may occasionally be offline)*
 
+> ⚠️ **Alpha stage** — Forum, real-time chat, and voice channels are functional. P2P federation, global directory, and mobile apps are still in development. Not yet recommended for large-scale production use.
+
 ---
 
 ## Why Nexus?
@@ -30,6 +32,11 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 - **Forum indexed by Google** — your knowledge belongs to the internet
 - **Real-time chat + voice** — WebRTC P2P mesh, self-hosted TURN relay
 - **Open source** — AGPL-3.0, forever
+
+<div align="center">
+  <img src="docs/img/Nexus-reseau.png" alt="Nexus network architecture — self-hosted, P2P, federated" width="700"/>
+  <p><em>Your instance. Your users. Your data. No central server.</em></p>
+</div>
 
 ---
 
@@ -113,8 +120,8 @@ docker-compose up -d
 
 ### Manual install
 
-See [docs/fr/README.md](docs/fr/README.md) for the full installation guide (French).
-English guide coming soon — contributions welcome.
+See [docs/en/README.md](docs/en/README.md) for the full English installation guide (Docker, Windows, Linux/Mac).
+French guide: [docs/fr/README.md](docs/fr/README.md)
 
 ---
 
@@ -148,12 +155,12 @@ English guide coming soon — contributions welcome.
 | 🇩🇪 Deutsch | *coming soon* |
 
 - [Manifesto](docs/en/MANIFESTO.md) — Why Nexus exists
-- [Architecture](docs/fr/ARCHITECTURE.md) — How it's built
-- [Roadmap](docs/fr/ROADMAP.md) — Where we're going
+- [Architecture](docs/en/ARCHITECTURE.md) — How it's built
+- [Roadmap](docs/en/ROADMAP.md) — Where we're going
 - [Contributing](docs/en/CONTRIBUTING.md) — How to contribute
 - [Audio Engine](docs/en/AUDIO.md) — Broadcast EQ, RNNoise, audio chain explained
 - [Neural Engine](docs/en/NEURAL-ENGINE.md) — Local AI with Ollama
-- [Specs](docs/specs/) — Functional specifications
+- [Specs](docs/specs/) — Functional specifications (FR) / [EN](docs/en/specs/)
 
 ---
 
@@ -161,14 +168,20 @@ English guide coming soon — contributions welcome.
 
 Nexus belongs to its community. All contributions are welcome.
 
-Read [CONTRIBUTING.md](docs/en/CONTRIBUTING.md) before you start.
-Commits must follow [Conventional Commits](https://www.conventionalcommits.org/) and be written in **English**.
+1. Browse [open Issues](https://github.com/Pokled/Nexus/issues) or start a [Discussion](https://github.com/Pokled/Nexus/discussions)
+2. Read [CONTRIBUTING.md](docs/en/CONTRIBUTING.md) before opening a PR
+3. Commits follow [Conventional Commits](https://www.conventionalcommits.org/), written in **English**
+
+Where to contribute freely — no validation required:
 
 ```
 nexus-plugins/    →  Build plugins
 nexus-themes/     →  Build themes
-docs/             →  Improve documentation
+docs/             →  Improve or translate documentation
+i18n/             →  Translate into your language
 ```
+
+The **core** (`nexus-core/src/`) requires discussion first — open an Issue.
 
 ---
 
