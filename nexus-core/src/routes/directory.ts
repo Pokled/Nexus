@@ -147,7 +147,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
           `UPDATE directory_instances
            SET status='active', ip=$1, cloudflare_record_id=$2
            WHERE id=$3`,
-          [instanceIp, recordId, instance.id]
+          [vpsIp, recordId, instance.id]
         );
 
         console.log(`[Directory] ${slug} activated. CF record: ${recordId}`);
