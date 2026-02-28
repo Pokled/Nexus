@@ -137,8 +137,9 @@ export default async function directoryRoutes(app: FastifyInstance) {
           return;
         }
 
-        const { address: vpsIp } = await dnsLookup('nexusnode.app', { family: 4 });
-        const { address: instanceIp } = await dnsLookup(new URL(url).hostname, { family: 4 }).catch(() => ({ address: vpsIp }));
+        // Utiliser l'IP VPS depuis l'env — jamais via dnsLookup (retournerait l'IP Cloudflare)
+        const vpsIp = process.env.VPS_IP;
+        if (!vpsIp) throw new Error('VPS_IP not set in .env');
 
         const recordId = await createCloudflareSubdomain(slug, vpsIp);
 
