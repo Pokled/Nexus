@@ -9,6 +9,30 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [0.4.0] — 2026-02-28
+
+### Added
+- **Production deployment** — full stack live on [nexusnode.app](https://nexusnode.app) (Hetzner CPX42, Ubuntu 24.04, PM2, Caddy, Cloudflare)
+- **Directory API** — instance registry with automatic Cloudflare DNS subdomain provisioning
+  - `GET /api/directory` — list active instances
+  - `POST /api/directory/register` — register an instance, triggers URL check + DNS creation
+  - `POST /api/directory/ping` — heartbeat to update member/online counts and `last_seen`
+  - `DELETE /api/directory/:slug` — unregister and remove DNS record
+- **Migration 014** — `directory_instances` table (slug, token, subdomain, cloudflare_record_id, last_seen…)
+- **Scheduler** (`scheduler.ts`) — auto-pings the directory every 5 minutes with live member/online counts from DB + Socket.IO
+- **Communities page** — replaced mock data with live `/api/directory` API data
+
+### Infrastructure
+- Caddy reverse proxy with Cloudflare Origin Certificate (Full Strict SSL)
+- `*.nexusnode.app` wildcard block — all registered subdomains routed to the same stack
+- `code.nexusnode.app` — code-server (VS Code in browser) for remote development
+- Claude Code CLI installed on VPS for remote AI-assisted development
+
+### Fixed
+- Directory DNS creation: replaced `dnsLookup` (returned Cloudflare proxy IP) with `VPS_IP` env var
+
+---
+
 ## [0.3.3] — 2026-02-28
 
 ### Fixed
