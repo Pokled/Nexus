@@ -9,6 +9,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [0.3.2] — 2026-02-28
+
+### Fixed
+- **WebRTC TURN relay fully operational** — relay candidates now correctly advertise the public IP
+  - `turn-server/server.js`: `externalIp` → `externalIps` (node-turn reads the plural form — one character, weeks of debugging)
+  - `turn-server/server.js`: `relayIps: ['0.0.0.0']` → `['192.168.1.100']` — relay socket now binds to the actual LAN interface instead of wildcard (was causing `xor-relayed-address: 0.0.0.0` in ALLOCATE responses)
+  - `turn-server/server.js`: added `credentials` config so node-turn can validate `MESSAGE-INTEGRITY` from browsers
+  - PM2 process now started with explicit `--cwd` — `dotenv` was silently failing to find `.env` causing 40+ crash-restart cycles
+  - Bbox port forwarding rule fixed: relay port range `49152–55440` was mapped to internal port `48000` instead of `49152`
+
+- **WebRTC ICE reconnection loop** — `_scheduleRejoin` was destroying all peer connections when a single peer failed
+  - Added `_dropPeer()`, `_hasOtherConnectedPeer()`, `_handlePeerFailure()` — only triggers full rejoin if no other connected peer exists
+  - Per-peer ICE restart (2 attempts before escalating to rejoin)
+
+- **Double-peer appearance on reconnect** — race condition where `voice:peer_joined` arrived before `voice:peer_left` for the same `userId`
+  - `onPeerJoined` now detects stale peers by `userId` and calls `_dropPeer` before adding the new socket
+
+### Changed
+- **ICE config cleanup** — removed broken TCP/TLS TURN URL variants (`?transport=tcp`, port 443, `turns:`) injected via `configureICE` — these were timing out and delaying ICE gathering
+- `iceCandidatePoolSize: 2` added to pre-gather relay candidates before ICE checking starts
+- Added `[ICE gather]` + `[ICE config]` console debug logging for future diagnostics
+
+### Security
+- Removed two user logo uploads (`uploads/logos/`) that were accidentally tracked in git
+
+---
+
 ## [0.3.1] — 2026-02-27
 
 ### Fixed
@@ -85,6 +112,9 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **AI assistant** — local Ollama integration (no cloud dependency)
 - **13 SQL migrations** — complete schema from users to voice channels
 
-[Unreleased]: https://github.com/Pokled/Nexus/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Pokled/Nexus/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/Pokled/Nexus/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/Pokled/Nexus/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Pokled/Nexus/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Pokled/Nexus/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Pokled/Nexus/releases/tag/v0.1.0
