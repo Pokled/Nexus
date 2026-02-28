@@ -140,7 +140,11 @@ Uniquement après que Phase 2 est stable.
 - [ ] Partage de fichiers (hébergé sur le nœud, pas de CDN central)
 - [ ] Whiteboard collaboratif (temps réel via WebSocket)
 - [ ] Système de tâches léger (Trello-like, par communauté)
-- [ ] Ollama IA locale — assistant de savoir (indexe le forum local) + aide à la modération
+- [ ] Ollama IA locale — assistant de savoir (indexe le forum local)
+- [ ] **Nexus Guard Protocol — intégration TypeScript** : migrer le moteur de scoring toxicité (prototype `ai-config.js` / `test-ai.js`) dans `nexus-core/src/socket/index.ts` comme middleware `chat:send` propre — score 0–10, seuil configurable via `.env`, logs en DB
+- [ ] Guard Protocol — seuil configurable via panneau admin (sans redémarrage)
+- [ ] Guard Protocol — blocage URL fiable (regex + whitelist configurable)
+- [ ] Guard Protocol — route backend `POST /api/v1/admin/neural/set-model` (UI admin déjà fonctionnelle)
 - [ ] Marketplace plugins — API stable pour extensions tierces
 - [ ] Data Sharding distribué pour les fichiers lourds (inspiration IPFS/BitTorrent — nœuds volontaires)
 
