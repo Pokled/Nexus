@@ -66,18 +66,19 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 
 ## How Nexus compares
 
-|  | **Nexus** | Discord | Lemmy | NodeBB |
-|---|:---:|:---:|:---:|:---:|
-| Self-hosted | ✅ | ❌ | ✅ | ✅ |
-| Forum indexed by Google | ✅ | ❌ | ✅ | ✅ |
-| Real-time chat | ✅ | ✅ | ❌ | ❌ |
-| Voice channels | ✅ | ✅ | ❌ | ❌ |
-| P2P voice (no Big Tech relay) | ✅ | ❌ | ❌ | ❌ |
-| No account required to read | ✅ | ❌ | ✅ | ✅ |
-| Open source | ✅ AGPL | ❌ | ✅ AGPL | ✅ GPL |
-| All three in one platform | ✅ | ⚠️ | ❌ | ❌ |
+|  | **Nexus** | Discord | Matrix | Discourse | Lemmy | NodeBB |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Self-hosted | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Forum indexed by Google | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Real-time chat | ✅ | ✅ | ✅ | ⚠️ | ❌ | ❌ |
+| Voice channels | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
+| P2P voice (no Big Tech relay) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| No account required to read | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Open source | ✅ AGPL | ❌ | ✅ Apache | ✅ GPL | ✅ AGPL | ✅ GPL |
+| Forum + Chat + Voice in one | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
 
 > Nexus is the only self-hosted platform combining an **indexed forum**, **real-time chat**, and **P2P voice** in a single install.
+> Matrix has chat+voice but no indexed forum. Discourse has forum+chat but no voice.
 
 ---
 
