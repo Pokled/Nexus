@@ -1,14 +1,15 @@
-# Nexus
+<div align="center">
+  <img src="docs/img/nexus-logo.png" alt="Nexus" width="220"/>
 
-> *"The network is the people."*
+  <p><em>"The network is the people."</em></p>
 
-**Nexus** is a self-hosted, open-source, decentralized community platform.
-Forum + real-time chat + voice channels — on your own server, under your own control.
+  <p><strong>Self-hosted, open-source, decentralized community platform.<br/>Forum + real-time chat + voice channels — on your own server, under your own control.</strong></p>
 
-[![Version](https://img.shields.io/badge/version-v0.3.2-7c3aed)](CHANGELOG.md)
-[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
-[![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL-green)](docs/en/ARCHITECTURE.md)
+  [![Version](https://img.shields.io/badge/version-v0.3.2-7c3aed)](CHANGELOG.md)
+  [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+  [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
+  [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL-green)](docs/en/ARCHITECTURE.md)
+</div>
 
 ---
 
@@ -60,6 +61,23 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
     <td><img src="docs/img/Annuaire_instances_Api-Nexus.png" alt="Instance directory" width="460"/></td>
   </tr>
 </table>
+
+---
+
+## How Nexus compares
+
+|  | **Nexus** | Discord | Lemmy | NodeBB |
+|---|:---:|:---:|:---:|:---:|
+| Self-hosted | ✅ | ❌ | ✅ | ✅ |
+| Forum indexed by Google | ✅ | ❌ | ✅ | ✅ |
+| Real-time chat | ✅ | ✅ | ❌ | ❌ |
+| Voice channels | ✅ | ✅ | ❌ | ❌ |
+| P2P voice (no Big Tech relay) | ✅ | ❌ | ❌ | ❌ |
+| No account required to read | ✅ | ❌ | ✅ | ✅ |
+| Open source | ✅ AGPL | ❌ | ✅ AGPL | ✅ GPL |
+| All three in one platform | ✅ | ⚠️ | ❌ | ❌ |
+
+> Nexus is the only self-hosted platform combining an **indexed forum**, **real-time chat**, and **P2P voice** in a single install.
 
 ---
 
