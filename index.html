@@ -552,16 +552,80 @@
     margin: 0; position: relative; z-index: 1;
   }
 
-  /* RESPONSIVE */
+  /* HAMBURGER */
+  .nav-hamburger {
+    display: none; flex-direction: column; justify-content: center; gap: 5px;
+    background: none; border: none; cursor: pointer; padding: 6px; z-index: 101;
+  }
+  .nav-hamburger span {
+    display: block; width: 22px; height: 1px; background: var(--text-dim); transition: all 0.3s;
+  }
+  nav.menu-open .nav-hamburger span:nth-child(1) { transform: rotate(45deg) translate(4px, 4px); }
+  nav.menu-open .nav-hamburger span:nth-child(2) { opacity: 0; transform: translateX(-8px); }
+  nav.menu-open .nav-hamburger span:nth-child(3) { transform: rotate(-45deg) translate(4px, -4px); }
+
+  /* RESPONSIVE — TABLET */
   @media (max-width: 900px) {
-    nav { padding: 20px 24px; }
-    .nav-links { gap: 20px; }
+    nav { padding: 16px 20px; }
+    .nav-hamburger { display: flex; }
+    .nav-cta { display: none; }
+    .nav-links {
+      display: none; position: absolute; top: 100%; left: 0; right: 0;
+      background: rgba(5,5,8,0.97); backdrop-filter: blur(20px);
+      flex-direction: column; padding: 8px 0;
+      border-bottom: 1px solid var(--border); gap: 0;
+    }
+    .nav-links li { border-bottom: 1px solid var(--border); }
+    .nav-links li:first-child { border-top: 1px solid var(--border); }
+    .nav-links a { display: block; padding: 16px 24px; font-size: 11px; letter-spacing: 2px; }
+    nav.menu-open .nav-links { display: flex; }
+
+    .section-wrap { padding: 80px 24px; }
+    .audio-inner { padding: 80px 24px; }
+    .ai-inner { padding: 80px 24px; }
+    .manifesto-section { padding: 40px 24px 80px; }
+    .network-section { padding: 40px 24px 80px; }
+    .waitlist-section { padding: 40px 24px 80px; }
+    footer { padding: 40px 24px; flex-direction: column; gap: 24px; text-align: center; }
+    .footer-links { flex-wrap: wrap; justify-content: center; gap: 16px; }
+
     .features-grid { grid-template-columns: 1fr; }
     .audio-grid { grid-template-columns: 1fr; gap: 40px; }
     .innovations-grid { grid-template-columns: 1fr; }
     .ai-grid { grid-template-columns: 1fr; }
     .manifesto-grid { grid-template-columns: 1fr; gap: 40px; }
     .evolution-bar { position: relative; bottom: auto; margin-top: 40px; }
+  }
+
+  /* RESPONSIVE — MOBILE */
+  @media (max-width: 600px) {
+    .cursor, .cursor-ring { display: none !important; }
+    body { cursor: auto; }
+
+    .hero { padding: 100px 20px 60px; }
+    .hero-gonexus { letter-spacing: 3px; font-size: 11px; }
+    .evolution-bar { width: 100%; }
+    .evo-item { padding: 10px 12px; flex: 1; }
+    .evo-era { font-size: 8px; letter-spacing: 1px; }
+    .evo-name { font-size: 11px; }
+
+    .network-viz { height: 220px; overflow: hidden; margin: 40px 0 20px; }
+    .network-ring-1 { width: 120px; height: 120px; }
+    .network-ring-2 { width: 200px; height: 200px; }
+    .network-ring-3 { width: 280px; height: 280px; }
+    .network-center { width: 56px; height: 56px; }
+    .network-node { width: 30px; height: 30px; font-size: 12px; }
+    .network-stats { flex-direction: column !important; }
+    .network-stat { padding: 20px 24px !important; border-right: none !important; border-bottom: 1px solid var(--border) !important; }
+    .network-stat:last-child { border-bottom: none !important; }
+
+    .feature-card { padding: 32px 20px; }
+    .innovation-card { padding: 28px 20px; }
+    .ai-card { padding: 28px 20px; }
+    .manifesto-item { padding: 18px 20px; }
+    .chain-step { padding: 18px 20px; }
+
+    .waitlist-box { padding: 48px 24px; }
   }
 </style>
 </head>
@@ -582,6 +646,7 @@
     <li><a href="#manifesto">Manifeste</a></li>
     <li><a href="https://github.com/Pokled/Nexus" target="_blank">GitHub ↗</a></li>
   </ul>
+  <button class="nav-hamburger" id="navHamburger" aria-label="Menu"><span></span><span></span><span></span></button>
   <a href="https://pokled.ddns.net" class="nav-cta" target="_blank"><span>Lancer l'app →</span></a>
 </nav>
 
@@ -969,16 +1034,16 @@
     </div>
   </div>
 
-  <div style="display:flex;gap:0;justify-content:center;border:1px solid var(--border);max-width:600px;margin:0 auto" class="reveal">
-    <div style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
+  <div class="network-stats reveal" style="display:flex;gap:0;justify-content:center;border:1px solid var(--border);max-width:600px;margin:0 auto">
+    <div class="network-stat" style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">0€</div>
       <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Par an, domaine inclus</div>
     </div>
-    <div style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
+    <div class="network-stat" style="padding:32px 40px;text-align:center;border-right:1px solid var(--border);flex:1">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">∞</div>
       <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Instances supportées</div>
     </div>
-    <div style="padding:32px 40px;text-align:center;flex:1">
+    <div class="network-stat" style="padding:32px 40px;text-align:center;flex:1">
       <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:36px;color:white">P2P</div>
       <div style="font-family:'Space Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:2px;color:var(--text-muted);margin-top:6px">Bande passante distribuée</div>
     </div>
@@ -1046,6 +1111,14 @@
     entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
   }, { threshold: 0.1 });
   document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Hamburger menu
+  const hamburger = document.getElementById('navHamburger');
+  const navEl = document.getElementById('nav');
+  hamburger.addEventListener('click', () => navEl.classList.toggle('menu-open'));
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.addEventListener('click', () => navEl.classList.remove('menu-open'));
+  });
 
   // Smooth scroll for anchor links
   document.querySelectorAll('a[href^="#"]').forEach(anchor => {
