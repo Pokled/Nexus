@@ -159,17 +159,17 @@ choco install caddy       # Windows
 apt install caddy         # Debian/Ubuntu
 brew install caddy        # macOS
 
-# Run with the example configuration
-caddy run --config scripts/Caddyfile.example
+# Run with the example configuration (from repo root)
+caddy run --config nexus-core/scripts/Caddyfile.example
 ```
 
-An annotated example is available in [`scripts/Caddyfile.example`](./scripts/Caddyfile.example).
+An annotated example is available in [`nexus-core/scripts/Caddyfile.example`](../../nexus-core/scripts/Caddyfile.example).
 
 ---
 
 ## Environment variables
 
-See [`.env.example`](./.env.example) for the full annotated list.
+See [`nexus-core/.env.example`](../../nexus-core/.env.example) for the full annotated list.
 
 | Variable | Required | Description |
 |---|---|---|

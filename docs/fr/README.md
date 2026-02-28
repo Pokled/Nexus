@@ -159,17 +159,17 @@ choco install caddy       # Windows
 apt install caddy         # Debian/Ubuntu
 brew install caddy        # macOS
 
-# Lancer avec la configuration d'exemple
-caddy run --config scripts/Caddyfile.example
+# Lancer avec la configuration d'exemple (depuis la racine du repo)
+caddy run --config nexus-core/scripts/Caddyfile.example
 ```
 
-Un exemple commenté est disponible dans [`scripts/Caddyfile.example`](./scripts/Caddyfile.example).
+Un exemple commenté est disponible dans [`nexus-core/scripts/Caddyfile.example`](../../nexus-core/scripts/Caddyfile.example).
 
 ---
 
 ## Variables d'environnement
 
-Voir [`.env.example`](./.env.example) pour la liste complète commentée.
+Voir [`nexus-core/.env.example`](../../nexus-core/.env.example) pour la liste complète commentée.
 
 | Variable | Obligatoire | Description |
 |---|---|---|
@@ -215,10 +215,10 @@ Après `npm run seed` :
 
 ## Documentation
 
-- [ROADMAP.MD](./ROADMAP.MD) — Le chemin vers la vision complète
-- [ARCHITECTURE.MD](./ARCHITECTURE.MD) — Comment Nexus est construit
-- [CONTRIBUTING.MD](./CONTRIBUTING.MD) — Comment contribuer
-- [NEXUS_CONTEXT.md](./NEXUS_CONTEXT.md) — Vision complète et décisions techniques
+- [ROADMAP.md](./ROADMAP.md) — Le chemin vers la vision complète
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — Comment Nexus est construit
+- [CONTRIBUTING.md](./CONTRIBUTING.md) — Comment contribuer
+- [NEXUS_CONTEXT.md](../../nexus-core/NEXUS_CONTEXT.md) — Vision complète et décisions techniques
 
 ---
 
@@ -226,7 +226,7 @@ Après `npm run seed` :
 
 Nexus appartient à sa communauté. Toutes les contributions sont les bienvenues.
 
-Lis [CONTRIBUTING.MD](./CONTRIBUTING.MD) avant de commencer.
+Lis [CONTRIBUTING.md](./CONTRIBUTING.md) avant de commencer.
 
 ```
 nexus-plugins/    →  Crée des plugins
