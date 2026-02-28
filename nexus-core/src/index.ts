@@ -15,9 +15,11 @@ import userRoutes          from './routes/users'
 import searchRoutes        from './routes/search'
 import notificationRoutes  from './routes/notifications'
 import chatRoutes          from './routes/chat'
+import directoryRoutes    from './routes/directory'
 import { setIO }           from './socket/io'
 import { registerSocketIO } from './socket/index'
 import { runMigrations }    from './scripts/migrate'
+import { startScheduler }  from './scheduler'
 
 const server = Fastify({ logger: true })
 
@@ -72,6 +74,7 @@ server.register(userRoutes,      { prefix: '/api/v1/users' })
 server.register(searchRoutes,        { prefix: '/api/v1/search' })
 server.register(notificationRoutes,  { prefix: '/api/v1/notifications' })
 server.register(chatRoutes,          { prefix: '/api/v1/chat' })
+server.register(directoryRoutes,     { prefix: '/api' })
 
 const start = async () => {
   await runMigrations()
@@ -93,6 +96,7 @@ const start = async () => {
     setIO(io)
     registerSocketIO(io)
     console.log('⚡ Socket.IO prêt')
+    startScheduler(io)
   } catch (err) {
     server.log.error(err)
     process.exit(1)
