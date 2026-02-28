@@ -4,6 +4,7 @@ import { lookup } from 'dns';
 import { promisify } from 'util';
 import https from 'https';
 import http from 'http';
+import { db } from '../config/database';
 
 const dnsLookup = promisify(lookup);
 
@@ -73,7 +74,7 @@ async function deleteCloudflareRecord(recordId: string): Promise<void> {
 export default async function directoryRoutes(app: FastifyInstance) {
   // GET /api/directory — list active instances
   app.get('/directory', async (_req, reply) => {
-    const result = await app.db.query(`
+    const result = await db.query(`
       SELECT id, slug, name, description, url, language, country, theme,
              members, online, version, status, last_seen, registered_at
       FROM directory_instances
@@ -107,7 +108,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Invalid URL' });
     }
 
-    const existing = await app.db.query(
+    const existing = await db.query(
       'SELECT id FROM directory_instances WHERE slug = $1', [slug]
     );
     if (existing.rows.length > 0) {
@@ -117,7 +118,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
     const token = randomBytes(32).toString('hex');
     const subdomain = `${slug}.nexusnode.app`;
 
-    const result = await app.db.query(
+    const result = await db.query(
       `INSERT INTO directory_instances
          (slug, name, description, url, language, country, theme, version, token, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending')
@@ -141,7 +142,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
 
         const recordId = await createCloudflareSubdomain(slug, vpsIp);
 
-        await app.db.query(
+        await db.query(
           `UPDATE directory_instances
            SET status='active', ip=$1, cloudflare_record_id=$2
            WHERE id=$3`,
@@ -169,7 +170,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
       const { token, members, online } = req.body;
       if (!token) return reply.status(400).send({ error: 'token required' });
 
-      const result = await app.db.query(
+      const result = await db.query(
         `UPDATE directory_instances
          SET last_seen = NOW(),
              members = COALESCE($2, members),
@@ -195,7 +196,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
       const { token } = req.body ?? {};
       if (!token) return reply.status(400).send({ error: 'token required' });
 
-      const result = await app.db.query(
+      const result = await db.query(
         'SELECT id, cloudflare_record_id FROM directory_instances WHERE slug=$1 AND token=$2',
         [slug, token]
       );
@@ -206,7 +207,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
 
       const { id, cloudflare_record_id } = result.rows[0];
       if (cloudflare_record_id) await deleteCloudflareRecord(cloudflare_record_id);
-      await app.db.query('DELETE FROM directory_instances WHERE id=$1', [id]);
+      await db.query('DELETE FROM directory_instances WHERE id=$1', [id]);
 
       return reply.send({ ok: true });
     }
