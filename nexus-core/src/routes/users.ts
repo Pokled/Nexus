@@ -33,6 +33,10 @@ const PatchProfileBody = z.object({
   twitter_username:   z.string().max(100).optional().nullable(),
   instagram_username: z.string().max(100).optional().nullable(),
   website_url:        z.string().url().max(500).optional().nullable(),
+  name_color:         z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  banner_asset_id:    z.string().uuid().optional().nullable(),
+  frame_asset_id:     z.string().uuid().optional().nullable(),
+  badge_asset_id:     z.string().uuid().optional().nullable(),
 })
 
 const GITHUB_CACHE_TTL = 3600 // 1 hour
@@ -102,6 +106,10 @@ export default async function userRoutes(app: FastifyInstance) {
     if (data.twitter_username  !== undefined) { fields.push(`twitter_username = $${i++}`);  values.push(data.twitter_username)  }
     if (data.instagram_username !== undefined) { fields.push(`instagram_username = $${i++}`); values.push(data.instagram_username) }
     if (data.website_url       !== undefined) { fields.push(`website_url = $${i++}`);       values.push(data.website_url)       }
+    if (data.name_color        !== undefined) { fields.push(`name_color = $${i++}`);        values.push(data.name_color)        }
+    if (data.banner_asset_id   !== undefined) { fields.push(`banner_asset_id = $${i++}`);   values.push(data.banner_asset_id)   }
+    if (data.frame_asset_id    !== undefined) { fields.push(`frame_asset_id = $${i++}`);    values.push(data.frame_asset_id)    }
+    if (data.badge_asset_id    !== undefined) { fields.push(`badge_asset_id = $${i++}`);    values.push(data.badge_asset_id)    }
 
     if (fields.length === 0) {
       return reply.code(400).send({ error: 'No fields to update', code: 'EMPTY_UPDATE' })
@@ -145,10 +153,25 @@ export default async function userRoutes(app: FastifyInstance) {
          p.display_name, p.avatar_url, p.banner_url,
          p.bio, p.status, p.location, p.tags, p.links,
          p.github_username, p.youtube_channel, p.twitter_username,
-         p.instagram_username, p.website_url
+         p.instagram_username, p.website_url, p.name_color,
+         p.banner_asset_id, p.frame_asset_id, p.badge_asset_id,
+         ab.file_path  AS banner_asset_path,
+         af.file_path  AS frame_asset_path,
+         af.thumbnail_path AS frame_asset_thumb,
+         ad.file_path  AS badge_asset_path,
+         ad.name       AS badge_asset_name,
+         (SELECT COUNT(*) FROM threads t WHERE t.author_id = u.id) AS thread_count,
+         (SELECT COUNT(*) FROM posts po WHERE po.author_id = u.id) AS post_count,
+         g.name AS grade_name, g.color AS grade_color
        FROM users u
        LEFT JOIN user_profiles p ON p.user_id = u.id
-       WHERE u.username = $1`,
+       LEFT JOIN community_assets ab  ON ab.id  = p.banner_asset_id
+       LEFT JOIN community_assets af  ON af.id  = p.frame_asset_id
+       LEFT JOIN community_assets ad  ON ad.id  = p.badge_asset_id
+       LEFT JOIN community_members cm ON cm.user_id = u.id
+       LEFT JOIN community_grades g ON g.id = cm.grade_id
+       WHERE u.username = $1
+       LIMIT 1`,
       [username]
     )
 

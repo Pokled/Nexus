@@ -106,6 +106,8 @@
 				{#if user}
 					<a href="/chat" class="px-3 py-2 rounded text-sm transition-colors {isActive('/chat') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Chat</a>
 				{/if}
+				<a href="/library" class="px-3 py-2 rounded text-sm transition-colors {isActive('/library') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Bibliothèque</a>
+				<a href="/garden" class="px-3 py-2 rounded text-sm transition-colors {isActive('/garden') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Jardin</a>
 			</div>
 			<div class="flex items-center gap-1 shrink-0">
 				<a href="/search" class="p-2 rounded text-gray-400 hover:text-white hover:bg-gray-800/60 transition-colors" title="Rechercher">
@@ -355,7 +357,7 @@
                 </div>
             {/if}
 
-            <div class="w-full flex-1 flex flex-col {$page.url.pathname.startsWith('/chat') || $page.url.pathname.startsWith('/admin') ? '' : 'max-w-5xl mx-auto px-4 py-8'}">
+            <div class="w-full flex-1 flex flex-col {$page.url.pathname.startsWith('/chat') || $page.url.pathname.startsWith('/admin') || $page.url.pathname.startsWith('/users/') ? '' : 'max-w-5xl mx-auto px-4 py-8'}">
                 {@render children()}
             </div>
         </main>

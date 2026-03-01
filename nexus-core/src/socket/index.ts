@@ -1,4 +1,5 @@
 import { registerVoiceHandlers, sendVoiceSnapshot } from './voice'
+import { registerWhisperHandlers } from './whisper'
 import { Server, Socket } from 'socket.io'
 import jwt from 'jsonwebtoken'
 import sanitizeHtml from 'sanitize-html'
@@ -133,6 +134,9 @@ export function registerSocketIO(server: Server): void {
         server.to('presence').emit('presence:offline', { userId })
       }
     })
+
+    // ── Whisper rooms ─────────────────────────────────────────────────────────
+    registerWhisperHandlers(server, socket)
 
     // ── chat:join ─────────────────────────────────────────────────────────────
     socket.on('chat:join', async (channelId: string) => {

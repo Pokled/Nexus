@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import type { PageData } from './$types';
 	import { socket, getSocket } from '$lib/socket';
+	import { linkifyHtml } from '$lib/linkify';
 	import NexusEditor from '$lib/components/editor/NexusEditor.svelte';
 	import VoicePanel from '$lib/components/VoicePanel.svelte';
 	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT, togglePTTMode, setPeerVolume } from '$lib/voice';
@@ -771,7 +772,7 @@
             </div>
         {:else}
             <div class="nexus-prose text-sm text-gray-300 leading-relaxed break-words">
-                {@html msg.content}
+                {@html linkifyHtml(msg.content ?? '')}
                 {#if shouldGroup && msg.edited_at}
                     <span class="text-[9px] text-gray-700 font-black uppercase ml-2">(modifié)</span>
                 {/if}

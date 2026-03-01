@@ -29,7 +29,7 @@ export const actions: Actions = {
 
 		const fields = [
 			'display_name', 'bio', 'status', 'location',
-			'avatar_url', 'banner_url',
+			'avatar_url', 'banner_url', 'name_color',
 			'github_username', 'youtube_channel', 'twitter_username',
 			'instagram_username', 'website_url',
 		]

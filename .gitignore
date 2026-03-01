@@ -27,6 +27,7 @@ nexus-core/turn-server.js
 nexus-core/uploads/avatars/*
 nexus-core/uploads/banners/*
 nexus-core/uploads/logos/*
+nexus-core/uploads/assets/*
 !nexus-core/uploads/avatars/.gitkeep
 !nexus-core/uploads/banners/.gitkeep
 !nexus-core/uploads/logos/.gitkeep

@@ -16,6 +16,9 @@ import searchRoutes        from './routes/search'
 import notificationRoutes  from './routes/notifications'
 import chatRoutes          from './routes/chat'
 import directoryRoutes    from './routes/directory'
+import assetRoutes        from './routes/assets'
+import gardenRoutes       from './routes/garden'
+import whisperRoutes      from './routes/whispers'
 import { setIO }           from './socket/io'
 import { registerSocketIO } from './socket/index'
 import { runMigrations }    from './scripts/migrate'
@@ -75,6 +78,9 @@ server.register(searchRoutes,        { prefix: '/api/v1/search' })
 server.register(notificationRoutes,  { prefix: '/api/v1/notifications' })
 server.register(chatRoutes,          { prefix: '/api/v1/chat' })
 server.register(directoryRoutes,     { prefix: '/api' })
+server.register(assetRoutes,         { prefix: '/api/v1/assets' })
+server.register(gardenRoutes,        { prefix: '/api/v1/garden' })
+server.register(whisperRoutes,       { prefix: '/api/v1/whispers' })
 
 const start = async () => {
   await runMigrations()

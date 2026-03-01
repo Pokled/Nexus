@@ -15,6 +15,7 @@
 |---|---|---|
 | **Phase 1** | Forum MVP + Admin | ✅ Complete |
 | **Phase 2** | Real-time Chat + Directory + Network Identity | ✅ Complete |
+| **Phase 2.5** | Community customization + Light federation | ✅ Complete |
 | **Phase 3** | P2P Infrastructure + Rust Foundation | 🔨 In Progress |
 | Phase 4 | Platform enrichment | ⏳ Planned |
 | Phase 5 | Mobile and reputation | ⏳ Planned |
@@ -128,6 +129,43 @@ A non-developer can:
 - [x] VoicePanel.svelte — floating bar + mic/camera/screen share controls
 - [x] VoiceSettings.svelte — configurable AudioContext chain
 - [x] MediaCenter.svelte — screen sharing + clips
+
+---
+
+## PHASE 2.5 — Community customization + Light federation ✅ COMPLETE
+### Goal: Each instance is unique, and instances can share their creations
+
+### v0.6 — Asset library & Feature Garden ✅
+
+- [x] Migration 017 — `community_assets` (frames, banners, badges, stickers, avatars, wallpapers)
+- [x] Migration 018 — `user_equipped_assets` (profile customization slots)
+- [x] Migration 019 — `feature_seeds` (feature proposals)
+- [x] Migration 020 — `user_seed_balance` (3 seeds/week per user)
+- [x] Route `POST /api/v1/assets` — multipart upload with Sharp compression (WebP)
+- [x] Full CRUD + like + equip/unequip routes for community assets
+- [x] `assetService.ts` — automatic thumbnails, resize, slot management
+- [x] `/library` page — asset gallery with category/tag/popularity filters
+- [x] `/library/[id]` page — asset detail with like, equip, Whisper button
+- [x] `/api/v1/garden` routes — proposals + seed voting + status change (admin)
+- [x] `/garden` page — proposal list, visual voting with seed counter
+- [x] User profile — display equipped assets (frame, banner, badge, wallpaper)
+- [x] `/users/me/edit` — manage asset slots on your own profile
+
+### v0.7 — Federated assets + Whispers ✅
+
+- [x] Migration 021 — `directory_assets` (federated asset snapshot from other instances)
+- [x] Migration 022 — `whisper_rooms` + `whisper_messages` (ephemeral rooms)
+- [x] Route `POST /api/directory/assets` — push assets to registry (Bearer token)
+- [x] Route `GET /api/directory/assets/search` — public multi-instance search
+- [x] Scheduler — push assets to `nexusnode.app` every hour
+- [x] Scheduler — clean up expired whisper rooms every 10 minutes
+- [x] "🌐 All instances" tab in `/library` — federated assets from the directory
+- [x] `/api/v1/whispers` routes — create, retrieve, delete ephemeral rooms
+- [x] Socket.IO — `whisper:*` events (join, leave, message, typing, history, expired)
+- [x] `/whisper/[id]` page — real-time whisper room (iMessage-style, TTL displayed)
+- [x] "🤫 Whisper" button on asset pages — contextual room creation
+- [x] "🔗 Share" button — copies link with "✅ Copied!" feedback
+- [x] `linkify.ts` — clickable URLs in chat (`linkifyHtml`) and whispers (`linkifyText`)
 
 ---
 

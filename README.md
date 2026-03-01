@@ -5,7 +5,7 @@
 
   <p><strong>Self-hosted, open-source, decentralized community platform.<br/>Forum + real-time chat + voice channels — on your own server, under your own control.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v0.5.0-7c3aed)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v0.7.0-7c3aed)](CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL-green)](docs/en/ARCHITECTURE.md)
@@ -15,7 +15,7 @@
 
 > **[→ Live: nexusnode.app](https://nexusnode.app)** — official instance, production VPS
 
-> ⚠️ **Alpha stage** — Forum, real-time chat, and voice channels are functional. P2P federation, global directory, and mobile apps are still in development. Not yet recommended for large-scale production use.
+> ⚠️ **Alpha stage** — Forum, real-time chat, voice channels, asset library, garden, whispers, and federated directory are functional. P2P relay (nexus-relay), WireGuard mesh, and mobile apps are still in development. Not yet recommended for large-scale production use.
 
 ---
 
@@ -83,6 +83,8 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 | P2P voice (no Big Tech relay) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | No account required to read | ✅ | ❌ | ❌ | ✅ | ✅ | ✅ |
 | **Community directory** | ✅ | ❌ | ⚠️ | ❌ | ✅ | ❌ |
+| **Asset library & profiles** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Ephemeral whisper rooms** | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Open source | ✅ AGPL | ❌ | ✅ Apache | ✅ GPL | ✅ AGPL | ✅ GPL |
 | Forum + Chat + Voice in one | ✅ | ⚠️ | ❌ | ❌ | ❌ | ❌ |
 
@@ -155,7 +157,7 @@ docker-compose up -d
 |---|---|
 | Forum (categories, threads, posts, reactions, tags) | ✅ Done |
 | Full-text search (PostgreSQL FTS) | ✅ Done |
-| Real-time chat (Socket.IO) | ✅ Done |
+| Real-time chat (Socket.IO) + clickable URLs | ✅ Done |
 | Voice channels (WebRTC P2P) | ✅ Done |
 | Screen sharing + clip recording | ✅ Done |
 | Admin panel | ✅ Done |
@@ -163,12 +165,17 @@ docker-compose up -d
 | Self-hosted TURN server (coturn) | ✅ Done |
 | One-click installer (`install.sh`) | ✅ Done |
 | Instance directory + auto DNS | ✅ Done |
-| **nexus-relay — P2P relay (no domain, no open ports)** | ✅ **Done** — Phase 3.0-A |
-| **Voice member stats & interaction panel** | ✅ **Done** |
-| Rust STUN/TURN server (`nexus-turn`) | ⏳ Phase 3.0-B |
-| WireGuard P2P mesh (inter-instance) | ⏳ Phase 3.0-C |
-| File sharing + collaborative whiteboard | ⏳ Phase 4 |
-| Mobile (Capacitor) / Desktop (Tauri) | ⏳ Phase 5 |
+| Voice member stats & interaction panel | ✅ Done |
+| **Community asset library** (frames, banners, badges…) | ✅ **Done** — v0.6 |
+| **Profile asset slots** (equip assets on your profile) | ✅ **Done** — v0.6 |
+| **Feature Garden** (community feature voting with seeds) | ✅ **Done** — v0.6 |
+| **Federated asset directory** (cross-instance asset sharing) | ✅ **Done** — v0.7 |
+| **Whispers** (ephemeral chat rooms, 1h TTL) | ✅ **Done** — v0.7 |
+| nexus-relay — P2P TCP tunnel (no domain, no open ports) | ⏳ Planned |
+| Rust STUN/TURN server (`nexus-turn`) | ⏳ Planned |
+| WireGuard P2P mesh (inter-instance) | ⏳ Planned |
+| File sharing + collaborative whiteboard | ⏳ Planned |
+| Mobile (Capacitor) / Desktop (Tauri) | ⏳ Planned |
 
 ---
 

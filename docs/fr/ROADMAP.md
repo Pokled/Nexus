@@ -15,6 +15,7 @@
 |---|---|---|
 | **Phase 1** | Forum MVP + Admin | ✅ Complète |
 | **Phase 2** | Chat temps réel + Annuaire + Identité réseau | ✅ Complète |
+| **Phase 2.5** | Personnalisation communautaire + Fédération légère | ✅ Complète |
 | **Phase 3** | Infrastructure P2P + Fondation Rust | 🔨 En cours |
 | Phase 4 | Enrichissement de la plateforme | ⏳ Planifiée |
 | Phase 5 | Mobile et réputation | ⏳ Planifiée |
@@ -128,6 +129,44 @@ Une personne non-développeur peut :
 - [x] VoicePanel.svelte — barre flottante + gestion micro/caméra/partage écran
 - [x] VoiceSettings.svelte — chaîne AudioContext configurable
 - [x] MediaCenter.svelte — partage d'écran + clips
+
+---
+
+## PHASE 2.5 — Personnalisation communautaire + Fédération légère ✅ COMPLÈTE
+### Objectif : Chaque instance est unique, et les instances peuvent partager leurs créations
+
+### v0.6 — Bibliothèque d'assets & Jardin ✅
+
+- [x] Migration 017 — `community_assets` (cadres, bannières, badges, stickers, avatars, fonds)
+- [x] Migration 018 — `user_equipped_assets` (slots de personnalisation sur le profil)
+- [x] Migration 019 — `feature_seeds` (propositions de fonctionnalités)
+- [x] Migration 020 — `user_seed_balance` (3 graines/semaine par utilisateur)
+- [x] Route `POST /api/v1/assets` — upload multipart avec compression Sharp (WebP)
+- [x] Routes CRUD + like + equip/unequip pour les assets communautaires
+- [x] Service `assetService.ts` — thumbnails automatiques, resize, gestion des slots
+- [x] Page `/library` — galerie d'assets avec filtres catégorie/tags/popularité
+- [x] Page `/library/[id]` — détail d'un asset avec like, équipement, bouton Chuchoter
+- [x] Routes `/api/v1/garden` — propositions + vote par graines + changement de statut (admin)
+- [x] Page `/garden` — liste des propositions, vote visuel avec compteur de graines
+- [x] Profil utilisateur — affichage des assets équipés (frame, banner, badge, wallpaper)
+- [x] Page `/users/me/edit` — gestion des slots d'assets sur son propre profil
+
+### v0.7 — Fédération assets + Chuchotements ✅
+
+- [x] Migration 021 — `directory_assets` (snapshot fédéré des assets d'autres instances)
+- [x] Migration 022 — `whisper_rooms` + `whisper_messages` (salons éphémères)
+- [x] Route `POST /api/directory/assets` — push d'assets vers le répertoire (Bearer token)
+- [x] Route `GET /api/directory/assets/search` — recherche publique multi-instances
+- [x] Scheduler — push assets toutes les heures vers `nexusnode.app`
+- [x] Scheduler — nettoyage des whispers expirés toutes les 10 minutes
+- [x] Onglet "🌐 Toutes les instances" dans `/library` — assets fédérés depuis le répertoire
+- [x] Routes `/api/v1/whispers` — création, récupération, suppression de salons éphémères
+- [x] Socket.IO — événements `whisper:*` (join, leave, message, typing, history, expired)
+- [x] Page `/whisper/[id]` — salon de chuchotement temps réel (style iMessage, TTL affiché)
+- [x] Bouton "🤫 Chuchoter" sur les pages asset — création contextuelle d'un salon
+- [x] Bouton "🔗 Partager" — copie du lien avec feedback "✅ Copié!"
+- [x] `linkify.ts` — URLs cliquables dans le chat et les whispers (sans XSS)
+- [x] Clickable URLs in chat (`linkifyHtml`) and whispers (`linkifyText`)
 
 ---
 

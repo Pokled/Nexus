@@ -1,27 +1,26 @@
 /**
  * Scheduler — tâches périodiques de nexus-core
- * Actuellement : ping directory toutes les 5 minutes
+ * - Ping directory toutes les 5 minutes (membres + online)
+ * - Push assets publics locaux → directory toutes les heures (v0.7 fédération)
  */
 import { db } from './config/database'
 import { Server } from 'socket.io'
 
-const PING_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
+const PING_INTERVAL_MS        = 5  * 60 * 1000  // 5 minutes
+const ASSET_PUSH_INTERVAL_MS  = 60 * 60 * 1000  // 1 heure
+const WHISPER_CLEANUP_MS      = 10 * 60 * 1000  // 10 minutes
+
+// ── Ping directory ────────────────────────────────────────────────────────────
 
 async function pingDirectory(io: Server) {
   const token = process.env.DIRECTORY_TOKEN
-  if (!token) return // pas configuré, on skip silencieusement
+  if (!token) return
 
   try {
-    const [membersResult, instanceResult] = await Promise.all([
-      db.query('SELECT COUNT(*) AS count FROM users'),
-      db.query("SELECT url FROM directory_instances WHERE token = $1", [token]),
-    ])
-
+    const membersResult = await db.query('SELECT COUNT(*) AS count FROM users')
     const members = parseInt(membersResult.rows[0]?.count ?? '0', 10)
     const online  = io.sockets.sockets.size
-
-    const targetUrl = instanceResult.rows[0]?.url ?? process.env.FRONTEND_URL ?? 'http://localhost:3000'
-    const apiBase   = process.env.SELF_URL ?? 'http://localhost:3000'
+    const apiBase = process.env.SELF_URL ?? 'http://localhost:3000'
 
     const res = await fetch(`${apiBase}/api/directory/ping`, {
       method:  'POST',
@@ -39,12 +38,94 @@ async function pingDirectory(io: Server) {
   }
 }
 
-export function startScheduler(io: Server) {
-  // Premier ping au démarrage (après 10s pour laisser le temps au serveur)
-  setTimeout(() => pingDirectory(io), 10_000)
+// ── Push assets (v0.7 fédération) ────────────────────────────────────────────
 
-  // Puis toutes les 5 minutes
+async function pushAssetsToDirectory() {
+  const token   = process.env.DIRECTORY_TOKEN
+  const selfUrl = process.env.FRONTEND_URL ?? process.env.SELF_URL ?? 'http://localhost:3000'
+  const apiBase = process.env.SELF_URL ?? 'http://localhost:3000'
+
+  if (!token) return  // pas inscrit au directory, on skip
+
+  try {
+    const { rows } = await db.query<{
+      id: string; asset_type: string; name: string; description: string | null;
+      tags: string[]; file_hash: string; file_path: string;
+      thumbnail_path: string | null; file_size: number; mime_type: string; downloads: number;
+    }>(
+      `SELECT id, asset_type, name, description, tags, file_hash,
+              file_path, thumbnail_path, file_size, mime_type, downloads
+       FROM community_assets
+       WHERE is_public = true AND is_banned = false
+       ORDER BY created_at DESC
+       LIMIT 500`
+    )
+
+    if (rows.length === 0) return
+
+    const base = selfUrl.replace(/\/$/, '')
+    const assets = rows.map(a => ({
+      id:            a.id,
+      asset_type:    a.asset_type,
+      name:          a.name,
+      description:   a.description ?? undefined,
+      tags:          a.tags,
+      file_hash:     a.file_hash,
+      file_url:      `${base}/uploads/${a.file_path}`,
+      thumbnail_url: a.thumbnail_path ? `${base}/uploads/${a.thumbnail_path}` : undefined,
+      file_size:     a.file_size,
+      mime_type:     a.mime_type,
+      downloads:     a.downloads,
+    }))
+
+    const res = await fetch(`${apiBase}/api/directory/assets`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      body: JSON.stringify({ assets }),
+    })
+
+    if (res.ok) {
+      const json = await res.json() as { upserted: number; skipped: number }
+      console.log(`[Scheduler] Assets push OK — ${json.upserted} upserted, ${json.skipped} skipped`)
+    } else {
+      console.warn(`[Scheduler] Assets push failed: HTTP ${res.status}`)
+    }
+  } catch (err) {
+    console.error('[Scheduler] Assets push error:', err)
+  }
+}
+
+// ── Whisper cleanup ───────────────────────────────────────────────────────────
+
+async function cleanupWhisperRooms() {
+  try {
+    const { rowCount } = await db.query(
+      `DELETE FROM whisper_rooms WHERE expires_at < NOW()`
+    )
+    if (rowCount && rowCount > 0) {
+      console.log(`[Scheduler] Whisper cleanup — ${rowCount} room(s) expirée(s) supprimée(s)`)
+    }
+  } catch (err) {
+    console.error('[Scheduler] Whisper cleanup error:', err)
+  }
+}
+
+// ── Démarrage ─────────────────────────────────────────────────────────────────
+
+export function startScheduler(io: Server) {
+  // Ping directory
+  setTimeout(() => pingDirectory(io), 10_000)
   setInterval(() => pingDirectory(io), PING_INTERVAL_MS)
 
-  console.log('[Scheduler] Démarré — ping directory toutes les 5 min')
+  // Push assets → directory (30s au démarrage, puis toutes les heures)
+  setTimeout(() => pushAssetsToDirectory(), 30_000)
+  setInterval(() => pushAssetsToDirectory(), ASSET_PUSH_INTERVAL_MS)
+
+  // Nettoyage des whisper rooms expirées (toutes les 10 min)
+  setInterval(() => cleanupWhisperRooms(), WHISPER_CLEANUP_MS)
+
+  console.log('[Scheduler] Démarré — ping directory 5min, assets push 1h, whisper cleanup 10min')
 }
