@@ -227,6 +227,12 @@ if ! $_PG_READY; then
   info "Cluster PostgreSQL absent — création automatique..."
   _PG_VER=$(ls /usr/lib/postgresql/ 2>/dev/null | sort -Vr | head -1)
   if [[ -n "$_PG_VER" ]]; then
+    # Ensure server binaries (initdb) are installed for this version
+    # On some ARM systems, `postgresql` metapackage omits the server package
+    if ! command -v "/usr/lib/postgresql/${_PG_VER}/bin/initdb" &>/dev/null; then
+      info "Binaires serveur PostgreSQL ${_PG_VER} manquants — installation..."
+      apt-get install -y -q "postgresql-${_PG_VER}" >/dev/null 2>&1 || true
+    fi
     pg_createcluster "$_PG_VER" main --start 2>/dev/null || true
     systemctl restart "postgresql@${_PG_VER}-main" 2>/dev/null \
       || systemctl restart postgresql 2>/dev/null || true
