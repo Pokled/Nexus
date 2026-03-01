@@ -455,7 +455,7 @@ fi
 # Bootstrap community + make admin owner — done directly in PostgreSQL
 # (The API requires a community to exist before any admin action)
 USER_ID=$(sudo -u postgres psql -d "$DB_NAME" -tc \
-  "SELECT id FROM users WHERE email='${ADMIN_EMAIL}';" 2>/dev/null | tr -d ' \n')
+  "SELECT id FROM users WHERE lower(email)=lower('${ADMIN_EMAIL}');" 2>/dev/null | tr -d ' \n')
 
 if [[ -n "$USER_ID" ]]; then
   sudo -u postgres psql -d "$DB_NAME" <<SQL >/dev/null
