@@ -209,44 +209,52 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration de PostgreSQL"
 
-systemctl enable postgresql --quiet
-systemctl start postgresql 2>/dev/null || true
+# Detect installed PostgreSQL version (needed for the versioned service name)
+_PG_VER=$(ls /usr/lib/postgresql/ 2>/dev/null | sort -Vr | head -1)
+[[ -z "$_PG_VER" ]] && die "PostgreSQL introuvable dans /usr/lib/postgresql/ — installation incomplète."
 
-# Wait for PostgreSQL to accept connections (socket may take a few seconds on RPi)
+# On Debian/Ubuntu, `postgresql.service` is a meta-service that runs /bin/true.
+# The real service managing the cluster is postgresql@X-main.service.
+systemctl enable  "postgresql@${_PG_VER}-main" --quiet 2>/dev/null || true
+systemctl start   "postgresql@${_PG_VER}-main" 2>/dev/null || true
+
+# Wait for PostgreSQL socket to be ready
 info "Attente du démarrage de PostgreSQL..."
 _PG_READY=false
 for _pg_i in {1..15}; do
-  if sudo -u postgres pg_isready -q 2>/dev/null; then
-    _PG_READY=true; break
-  fi
+  sudo -u postgres pg_isready -q 2>/dev/null && { _PG_READY=true; break; }
   sleep 2
 done
 
-# Fallback: cluster may not exist yet (fresh RPi install) — create it
 if ! $_PG_READY; then
-  info "Cluster PostgreSQL absent — création automatique..."
-  _PG_VER=$(ls /usr/lib/postgresql/ 2>/dev/null | sort -Vr | head -1)
-  if [[ -n "$_PG_VER" ]]; then
-    # Ensure server binaries (initdb) are installed for this version
-    # On some ARM systems, `postgresql` metapackage omits the server package
-    if ! command -v "/usr/lib/postgresql/${_PG_VER}/bin/initdb" &>/dev/null; then
-      info "Binaires serveur PostgreSQL ${_PG_VER} manquants — installation..."
-      apt-get install -y -q "postgresql-${_PG_VER}" >/dev/null 2>&1 || true
-    fi
-    pg_createcluster "$_PG_VER" main --start 2>/dev/null || true
-    systemctl restart "postgresql@${_PG_VER}-main" 2>/dev/null \
-      || systemctl restart postgresql 2>/dev/null || true
-    for _pg_i in {1..15}; do
-      if sudo -u postgres pg_isready -q 2>/dev/null; then
-        _PG_READY=true; break
-      fi
-      sleep 2
-    done
+  info "Cluster PostgreSQL non prêt — initialisation..."
+
+  # Ensure server binaries (initdb) are present — some ARM packages omit them
+  if ! command -v "/usr/lib/postgresql/${_PG_VER}/bin/initdb" &>/dev/null; then
+    info "Installation de postgresql-${_PG_VER} (binaires serveur manquants)..."
+    apt-get install -y -q "postgresql-${_PG_VER}" >/dev/null 2>&1 || true
   fi
+
+  # If the cluster config exists but the data directory is not initialized
+  # (pg_lsclusters shows "down / <unknown>"), drop the config and recreate cleanly
+  if [[ ! -f "/var/lib/postgresql/${_PG_VER}/main/PG_VERSION" ]]; then
+    info "Répertoire de données absent — recréation du cluster..."
+    pg_dropcluster   "${_PG_VER}" main 2>/dev/null || true
+    pg_createcluster "${_PG_VER}" main 2>/dev/null || true
+  fi
+
+  # Start the cluster (pg_ctlcluster bypasses systemd, works even without a unit)
+  pg_ctlcluster "${_PG_VER}" main start 2>/dev/null || true
+  systemctl restart "postgresql@${_PG_VER}-main" 2>/dev/null || true
+
+  for _pg_i in {1..15}; do
+    sudo -u postgres pg_isready -q 2>/dev/null && { _PG_READY=true; break; }
+    sleep 2
+  done
 fi
 
-$_PG_READY || die "PostgreSQL n'a pas démarré après 60s.\nVérifie : sudo systemctl status postgresql  |  sudo pg_lsclusters"
-ok "PostgreSQL prêt"
+$_PG_READY || die "PostgreSQL n'a pas démarré après 60s.\nVérifie : sudo pg_lsclusters  |  sudo systemctl status postgresql@${_PG_VER}-main"
+ok "PostgreSQL ${_PG_VER} prêt"
 
 # Create role + database (idempotent)
 sudo -u postgres psql -c "
