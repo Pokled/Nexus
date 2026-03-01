@@ -18,7 +18,10 @@ let _socket: Socket | null = null
 
 export async function initSocket(token: string, initialCount: number): Promise<void> {
   if (!browser) return
-  if (_socket?.connected) return
+  // Guard against double-init: if a socket already exists (even while still
+  // connecting), don't create a second one — it causes two simultaneous
+  // WebSocket attempts and blocks browser connections for several seconds.
+  if (_socket) return
 
   localStorage.setItem('nexus_token', token);
 

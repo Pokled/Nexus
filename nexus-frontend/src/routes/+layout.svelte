@@ -6,11 +6,6 @@
 	import { initSocket, unreadCountStore, onlineMembersStore } from '$lib/socket';
 	import { tryAutoConnect } from '$lib/socket';
 
-onMount(() => {
-    tryAutoConnect(); // Nexus regarde s'il te connaît déjà au démarrage
-});
-	
-
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
 	const user            = $derived(data.user);
@@ -28,7 +23,11 @@ onMount(() => {
 
 	onMount(() => {
 		if (data.user && data.token) {
+			// SSR provided a valid session — use it directly
 			initSocket(data.token, data.unreadCount ?? 0)
+		} else {
+			// No SSR session (guest page) — try reconnecting from stored token
+			tryAutoConnect()
 		}
 	})
 
