@@ -578,6 +578,117 @@ CREDS
 chmod 600 "$CREDS_FILE"
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  HEALTH CHECK
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Vérification post-installation"
+
+HC_PASS=0; HC_WARN=0; HC_FAIL=0
+_HC_SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
+
+_hc_pass() { HC_PASS=$((HC_PASS+1)); echo -e "  ${GREEN}✔${RESET}  $*"; }
+_hc_warn() { HC_WARN=$((HC_WARN+1)); echo -e "  ${YELLOW}⚠${RESET}  $*"; }
+_hc_fail() { HC_FAIL=$((HC_FAIL+1)); echo -e "  ${RED}✘${RESET}  $*"; }
+_hc_sect() {
+  echo ""
+  echo -e "  ${BOLD}${CYAN}▸ $1${RESET}"
+  echo -e "  ${CYAN}──────────────────────────────────────────────────${RESET}"
+}
+
+# Poll URL until 2xx/3xx or timeout; shows live braille spinner
+_wait_https() {
+  local url="$1" label="$2" max_secs="${3:-120}"
+  local waited=0 code si=0
+  while [[ $waited -lt $max_secs ]]; do
+    code=$(curl -sk --max-time 4 -o /dev/null -w '%{http_code}' "$url" 2>/dev/null || true)
+    [[ "$code" =~ ^[23] ]] && { printf "\r\033[2K"; return 0; }
+    printf "\r  ${CYAN}%s${RESET}  %s  ${YELLOW}%ds${RESET}   " "${_HC_SPIN[$((si % 10))]}" "$label" "$waited"
+    si=$((si+1)); sleep 2; waited=$((waited+2))
+  done
+  printf "\r\033[2K"
+  return 1
+}
+
+# ── Services système ──────────────────────────────────────────────────────────
+_hc_sect "Services système"
+for _svc in postgresql redis-server coturn caddy; do
+  if systemctl is-active --quiet "$_svc" 2>/dev/null; then
+    _hc_pass "$_svc"
+  else
+    _hc_fail "$_svc  ${YELLOW}(sudo systemctl start $_svc)${RESET}"
+  fi
+done
+
+# ── Nexus (PM2) ───────────────────────────────────────────────────────────────
+_hc_sect "Nexus (PM2)"
+for _app in nexus-core nexus-frontend; do
+  _pm2=$(pm2 list 2>/dev/null | grep " $_app " | grep -oE 'online|stopped|errored|launching' | head -1 || echo "absent")
+  if [[ "$_pm2" == "online" ]]; then
+    _hc_pass "$_app"
+  else
+    _hc_fail "$_app  ${YELLOW}[${_pm2}] — pm2 restart $_app${RESET}"
+  fi
+done
+
+# ── Réseau & HTTPS ────────────────────────────────────────────────────────────
+_hc_sect "Réseau & HTTPS"
+
+_dns_ip=$(getent hosts "$DOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
+if [[ -n "$_dns_ip" ]]; then
+  _hc_pass "DNS ${DOMAIN}  →  ${_dns_ip}"
+else
+  _hc_warn "DNS ${DOMAIN}  →  non résolu  ${YELLOW}(propagation en cours ?)${RESET}"
+fi
+
+if _wait_https "https://${DOMAIN}" "Attente certificat TLS…" 120; then
+  _hc_pass "HTTPS https://${DOMAIN}"
+else
+  _hc_warn "HTTPS https://${DOMAIN}  →  timeout  ${YELLOW}(cert Let's Encrypt en cours de génération)${RESET}"
+fi
+
+_api_code=$(curl -sk --max-time 5 -o /dev/null -w '%{http_code}' "https://${DOMAIN}/api/v1/instance/info" 2>/dev/null || true)
+if [[ "$_api_code" =~ ^[23] ]]; then
+  _hc_pass "API /api/v1/instance/info  →  HTTP ${_api_code}"
+else
+  _hc_warn "API /api/v1/instance/info  →  HTTP ${_api_code:-timeout}"
+fi
+
+# ── Annuaire Nexus ────────────────────────────────────────────────────────────
+if [[ -n "${NEXUS_SUBDOMAIN:-}" ]]; then
+  _hc_sect "Annuaire Nexus"
+
+  _sub_ip=$(getent hosts "$NEXUS_SUBDOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
+  if [[ -n "$_sub_ip" ]]; then
+    _hc_pass "DNS ${NEXUS_SUBDOMAIN}  →  ${_sub_ip}"
+  else
+    _hc_warn "DNS ${NEXUS_SUBDOMAIN}  →  propagation en cours  ${YELLOW}(~30s, c'est normal)${RESET}"
+  fi
+
+  _dir_status=$(curl -s --max-time 5 "${NEXUS_DIRECTORY_URL}/instances/${COMMUNITY_SLUG}" 2>/dev/null \
+    | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || true)
+  if [[ "$_dir_status" == "active" ]]; then
+    _hc_pass "Annuaire  →  instance ${GREEN}active${RESET}"
+  elif [[ -n "$_dir_status" ]]; then
+    _hc_warn "Annuaire  →  statut : ${_dir_status}"
+  else
+    _hc_warn "Annuaire  →  non joignable  ${YELLOW}(normal si DNS en propagation)${RESET}"
+  fi
+fi
+
+# ── Score final ───────────────────────────────────────────────────────────────
+HC_TOTAL=$((HC_PASS + HC_WARN + HC_FAIL))
+echo ""
+echo -e "  ${CYAN}$(printf '═%.0s' {1..50})${RESET}"
+if [[ $HC_FAIL -eq 0 && $HC_WARN -eq 0 ]]; then
+  echo -e "  ${GREEN}${BOLD}  ✔  ${HC_PASS}/${HC_TOTAL} vérifications — TOUT EST AU VERT !${RESET}"
+elif [[ $HC_FAIL -eq 0 ]]; then
+  echo -e "  ${YELLOW}${BOLD}  ⚠  ${HC_PASS}/${HC_TOTAL} OK — ${HC_WARN} avertissement(s) à corriger${RESET}"
+else
+  echo -e "  ${RED}${BOLD}  ✘  ${HC_PASS}/${HC_TOTAL} OK — ${HC_FAIL} erreur(s) / ${HC_WARN} avertissement(s)${RESET}"
+fi
+echo -e "  ${CYAN}$(printf '═%.0s' {1..50})${RESET}"
+echo ""
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SUMMARY
 # ═══════════════════════════════════════════════════════════════════════════════
 echo ""
