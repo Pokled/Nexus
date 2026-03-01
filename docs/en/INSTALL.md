@@ -1,6 +1,10 @@
 # 🚀 Nexus — Complete Installation Guide
 
-> **TL;DR:** Copy your repo to a Linux server, run `bash install.sh`, answer 5 questions. Done. ☕
+> **TL;DR:** Clone the repo on a Linux server, run `bash install.sh`, answer a few questions. Done. ☕
+>
+> **New — Nexus Relay:** No domain and no open ports? Raspberry Pi, old PC, home router?
+> **Choose option `[2] Nexus Relay`** during installation → your instance goes live at `your-slug.nexusnode.app` with zero configuration.
+> [→ Full Nexus Relay guide](RELAY.md)
 
 ---
 
@@ -13,7 +17,7 @@
 - [Installation — The Easy Way](#-installation--the-easy-way-recommended)
 - [Windows Users — WSL Guide](#-windows-users--wsl-guide)
 - [Home Server / Behind NAT](#-home-server--behind-nat)
-- [Hosting WITHOUT Opening Ports (Cloudflare Tunnel, Tailscale)](#-hosting-at-home-without-opening-ports)
+- [Hosting WITHOUT Opening Ports (Nexus Relay, Cloudflare Tunnel, Tailscale)](#-hosting-at-home-without-opening-ports)
 - [Behind a VPN or WireGuard](#-behind-a-vpn-or-wireguard)
 - [Common Errors & Fixes](#-common-errors--fixes)
 - [After Installation](#-after-installation)
@@ -388,7 +392,25 @@ If you don't want to open those doors, you use a **tunnel** — a middleman that
 
 ---
 
-### 🌩️ Solution 1 — Cloudflare Tunnel *(recommended, 100% free)*
+### ⚡ Solution 0 — Nexus Relay *(new recommendation — zero prerequisites)*
+
+**Nexus Relay** is Nexus's built-in solution. No third-party account, no domain, no open ports.
+
+| | Nexus Relay | Cloudflare Tunnel |
+|---|---|---|
+| Third-party account required | ❌ No | ✅ Cloudflare |
+| Domain required | ❌ No | ✅ Yes (~€1/year) |
+| URL obtained | `slug.nexusnode.app` | `slug.your-domain.com` |
+| Built into `install.sh` | ✅ Yes (option 2) | 🔧 Separate script |
+| Open source | ✅ Yes | ❌ No |
+
+**How to activate it:** when installing with `install.sh`, simply choose option `[2] Nexus Relay`. That's it.
+
+> 📖 [→ Full Nexus Relay guide](RELAY.md)
+
+---
+
+### 🌩️ Solution 1 — Cloudflare Tunnel *(alternative if you already have a CF domain)*
 
 Cloudflare Tunnel creates an **outbound** connection from your server to Cloudflare's servers. No ports to open. Cloudflare receives visitors and forwards them to your server through this tunnel.
 

@@ -2,7 +2,11 @@
 
 # 🚀 Nexus — Guide d'installation complet
 
-> **En bref :** Clone le repo sur un serveur Linux, lance `bash install.sh`, réponds à 5 questions. C'est tout. ☕
+> **En bref :** Clone le repo sur un serveur Linux, lance `bash install.sh`, réponds à quelques questions. C'est tout. ☕
+>
+> **Nouveau — Nexus Relay :** Tu n'as pas de domaine et aucun port ouvert ? Raspberry Pi, vieux PC, box maison ?
+> **Choisis l'option `[2] Nexus Relay`** au moment de l'installation → ton instance est en ligne sous `ton-slug.nexusnode.app` sans rien configurer.
+> [→ Guide complet Nexus Relay](RELAY.md)
 
 ---
 
@@ -15,7 +19,7 @@
 - [Installation — La méthode simple](#-installation--la-méthode-simple-recommandée)
 - [Utilisateurs Windows — Guide WSL](#-utilisateurs-windows--guide-wsl)
 - [Serveur maison / Derrière un routeur (NAT)](#-serveur-maison--derrière-un-routeur-nat)
-- [Héberger SANS ouvrir de ports (Cloudflare Tunnel, Tailscale)](#-héberger-chez-soi-sans-ouvrir-de-ports)
+- [Héberger SANS ouvrir de ports (Nexus Relay, Cloudflare Tunnel, Tailscale)](#-héberger-chez-soi-sans-ouvrir-de-ports)
 - [Derrière un VPN ou WireGuard](#-derrière-un-vpn-ou-wireguard)
 - [Erreurs fréquentes et solutions](#-erreurs-fréquentes-et-solutions)
 - [Après l'installation](#-après-linstallation)
@@ -392,7 +396,25 @@ Si tu ne veux pas ouvrir ces portes, il faut passer par un **tunnel** — un int
 
 ---
 
-### 🌩️ Solution 1 — Cloudflare Tunnel *(recommandée, 100% gratuite)*
+### ⚡ Solution 0 — Nexus Relay *(nouvelle recommandation — zéro prérequis)*
+
+**Nexus Relay** est la solution intégrée à Nexus. Aucun compte tiers, aucun domaine, aucun port à ouvrir.
+
+| | Nexus Relay | Cloudflare Tunnel |
+|---|---|---|
+| Compte tiers requis | ❌ Non | ✅ Cloudflare |
+| Domaine requis | ❌ Non | ✅ Oui (~1€/an) |
+| URL obtenue | `slug.nexusnode.app` | `slug.ton-domaine.com` |
+| Intégré dans `install.sh` | ✅ Oui (option 2) | 🔧 Script séparé |
+| Open source | ✅ Oui | ❌ Non |
+
+**Comment l'activer :** lors de l'installation avec `install.sh`, choisis simplement l'option `[2] Nexus Relay`. C'est tout.
+
+> 📖 [→ Guide complet Nexus Relay](RELAY.md)
+
+---
+
+### 🌩️ Solution 1 — Cloudflare Tunnel *(alternative si tu as déjà un domaine CF)*
 
 Cloudflare Tunnel crée une connexion **sortante** depuis ton serveur vers les serveurs Cloudflare. Aucun port à ouvrir. Cloudflare reçoit les visiteurs et les transmet à ton serveur via ce tunnel.
 
