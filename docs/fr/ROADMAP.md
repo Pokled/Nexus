@@ -197,8 +197,8 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Enregistrement automatique `slug.nexusnode.app` sans DNS ni CF account
 - [x] Reconnexion automatique avec backoff exponentiel (1s → 2s → 4s → max 30s)
 - [x] GitHub Release `v0.1.0-relay` — binaires amd64 + arm64
-- [ ] Intégration dans `install.sh` : option 3 "Nexus Relay (recommandé)"
-- [ ] Service systemd côté client (`nexus-relay-client.service`)
+- [x] Intégration dans `install.sh` : option 2 "Nexus Relay (recommandé)"
+- [x] Service systemd côté client (`nexus-relay-client.service`)
 
 **Résultat utilisateur :** `bash install.sh` → choisir "Relay" → obtenir `moncommunaute.nexusnode.app` **sans aucune configuration réseau**.
 

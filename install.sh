@@ -96,22 +96,36 @@ COMMUNITY_SLUG_DEFAULT=$(slugify "$COMMUNITY_NAME")
 prompt   COMMUNITY_SLUG  "Identifiant unique (slug)" "$COMMUNITY_SLUG_DEFAULT"
 prompt   COMMUNITY_LANG  "Langue principale (fr/en/de/es/it/pt)" "fr"
 
-# 2 — Domaine (optionnel)
+# 2 — Mode réseau
 echo ""
-echo -e "  ${BOLD}Domaine de ton instance${RESET}"
-echo -e "  ┌─ Si tu as un domaine (ex: ${CYAN}moncommunaute.fr${RESET}), entre-le ci-dessous."
-echo -e "  └─ Sinon, appuie sur ${BOLD}Entrée${RESET} → domaine gratuit ${CYAN}${PUBLIC_IP//./-}.sslip.io${RESET} utilisé automatiquement."
+echo -e "  ${BOLD}Mode de connexion réseau${RESET}"
+echo -e "  ┌─ ${BOLD}[1] Domaine personnel${RESET}  — tu as un domaine (ex: moncommunaute.fr) et les ports 80/443 sont ouverts"
+echo -e "  ├─ ${BOLD}[2] Nexus Relay${RESET}         — ${GREEN}recommandé${RESET} — aucun port à ouvrir, aucun domaine requis (RPi, box, ...)"
+echo -e "  └─ ${BOLD}[3] sslip.io auto${RESET}       — domaine gratuit automatique, ports 80/443 ouverts requis"
 echo ""
-read -rp "$(echo -e "  ${CYAN}?${RESET} Domaine (Entrée pour obtenir un domaine gratuit): ")" DOMAIN
+read -rp "$(echo -e "  ${CYAN}?${RESET} Choix [1/2/3] (défaut: 2 — Nexus Relay): ")" NET_MODE
+NET_MODE="${NET_MODE:-2}"
 
+RELAY_MODE=false
 DOMAIN_IS_AUTO=false
-if [[ -z "$DOMAIN" ]]; then
-  # Derive a sslip.io domain from the public IP — resolves to this VPS, Caddy auto-TLS works
-  DOMAIN="${PUBLIC_IP//./-}.sslip.io"
-  DOMAIN_IS_AUTO=true
-  ok "Domaine automatique : ${BOLD}${DOMAIN}${RESET}"
-  info "sslip.io résout automatiquement vers ${PUBLIC_IP} — certificat HTTPS géré par Caddy."
-fi
+
+case "$NET_MODE" in
+  1)
+    prompt DOMAIN "Domaine de l'instance (ex: moncommunaute.fr)"
+    ;;
+  2)
+    RELAY_MODE=true
+    DOMAIN="${COMMUNITY_SLUG}.nexusnode.app"
+    ok "Mode Nexus Relay — URL : ${BOLD}https://${DOMAIN}${RESET}"
+    info "Aucun port à ouvrir. Le tunnel sera établi vers relay.nexusnode.app."
+    ;;
+  3|*)
+    DOMAIN="${PUBLIC_IP//./-}.sslip.io"
+    DOMAIN_IS_AUTO=true
+    ok "Domaine automatique : ${BOLD}${DOMAIN}${RESET}"
+    info "sslip.io résout automatiquement vers ${PUBLIC_IP} — certificat HTTPS géré par Caddy."
+    ;;
+esac
 
 # 3 — Compte administrateur
 echo ""
@@ -151,13 +165,10 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update -q
 # git first — needed to clone the repo, and most VPS images don't ship with it
 apt-get install -y -q git 2>/dev/null
-apt-get install -y -q \
-  curl wget gnupg2 ca-certificates lsb-release \
-  openssl ufw build-essential \
-  postgresql postgresql-contrib \
-  redis-server \
-  coturn \
-  2>/dev/null
+_SYS_PKGS="curl wget gnupg2 ca-certificates lsb-release openssl ufw build-essential postgresql postgresql-contrib redis-server"
+if ! $RELAY_MODE; then _SYS_PKGS="$_SYS_PKGS coturn"; fi
+# shellcheck disable=SC2086
+apt-get install -y -q $_SYS_PKGS 2>/dev/null
 ok "Paquets système installés"
 
 # Node.js 20 LTS
@@ -229,11 +240,12 @@ systemctl start redis-server
 ok "Redis démarré"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  COTURN (TURN/STUN relay pour WebRTC)
+#  COTURN (TURN/STUN relay pour WebRTC) — ignoré en mode Relay
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Configuration de coturn (relay vocal)"
+if ! $RELAY_MODE; then
+  step "Configuration de coturn (relay vocal)"
 
-cat > /etc/turnserver.conf <<TURN
+  cat > /etc/turnserver.conf <<TURN
 # Nexus TURN relay — généré par install.sh
 listening-port=3478
 tls-listening-port=5349
@@ -261,9 +273,10 @@ simple-log
 no-cli
 TURN
 
-systemctl enable coturn --quiet
-systemctl restart coturn
-ok "coturn configuré et démarré (IP: ${PUBLIC_IP}, port: 3478)"
+  systemctl enable coturn --quiet
+  systemctl restart coturn
+  ok "coturn configuré et démarré (IP: ${PUBLIC_IP}, port: 3478)"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  PARE-FEU (UFW)
@@ -274,15 +287,39 @@ ufw --force reset >/dev/null 2>&1
 ufw default deny incoming >/dev/null 2>&1
 ufw default allow outgoing >/dev/null 2>&1
 ufw allow ssh >/dev/null 2>&1
-ufw allow 80/tcp >/dev/null 2>&1
-ufw allow 443/tcp >/dev/null 2>&1
-ufw allow 3478/tcp >/dev/null 2>&1
-ufw allow 3478/udp >/dev/null 2>&1
-ufw allow 5349/tcp >/dev/null 2>&1
-ufw allow 5349/udp >/dev/null 2>&1
-ufw allow 49152:65535/udp >/dev/null 2>&1
+if ! $RELAY_MODE; then
+  ufw allow 80/tcp >/dev/null 2>&1
+  ufw allow 443/tcp >/dev/null 2>&1
+  ufw allow 3478/tcp >/dev/null 2>&1
+  ufw allow 3478/udp >/dev/null 2>&1
+  ufw allow 5349/tcp >/dev/null 2>&1
+  ufw allow 5349/udp >/dev/null 2>&1
+  ufw allow 49152:65535/udp >/dev/null 2>&1
+fi
 ufw --force enable >/dev/null 2>&1
-ok "Pare-feu configuré"
+ok "Pare-feu configuré${RELAY_MODE:+ (mode Relay — seul SSH ouvert, connexions sortantes libres)}"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  NEXUS RELAY CLIENT — binaire (mode Relay uniquement)
+# ═══════════════════════════════════════════════════════════════════════════════
+if $RELAY_MODE; then
+  step "Téléchargement du binaire Nexus Relay Client"
+
+  _ARCH=$(uname -m)
+  case "$_ARCH" in
+    x86_64)  _RELAY_ARCH="amd64" ;;
+    aarch64) _RELAY_ARCH="arm64" ;;
+    *) die "Architecture non supportée pour Nexus Relay : $_ARCH (supporté: x86_64, aarch64)" ;;
+  esac
+
+  _RELAY_VERSION="v0.1.0-relay"
+  _RELAY_URL="https://github.com/Pokled/Nexus/releases/download/${_RELAY_VERSION}/nexus-relay-linux-${_RELAY_ARCH}"
+
+  info "Téléchargement nexus-relay ${_RELAY_VERSION} (${_RELAY_ARCH})..."
+  curl -sL "$_RELAY_URL" -o /usr/local/bin/nexus-relay
+  chmod +x /usr/local/bin/nexus-relay
+  ok "nexus-relay $(/usr/local/bin/nexus-relay --version 2>&1 || echo '?') installé"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  NEXUS — CLONE / UPDATE
@@ -347,10 +384,20 @@ ok "Backend prêt"
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration du frontend (nexus-frontend)"
 
-# TURN URL : on utilise l'IP directement pour contourner les proxys DNS (Cloudflare, etc.)
-TURN_PUBLIC_URL="turn:${PUBLIC_IP}:3478"
+if $RELAY_MODE; then
+  cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
+# Généré par install.sh — ne pas modifier manuellement
 
-cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
+PUBLIC_API_URL=https://${DOMAIN}
+PUBLIC_TURN_URL=
+PUBLIC_TURN_USERNAME=
+PUBLIC_TURN_CREDENTIAL=
+FEENV
+else
+  # TURN URL : on utilise l'IP directement pour contourner les proxys DNS (Cloudflare, etc.)
+  TURN_PUBLIC_URL="turn:${PUBLIC_IP}:3478"
+
+  cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
 # Généré par install.sh — ne pas modifier manuellement
 
 PUBLIC_API_URL=https://${DOMAIN}
@@ -358,6 +405,7 @@ PUBLIC_TURN_URL=${TURN_PUBLIC_URL}
 PUBLIC_TURN_USERNAME=${TURN_USER}
 PUBLIC_TURN_CREDENTIAL=${TURN_CREDENTIAL}
 FEENV
+fi
 
 info "Installation des dépendances frontend..."
 cd "${NEXUS_DIR}/nexus-frontend"
@@ -371,7 +419,21 @@ ok "Frontend prêt"
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration de Caddy (proxy HTTPS)"
 
-cat > /etc/caddy/Caddyfile <<CADDY
+if $RELAY_MODE; then
+  # En mode Relay : Caddy écoute sur HTTP port 80 (local seulement).
+  # TLS est géré en amont par le serveur nexus-relay sur nexusnode.app.
+  cat > /etc/caddy/Caddyfile <<CADDY
+:80 {
+    reverse_proxy /api/*       localhost:3000
+    reverse_proxy /uploads/*   localhost:3000
+    reverse_proxy /socket.io/* localhost:3000
+    reverse_proxy *            localhost:4173
+
+    encode gzip
+}
+CADDY
+else
+  cat > /etc/caddy/Caddyfile <<CADDY
 ${DOMAIN} {
     reverse_proxy /api/*       localhost:3000
     reverse_proxy /uploads/*   localhost:3000
@@ -381,10 +443,15 @@ ${DOMAIN} {
     encode gzip
 }
 CADDY
+fi
 
 systemctl enable caddy --quiet
 systemctl restart caddy
-ok "Caddy configuré (Let's Encrypt automatique pour $DOMAIN)"
+if $RELAY_MODE; then
+  ok "Caddy configuré (HTTP local port 80 — TLS géré par relay.nexusnode.app)"
+else
+  ok "Caddy configuré (Let's Encrypt automatique pour $DOMAIN)"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  PM2 ECOSYSTEM
@@ -492,8 +559,11 @@ NEXUS_DIRECTORY_TOKEN=""
 NEXUS_DIRECTORY_URL="https://nexusnode.app/api/directory"
 
 echo ""
-if $DOMAIN_IS_AUTO; then
-  # No custom domain → the nexusnode.app alias is extra useful as a readable URL
+# En mode Relay ou auto-domaine, le sous-domaine nexusnode.app est obligatoire/automatique.
+if $RELAY_MODE; then
+  echo -e "  Mode Relay : enregistrement de ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} obligatoire — automatique."
+  want_subdomain="o"
+elif $DOMAIN_IS_AUTO; then
   echo -e "  Tu n'as pas de domaine propre : ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} va être activé"
   echo -e "  automatiquement comme alias mémorable pour ton instance."
   want_subdomain="o"
@@ -507,8 +577,6 @@ fi
 if [[ "${want_subdomain,,}" != "n" ]]; then
   info "Enregistrement auprès du directory nexusnode.app..."
 
-  # Wait a bit more for backend to be fully ready and reachable from outside
-  # The directory will check if DOMAIN is reachable before activating the subdomain
   REGISTER_RESPONSE=$(curl -s -X POST "${NEXUS_DIRECTORY_URL}/register" \
     -H "Content-Type: application/json" \
     -d "{
@@ -526,8 +594,10 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
     NEXUS_DIRECTORY_TOKEN="$REGISTER_TOKEN"
     NEXUS_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nexusnode.app}"
     ok "Enregistré ! Sous-domaine : ${BOLD}https://${NEXUS_SUBDOMAIN}${RESET}"
-    info "Le DNS sera actif dans ~30 secondes."
-    info "Sauvegarde le token directory — nécessaire pour les heartbeats et la désinscription."
+    if ! $RELAY_MODE; then
+      info "Le DNS sera actif dans ~30 secondes."
+      info "Sauvegarde le token directory — nécessaire pour les heartbeats et la désinscription."
+    fi
   else
     # Check for slug conflict (409) — common on reinstall
     if echo "$REGISTER_RESPONSE" | grep -q 'Slug already taken'; then
@@ -539,15 +609,65 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
       warn "Réponse : $(echo "$REGISTER_RESPONSE" | head -c 200)"
       warn "Tu peux réessayer manuellement plus tard sur https://nexusnode.app"
     fi
+    # En mode Relay, l'enregistrement est indispensable — le tunnel ne peut pas démarrer sans token.
+    if $RELAY_MODE; then
+      die "Enregistrement au directory échoué. Le mode Relay nécessite un slug valide. Vérifie ta connexion Internet et réessaie."
+    fi
   fi
 else
   info "Sous-domaine gratuit ignoré. Tu utiliseras https://${DOMAIN}"
+fi
+
+# ── Relay client systemd service (mode Relay uniquement) ──────────────────────
+if $RELAY_MODE && [[ -n "$NEXUS_DIRECTORY_TOKEN" ]]; then
+  step "Configuration du service Nexus Relay Client"
+
+  cat > /etc/systemd/system/nexus-relay-client.service <<SVC
+[Unit]
+Description=Nexus Relay Client — tunnel vers relay.nexusnode.app
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/nexus-relay client \
+  --server relay.nexusnode.app:7443 \
+  --slug ${COMMUNITY_SLUG} \
+  --token ${NEXUS_DIRECTORY_TOKEN} \
+  --local-port 80
+Restart=on-failure
+RestartSec=5s
+StartLimitIntervalSec=60
+StartLimitBurst=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+SVC
+
+  systemctl daemon-reload
+  systemctl enable nexus-relay-client --quiet
+  systemctl start nexus-relay-client
+  ok "Nexus Relay Client démarré — tunnel vers relay.nexusnode.app:7443 actif"
+  info "Ton instance sera accessible sur https://${DOMAIN} dans quelques secondes."
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  SAVE CREDENTIALS
 # ═══════════════════════════════════════════════════════════════════════════════
 CREDS_FILE="/root/nexus-credentials.txt"
+
+# Prépare les blocs conditionnels pour le fichier credentials
+_CREDS_TURN=""
+if ! $RELAY_MODE; then
+  _CREDS_TURN="TURN URL         : turn:${PUBLIC_IP}:3478
+TURN user        : ${TURN_USER}
+TURN credential  : ${TURN_CREDENTIAL}"
+fi
+_CREDS_RELAY=""
+if $RELAY_MODE; then
+  _CREDS_RELAY="Mode réseau      : Nexus Relay (tunnel TCP sortant)
+Relay service    : sudo systemctl status nexus-relay-client"
+fi
+
 cat > "$CREDS_FILE" <<CREDS
 ═══════════════════════════════════════════════
   NEXUS — Credentials de l'instance
@@ -565,10 +685,8 @@ PostgreSQL DB    : ${DB_NAME}
 
 JWT secret       : ${JWT_SECRET}
 
-TURN URL         : turn:${PUBLIC_IP}:3478
-TURN user        : ${TURN_USER}
-TURN credential  : ${TURN_CREDENTIAL}
-
+${_CREDS_TURN}
+${_CREDS_RELAY}
 Nexus dir        : ${NEXUS_DIR}
 $([ -n "$NEXUS_SUBDOMAIN" ] && echo "Sous-domaine     : https://${NEXUS_SUBDOMAIN}")
 $([ -n "$NEXUS_DIRECTORY_TOKEN" ] && echo "Directory token  : ${NEXUS_DIRECTORY_TOKEN}")
@@ -610,7 +728,10 @@ _wait_https() {
 
 # ── Services système ──────────────────────────────────────────────────────────
 _hc_sect "Services système"
-for _svc in postgresql redis-server coturn caddy; do
+_HC_SVCS="postgresql redis-server caddy"
+if ! $RELAY_MODE; then _HC_SVCS="$_HC_SVCS coturn"; fi
+if $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nexus-relay-client"; fi
+for _svc in $_HC_SVCS; do
   if systemctl is-active --quiet "$_svc" 2>/dev/null; then
     _hc_pass "$_svc"
   else
@@ -632,24 +753,35 @@ done
 # ── Réseau & HTTPS ────────────────────────────────────────────────────────────
 _hc_sect "Réseau & HTTPS"
 
-_dns_ip=$(getent hosts "$DOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
-if [[ -n "$_dns_ip" ]]; then
-  _hc_pass "DNS ${DOMAIN}  →  ${_dns_ip}"
+if $RELAY_MODE; then
+  # En mode Relay : vérification locale uniquement — l'HTTPS passe par le tunnel.
+  _api_code=$(curl -s --max-time 5 -o /dev/null -w '%{http_code}' "http://localhost/api/v1/instance/info" 2>/dev/null || true)
+  if [[ "$_api_code" =~ ^[23] ]]; then
+    _hc_pass "API locale http://localhost/api/v1/instance/info  →  HTTP ${_api_code}"
+  else
+    _hc_warn "API locale  →  HTTP ${_api_code:-timeout}  ${YELLOW}(backend en démarrage ?)${RESET}"
+  fi
+  _hc_pass "URL publique : https://${DOMAIN}  ${CYAN}(via tunnel relay — non vérifiable localement)${RESET}"
 else
-  _hc_warn "DNS ${DOMAIN}  →  non résolu  ${YELLOW}(propagation en cours ?)${RESET}"
-fi
+  _dns_ip=$(getent hosts "$DOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
+  if [[ -n "$_dns_ip" ]]; then
+    _hc_pass "DNS ${DOMAIN}  →  ${_dns_ip}"
+  else
+    _hc_warn "DNS ${DOMAIN}  →  non résolu  ${YELLOW}(propagation en cours ?)${RESET}"
+  fi
 
-if _wait_https "https://${DOMAIN}" "Attente certificat TLS…" 120; then
-  _hc_pass "HTTPS https://${DOMAIN}"
-else
-  _hc_warn "HTTPS https://${DOMAIN}  →  timeout  ${YELLOW}(cert Let's Encrypt en cours de génération)${RESET}"
-fi
+  if _wait_https "https://${DOMAIN}" "Attente certificat TLS…" 120; then
+    _hc_pass "HTTPS https://${DOMAIN}"
+  else
+    _hc_warn "HTTPS https://${DOMAIN}  →  timeout  ${YELLOW}(cert Let's Encrypt en cours de génération)${RESET}"
+  fi
 
-_api_code=$(curl -sk --max-time 5 -o /dev/null -w '%{http_code}' "https://${DOMAIN}/api/v1/instance/info" 2>/dev/null || true)
-if [[ "$_api_code" =~ ^[23] ]]; then
-  _hc_pass "API /api/v1/instance/info  →  HTTP ${_api_code}"
-else
-  _hc_warn "API /api/v1/instance/info  →  HTTP ${_api_code:-timeout}"
+  _api_code=$(curl -sk --max-time 5 -o /dev/null -w '%{http_code}' "https://${DOMAIN}/api/v1/instance/info" 2>/dev/null || true)
+  if [[ "$_api_code" =~ ^[23] ]]; then
+    _hc_pass "API /api/v1/instance/info  →  HTTP ${_api_code}"
+  else
+    _hc_warn "API /api/v1/instance/info  →  HTTP ${_api_code:-timeout}"
+  fi
 fi
 
 # ── Annuaire Nexus ────────────────────────────────────────────────────────────
@@ -697,10 +829,16 @@ echo -e "${GREEN}${BOLD}║           ✔  Nexus installé avec succès !       
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  ${BOLD}Instance  :${RESET} https://${DOMAIN}"
-[[ -n "$NEXUS_SUBDOMAIN" ]] && \
-echo -e "  ${BOLD}Alias     :${RESET} https://${NEXUS_SUBDOMAIN} ${CYAN}(nexusnode.app)${RESET}"
+if ! $RELAY_MODE && [[ -n "$NEXUS_SUBDOMAIN" ]]; then
+  echo -e "  ${BOLD}Alias     :${RESET} https://${NEXUS_SUBDOMAIN} ${CYAN}(nexusnode.app)${RESET}"
+fi
 echo -e "  ${BOLD}Admin     :${RESET} ${ADMIN_USERNAME} / ${ADMIN_EMAIL}"
-echo -e "  ${BOLD}Vocal     :${RESET} TURN relay sur ${PUBLIC_IP}:3478"
+if ! $RELAY_MODE; then
+  echo -e "  ${BOLD}Vocal     :${RESET} TURN relay sur ${PUBLIC_IP}:3478"
+fi
+if $RELAY_MODE; then
+  echo -e "  ${BOLD}Relay     :${RESET} tunnel TCP → relay.nexusnode.app:7443"
+fi
 echo ""
 echo -e "  ${CYAN}Les credentials sont sauvegardés dans :${RESET}"
 echo -e "  ${BOLD}${CREDS_FILE}${RESET}"
@@ -710,7 +848,16 @@ echo -e "  pm2 list                          → état des services"
 echo -e "  pm2 logs nexus-core               → logs backend"
 echo -e "  pm2 logs nexus-frontend           → logs frontend"
 echo -e "  pm2 restart all                   → redémarrer tout"
+if $RELAY_MODE; then
+  echo -e "  systemctl status nexus-relay-client → état du tunnel relay"
+  echo -e "  journalctl -u nexus-relay-client -f  → logs du tunnel relay"
+fi
 echo ""
-echo -e "  ${YELLOW}⚠  Assure-toi que ton DNS pointe vers ${PUBLIC_IP}${RESET}"
-echo -e "  ${YELLOW}   Le certificat SSL sera généré automatiquement par Caddy.${RESET}"
+if $RELAY_MODE; then
+  echo -e "  ${GREEN}✔  Mode Relay actif — aucun port à ouvrir, aucun DNS à configurer.${RESET}"
+  echo -e "  ${CYAN}   Le tunnel est géré automatiquement par nexus-relay-client.${RESET}"
+else
+  echo -e "  ${YELLOW}⚠  Assure-toi que ton DNS pointe vers ${PUBLIC_IP}${RESET}"
+  echo -e "  ${YELLOW}   Le certificat SSL sera généré automatiquement par Caddy.${RESET}"
+fi
 echo ""
