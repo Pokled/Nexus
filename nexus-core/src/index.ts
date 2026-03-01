@@ -92,6 +92,12 @@ const start = async () => {
         origin:      process.env.FRONTEND_URL || 'http://localhost:5173',
         credentials: true,
       },
+      // Keep ping interval under the relay server's request timeout (~11s).
+      // Without this, long-polling connections are held open for 25s and the
+      // relay proxy kills them before the server can respond, causing repeated
+      // connection failures and blocking browser connection slots.
+      pingInterval: 8000,
+      pingTimeout:  4000,
     })
     setIO(io)
     registerSocketIO(io)
