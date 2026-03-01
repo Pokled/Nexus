@@ -1,3 +1,5 @@
+![Screenshot of a comment on a GitHub issue showing an image, added in the Markdown, of an Octocat smiling and raising a tentacle.](https://github.com/Pokled/Nexus/blob/main/docs/img/Nexus_Install.png?raw=true)
+
 # 🚀 Nexus — Guide d'installation complet
 
 > **En bref :** Clone le repo sur un serveur Linux, lance `bash install.sh`, réponds à 5 questions. C'est tout. ☕
