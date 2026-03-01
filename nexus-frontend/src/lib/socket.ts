@@ -40,7 +40,10 @@ export async function initSocket(token: string, initialCount: number): Promise<v
 
   _socket = ioClient(baseUrl, {
     auth:       { token },
-    transports: ['websocket', 'polling'],
+    // polling first: connects immediately through the relay without a 10s
+    // WebSocket handshake delay. WebSocket upgrade is tried afterwards and
+    // used automatically when available (direct HTTPS instances).
+    transports: ['polling', 'websocket'],
   })
   
 

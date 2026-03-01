@@ -2,6 +2,7 @@ mod forwarder;
 
 use std::time::Duration;
 use tokio::net::TcpStream;
+use tokio::sync::mpsc;
 use tracing::{error, info, warn};
 
 use crate::protocol::{ClientMessage, ServerMessage, read_msg, write_msg};
@@ -77,34 +78,61 @@ async fn handle_session(
         }
     }
 
-    // 3. Process incoming requests until the connection drops.
+    // 3. Split stream: concurrent reader + serialized writer.
     let (mut reader, mut writer) = stream.into_split();
 
-    loop {
-        match read_msg::<_, ServerMessage>(&mut reader).await? {
-            Some(ServerMessage::Request { id, method, path, headers, body_b64 }) => {
-                let writer_ref = &mut writer;
-                forwarder::handle_request(
-                    writer_ref,
-                    id,
-                    method,
-                    path,
-                    headers,
-                    body_b64,
-                    local_port,
-                )
-                .await?;
-            }
-            Some(ServerMessage::Ping) => {
-                write_msg(&mut writer, &ClientMessage::Heartbeat).await?;
-            }
-            Some(ServerMessage::Registered { .. }) => {
-                warn!("Unexpected Registered message — ignoring");
-            }
-            None => {
-                info!("Server closed the connection");
-                return Ok(());
+    // Channel to serialize all writes back to the relay server.
+    // Multiple concurrent request handlers send their responses here;
+    // the write task drains it in order so writes are never concurrent.
+    let (resp_tx, mut resp_rx) = mpsc::channel::<ClientMessage>(256);
+
+    // Write task — drains the response channel and writes to TCP stream.
+    let write_task = tokio::spawn(async move {
+        while let Some(msg) = resp_rx.recv().await {
+            if write_msg(&mut writer, &msg).await.is_err() {
+                break;
             }
         }
+    });
+
+    // Read task — reads requests from the relay server and spawns a concurrent
+    // handler per request so that long-polling GETs don't block other requests.
+    let read_task = tokio::spawn(async move {
+        loop {
+            match read_msg::<_, ServerMessage>(&mut reader).await {
+                Ok(Some(ServerMessage::Request { id, method, path, headers, body_b64 })) => {
+                    let tx = resp_tx.clone();
+                    tokio::spawn(async move {
+                        let msg = forwarder::handle_request(
+                            id, method, path, headers, body_b64, local_port,
+                        )
+                        .await;
+                        let _ = tx.send(msg).await;
+                    });
+                }
+                Ok(Some(ServerMessage::Ping)) => {
+                    let _ = resp_tx.send(ClientMessage::Heartbeat).await;
+                }
+                Ok(Some(ServerMessage::Registered { .. })) => {
+                    warn!("Unexpected Registered message — ignoring");
+                }
+                Ok(None) => {
+                    info!("Server closed the connection");
+                    break;
+                }
+                Err(e) => {
+                    warn!("Read error: {e}");
+                    break;
+                }
+            }
+        }
+    });
+
+    // Wait until either task ends (connection dropped or error).
+    tokio::select! {
+        _ = write_task => {}
+        _ = read_task  => {}
     }
+
+    Ok(())
 }

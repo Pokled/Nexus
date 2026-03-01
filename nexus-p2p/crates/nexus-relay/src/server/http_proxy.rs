@@ -129,9 +129,10 @@ async fn proxy_through_tunnel(
         return service_unavailable(&slug);
     }
 
-    // Wait for the relay client to respond (10 s timeout).
+    // Wait for the relay client to respond (15 s timeout).
+    // Must exceed the relay client reqwest timeout (12s) to avoid racing.
     match tokio::time::timeout(
-        tokio::time::Duration::from_secs(10),
+        tokio::time::Duration::from_secs(15),
         reply_rx,
     )
     .await

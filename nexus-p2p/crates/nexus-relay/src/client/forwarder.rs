@@ -1,29 +1,39 @@
 use std::collections::HashMap;
-use tokio::net::tcp::OwnedWriteHalf;
 use tracing::{debug, warn};
 use base64::{Engine as _, engine::general_purpose::STANDARD as B64};
 
-use crate::protocol::{ClientMessage, write_msg};
+use crate::protocol::ClientMessage;
 
-/// Receive a forwarded HTTP request, execute it against localhost:{local_port},
-/// and write the response back over the relay connection.
+/// Forward an HTTP request to localhost:{local_port} and return the response
+/// as a ClientMessage::Response ready to send back to the relay server.
+///
+/// This function is designed to be spawned concurrently — it does NOT write
+/// to the TCP stream directly; the caller serializes writes via an mpsc channel.
 pub async fn handle_request(
-    writer: &mut OwnedWriteHalf,
     id: String,
     method: String,
     path: String,
     headers: HashMap<String, String>,
     body_b64: String,
     local_port: u16,
-) -> anyhow::Result<()> {
+) -> ClientMessage {
     let url = format!("http://127.0.0.1:{local_port}{path}");
     debug!("Forwarding {method} {url}");
 
     let body_bytes = B64.decode(&body_b64).unwrap_or_default();
 
-    let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(10))
-        .build()?;
+    let client = match reqwest::Client::builder()
+        // Slightly above pingInterval (8s) so long polls complete before timeout.
+        // Must be less than the relay server's reply timeout (15s).
+        .timeout(std::time::Duration::from_secs(12))
+        .build()
+    {
+        Ok(c) => c,
+        Err(e) => {
+            warn!("Failed to build reqwest client: {e}");
+            return error_response(id, 500, "Client build error");
+        }
+    };
 
     let method_parsed = reqwest::Method::from_bytes(method.as_bytes())
         .unwrap_or(reqwest::Method::GET);
@@ -43,8 +53,7 @@ pub async fn handle_request(
         Ok(r) => r,
         Err(e) => {
             warn!("Local request failed: {e}");
-            // Send a 502 back to the relay server.
-            return send_error(writer, id, 502, "Local server unreachable").await;
+            return error_response(id, 502, "Local server unreachable");
         }
     };
 
@@ -63,38 +72,21 @@ pub async fn handle_request(
     let resp_body = response.bytes().await.unwrap_or_default();
     let body_b64 = B64.encode(&resp_body);
 
-    write_msg(
-        writer,
-        &ClientMessage::Response {
-            id,
-            status,
-            headers: resp_headers,
-            body_b64,
-        },
-    )
-    .await?;
-
-    Ok(())
+    ClientMessage::Response {
+        id,
+        status,
+        headers: resp_headers,
+        body_b64,
+    }
 }
 
-async fn send_error(
-    writer: &mut OwnedWriteHalf,
-    id: String,
-    status: u16,
-    msg: &str,
-) -> anyhow::Result<()> {
-    let body_b64 = B64.encode(msg.as_bytes());
-    write_msg(
-        writer,
-        &ClientMessage::Response {
-            id,
-            status,
-            headers: HashMap::new(),
-            body_b64,
-        },
-    )
-    .await?;
-    Ok(())
+fn error_response(id: String, status: u16, msg: &str) -> ClientMessage {
+    ClientMessage::Response {
+        id,
+        status,
+        headers: HashMap::new(),
+        body_b64: B64.encode(msg.as_bytes()),
+    }
 }
 
 fn is_hop_by_hop(name: &str) -> bool {
