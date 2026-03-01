@@ -462,6 +462,55 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
+#  OPTIONAL — FREE nexusnode.app SUBDOMAIN
+# ═══════════════════════════════════════════════════════════════════════════════
+step "Sous-domaine gratuit nexusnode.app (optionnel)"
+
+NEXUS_SUBDOMAIN=""
+NEXUS_DIRECTORY_TOKEN=""
+NEXUS_DIRECTORY_URL="https://nexusnode.app/api/directory"
+
+echo ""
+echo -e "  Tu peux obtenir un sous-domaine gratuit : ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET}"
+echo -e "  Cela permet à tes utilisateurs d'accéder à ton instance sans domaine propre."
+echo -e "  (Tu peux toujours utiliser ton propre domaine ${CYAN}${DOMAIN}${RESET} en même temps.)"
+echo ""
+read -rp "$(echo -e "  Activer ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} ? [O/n] ")" want_subdomain
+
+if [[ "${want_subdomain,,}" != "n" ]]; then
+  info "Enregistrement auprès du directory nexusnode.app..."
+
+  # Wait a bit more for backend to be fully ready and reachable from outside
+  # The directory will check if DOMAIN is reachable before activating the subdomain
+  REGISTER_RESPONSE=$(curl -s -X POST "${NEXUS_DIRECTORY_URL}/register" \
+    -H "Content-Type: application/json" \
+    -d "{
+      \"name\":        \"${COMMUNITY_NAME}\",
+      \"slug\":        \"${COMMUNITY_SLUG}\",
+      \"url\":         \"https://${DOMAIN}\",
+      \"language\":    \"${COMMUNITY_LANG}\",
+      \"version\":     \"0.4.1\"
+    }" 2>/dev/null || true)
+
+  REGISTER_TOKEN=$(echo "$REGISTER_RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
+  REGISTER_SLUG=$(echo "$REGISTER_RESPONSE" | grep -o '"subdomain":"[^"]*"' | cut -d'"' -f4 || true)
+
+  if [[ -n "$REGISTER_TOKEN" ]]; then
+    NEXUS_DIRECTORY_TOKEN="$REGISTER_TOKEN"
+    NEXUS_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nexusnode.app}"
+    ok "Enregistré ! Sous-domaine : ${BOLD}https://${NEXUS_SUBDOMAIN}${RESET}"
+    info "Le DNS sera actif dans ~30 secondes (vérification de ton domaine en cours)."
+    info "Sauvegarde le token directory — nécessaire pour les heartbeats et la désinscription."
+  else
+    warn "Enregistrement échoué (le directory n'a peut-être pas pu vérifier ton domaine)."
+    warn "Réponse : $(echo "$REGISTER_RESPONSE" | head -c 200)"
+    warn "Tu peux réessayer manuellement plus tard sur https://nexusnode.app"
+  fi
+else
+  info "Sous-domaine gratuit ignoré. Tu utiliseras https://${DOMAIN}"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
 #  SAVE CREDENTIALS
 # ═══════════════════════════════════════════════════════════════════════════════
 CREDS_FILE="/root/nexus-credentials.txt"
@@ -487,6 +536,8 @@ TURN user        : ${TURN_USER}
 TURN credential  : ${TURN_CREDENTIAL}
 
 Nexus dir        : ${NEXUS_DIR}
+$([ -n "$NEXUS_SUBDOMAIN" ] && echo "Sous-domaine     : https://${NEXUS_SUBDOMAIN}")
+$([ -n "$NEXUS_DIRECTORY_TOKEN" ] && echo "Directory token  : ${NEXUS_DIRECTORY_TOKEN}")
 
 GARDE CE FICHIER EN LIEU SÛR — ne le partage jamais.
 CREDS
@@ -501,6 +552,8 @@ echo -e "${GREEN}${BOLD}║           ✔  Nexus installé avec succès !       
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  ${BOLD}Instance  :${RESET} https://${DOMAIN}"
+[[ -n "$NEXUS_SUBDOMAIN" ]] && \
+echo -e "  ${BOLD}Alias     :${RESET} https://${NEXUS_SUBDOMAIN} ${CYAN}(nexusnode.app)${RESET}"
 echo -e "  ${BOLD}Admin     :${RESET} ${ADMIN_USERNAME} / ${ADMIN_EMAIL}"
 echo -e "  ${BOLD}Vocal     :${RESET} TURN relay sur ${PUBLIC_IP}:3478"
 echo ""

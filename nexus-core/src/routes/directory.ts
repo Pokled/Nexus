@@ -72,6 +72,37 @@ async function deleteCloudflareRecord(recordId: string): Promise<void> {
 }
 
 export default async function directoryRoutes(app: FastifyInstance) {
+
+  // ── Subdomain redirect ────────────────────────────────────────────────────
+  // When a browser hits {slug}.nexusnode.app, Caddy proxies the request here.
+  // We look up the slug in directory_instances and redirect to the real URL.
+  // This makes {slug}.nexusnode.app a free vanity alias for any registered node.
+  app.addHook('onRequest', async (req, reply) => {
+    const host = req.headers.host ?? ''
+    // Match any subdomain of nexusnode.app that isn't the root instance
+    const match = host.match(/^([a-z0-9][a-z0-9-]{1,61}[a-z0-9])\.nexusnode\.app(:\d+)?$/i)
+    if (!match) return  // not a subdomain — let the route handle it normally
+
+    const slug = match[1].toLowerCase()
+    // Ignore the main community slug — it serves this instance normally
+    const mainSlug = process.env.NEXUS_COMMUNITY_SLUG ?? 'nexusnode'
+    if (slug === mainSlug) return
+
+    try {
+      const { rows } = await db.query(
+        `SELECT url FROM directory_instances WHERE slug = $1 AND status = 'active' LIMIT 1`,
+        [slug]
+      )
+      if (rows[0]?.url) {
+        // Preserve path + query so deep links work (e.g. community.nexusnode.app/forum/thread/42)
+        const target = rows[0].url.replace(/\/$/, '') + (req.url === '/' ? '' : req.url)
+        return reply.redirect(target, 302)
+      }
+    } catch {
+      // DB error — fall through to normal route handling
+    }
+  })
+
   // GET /api/directory — list active instances
   app.get('/directory', async (_req, reply) => {
     const result = await db.query(`
