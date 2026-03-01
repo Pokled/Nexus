@@ -154,7 +154,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
          (slug, name, description, url, language, country, theme, version, token, status)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pending')
        RETURNING id, slug, name, url, status, registered_at`,
-      [slug, name, description ?? null, url, language, country ?? null, theme ?? null, version ?? null, token]
+      [slug, name, description ?? '', url, language, country ?? null, theme ?? null, version ?? null, token]
     );
 
     const instance = result.rows[0];

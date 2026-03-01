@@ -35,12 +35,12 @@ gen_pass()    { openssl rand -base64 18 | tr -d '/+='; }
 slugify()     { echo "$1" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-\|-$//g'; }
 
 prompt() {
-  local var="$1" msg="$2" default="${3:-}"
+  local var="$1" msg="$2" default="${3:-}" val=''
   if [[ -n "$default" ]]; then
     read -rp "$(echo -e "  ${CYAN}?${RESET} ${msg} [${default}]: ")" val
     val="${val:-$default}"
   else
-    while [[ -z "${val:-}" ]]; do
+    while [[ -z "$val" ]]; do
       read -rp "$(echo -e "  ${CYAN}?${RESET} ${msg}: ")" val
     done
   fi
