@@ -40,7 +40,7 @@
 		const fd = new FormData()
 		fd.append('file', file)
 
-		const res = await fetch(`${PUBLIC_API_URL}/users/me/upload?type=${type}`, {
+		const res = await fetch(`${PUBLIC_API_URL}/api/v1/users/me/upload?type=${type}`, {
 			method: 'POST',
 			headers: token ? { Authorization: `Bearer ${token}` } : {},
 			body: fd,

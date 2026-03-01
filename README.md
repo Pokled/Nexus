@@ -5,7 +5,7 @@
 
   <p><strong>Self-hosted, open-source, decentralized community platform.<br/>Forum + real-time chat + voice channels — on your own server, under your own control.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v0.4.0-7c3aed)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v0.4.1-7c3aed)](CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL-green)](docs/en/ARCHITECTURE.md)
@@ -109,20 +109,32 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 
 ## Quick Start
 
-### Docker (recommended)
+### ⚡ One-click install (recommended)
+
+One command. 5 questions. Everything configured automatically.
 
 ```bash
 git clone https://github.com/Pokled/Nexus.git
-cd Nexus/nexus-core
-cp .env.example .env
-# Edit .env with your community settings
-docker-compose up -d
+cd Nexus
+sudo bash install.sh
 ```
 
-### Manual install
+The script installs and configures Node.js, PostgreSQL, Redis, coturn (TURN relay), Caddy (HTTPS), and PM2. It detects your public IP, generates secure secrets, bootstraps the community, and creates your admin account. **No manual configuration needed.**
 
-See [docs/en/README.md](docs/en/README.md) for the full English installation guide (Docker, Windows, Linux/Mac).
-French guide: [docs/fr/README.md](docs/fr/README.md)
+> Supported: Ubuntu 22.04/24.04, Debian 11/12. Windows users → [WSL guide](docs/en/INSTALL.md#-windows-users--wsl-guide).
+
+→ **[Complete installation guide (EN)](docs/en/INSTALL.md)** — VPS, WSL, home server, NAT, common errors, tips
+→ **[Guide d'installation complet (FR)](docs/fr/INSTALL.md)** — VPS, WSL, serveur maison, NAT, erreurs, astuces
+
+### Docker
+
+```bash
+git clone https://github.com/Pokled/Nexus.git
+cd Nexus
+cp nexus-core/.env.example nexus-core/.env
+# Edit nexus-core/.env with your community settings
+docker-compose up -d
+```
 
 ---
 
@@ -138,8 +150,10 @@ French guide: [docs/fr/README.md](docs/fr/README.md)
 | Admin panel | ✅ Done |
 | SEO (sitemap, RSS, JSON-LD) | ✅ Done |
 | Self-hosted TURN server | ✅ Done |
-| Meilisearch | ⏳ Phase 2 |
+| One-click installer (`install.sh`) | ✅ Done |
+| Instance directory | ✅ Done |
 | Instance directory + auto DNS | ✅ Done |
+| Meilisearch | ⏳ Phase 2 |
 | WireGuard P2P mesh | ⏳ Phase 3 |
 | Mobile (Capacitor) / Desktop (Tauri) | ⏳ Phase 5 |
 

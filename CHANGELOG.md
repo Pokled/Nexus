@@ -33,6 +33,41 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+
+## [0.4.1] — 2026-03-01
+
+### Added
+- **`install.sh`** — one-click node installer for Ubuntu 22.04/24.04 and Debian 11/12
+  - Detects the server's public IP automatically (used for TURN relay config)
+  - Installs and configures: Node.js 20, PostgreSQL, Redis, coturn, Caddy, PM2
+  - Grants PostgreSQL 15+ `CREATE ON SCHEMA public` (migration fix for fresh installs)
+  - Configures UFW firewall (SSH, HTTP, HTTPS, TURN ports, WebRTC relay range)
+  - Generates secure random secrets (DB password, JWT secret, TURN credential)
+  - Bootstraps the instance community and creates the admin account automatically
+  - Saves all credentials to `/root/nexus-credentials.txt` (chmod 600)
+  - TURN URL uses server IP directly — bypasses Cloudflare proxy automatically
+- **`docs/en/INSTALL.md`** — comprehensive English installation guide
+  - Hardware requirements, OS compatibility table
+  - VPS recommendations (Hetzner, DigitalOcean, Vultr, OVH)
+  - Windows WSL2 step-by-step guide
+  - Home server / NAT / CGNAT section with port forwarding table
+  - VPN and WireGuard considerations (Phase 3 preview)
+  - Common errors & fixes (port conflicts, DNS, TURN, SSL, uploads)
+  - Post-install guide and admin tips
+- **`docs/fr/INSTALL.md`** — guide d'installation complet en français (même contenu)
+- **`nexus-core/src/migrations/015_admin_role.sql`** — fixes `community_members_role` constraint to include `'admin'` role (was missing from migration 001, causing DB errors when promoting users to admin)
+- **GitHub CLI (`gh`)** — installed on the VPS for release management
+
+### Fixed
+- **DB constraint `community_members_role`** — migration 001 only allowed `('owner', 'moderator', 'member')`; the admin middleware and routes already referenced `'admin'`, causing a silent mismatch. Migration 015 aligns the constraint with the codebase.
+
+### Changed
+- **TURN relay** — removed hardcoded home server (`pokled.ddns.net`). TURN is now configured entirely via `.env` variables (`PUBLIC_TURN_URL`, `PUBLIC_TURN_USERNAME`, `PUBLIC_TURN_CREDENTIAL`), set automatically by `install.sh` using the detected public IP.
+- **File uploads** — Caddy now routes `/uploads/*` to port 3000 (was missing, causing 404 on uploaded avatars/banners)
+- **Instance directory** — backend scheduler pings directory every 5 minutes with live member/online stats
+
+---
+
 ## [0.3.3] — 2026-02-28
 
 ### Fixed
@@ -155,7 +190,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **AI assistant** — local Ollama integration (no cloud dependency)
 - **13 SQL migrations** — complete schema from users to voice channels
 
-[Unreleased]: https://github.com/Pokled/Nexus/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/Pokled/Nexus/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/Pokled/Nexus/compare/v0.3.3...v0.4.1
 [0.3.3]: https://github.com/Pokled/Nexus/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/Pokled/Nexus/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/Pokled/Nexus/compare/v0.3.0...v0.3.1

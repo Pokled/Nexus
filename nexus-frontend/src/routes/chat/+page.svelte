@@ -6,8 +6,7 @@
 	import { socket, getSocket } from '$lib/socket';
 	import NexusEditor from '$lib/components/editor/NexusEditor.svelte';
 	import VoicePanel from '$lib/components/VoicePanel.svelte';
-	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT, togglePTTMode, setPeerVolume, configureICE } from '$lib/voice';
-	import { PUBLIC_TURN_URL, PUBLIC_TURN_USERNAME, PUBLIC_TURN_CREDENTIAL } from '$env/static/public';
+	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT, togglePTTMode, setPeerVolume } from '$lib/voice';
 	import type { Socket } from 'socket.io-client';
 	import MediaCenter from '$lib/components/MediaCenter.svelte';
 
@@ -236,19 +235,6 @@
 
 	onMount(async () => {
 		if (!browser) return;
-
-		// Inject TURN server if configured in env (PUBLIC_TURN_URL=turn:host:port)
-		if (PUBLIC_TURN_URL) {
-			const srv: RTCIceServer = {
-				urls: PUBLIC_TURN_URL,
-			}
-			if (PUBLIC_TURN_USERNAME)   srv.username   = PUBLIC_TURN_USERNAME
-			if (PUBLIC_TURN_CREDENTIAL) srv.credential = PUBLIC_TURN_CREDENTIAL
-			configureICE([srv])
-			console.debug('[voice] TURN configured:', srv.urls)
-		} else {
-			console.warn('[voice] No TURN server configured — LAN connections may fail')
-		}
 
 		const existing = getSocket();
 		if (existing) {

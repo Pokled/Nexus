@@ -18,32 +18,26 @@ const BASE_STUN: RTCIceServer[] = [
   { urls: 'stun:stun.cloudflare.com:3478' },
 ]
 
-// Nexus self-hosted TURN relay
-// TCP en premier : les mappings NAT TCP durent 30+ min vs ~3 min pour UDP
-// → évite les micro-déconnexions liées au timeout NAT UDP de la BBOX
-const FALLBACK_TURN: RTCIceServer = {
-  urls: [
-    // IP LAN : pour les clients sur le même réseau que le serveur TURN
-    // (sans ça, le hairpin NAT bloque l'allocation relay via l'IP publique)
-    'turn:192.168.1.100:3478',
-    // IP publique : pour les clients externes
-    'turn:pokled.ddns.net:3478',
-  ],
-  username:   'guest',
-  credential: 'changeme',
-}
-
-let _extraIceServers: RTCIceServer[] = []
-
-/** Call before joinVoice() to inject TURN credentials from env/settings */
-export function configureICE(servers: RTCIceServer[]): void {
-  _extraIceServers = servers
-  console.debug('[voice] ICE configured with', servers.length, 'extra server(s)')
-}
+// TURN relay — configured per-instance via PUBLIC_TURN_* env vars.
+// If not set, the instance runs P2P-only (users behind symmetric NAT / CGNAT
+// may not be able to connect). Each admin can deploy coturn on their VPS and
+// set PUBLIC_TURN_URL / PUBLIC_TURN_USERNAME / PUBLIC_TURN_CREDENTIAL.
+import {
+  PUBLIC_TURN_URL,
+  PUBLIC_TURN_USERNAME,
+  PUBLIC_TURN_CREDENTIAL,
+} from '$env/static/public'
 
 function getIceServers(): RTCIceServer[] {
-  // Always include fallback TURN + any env-injected servers
-  return [...BASE_STUN, FALLBACK_TURN, ..._extraIceServers]
+  const servers: RTCIceServer[] = [...BASE_STUN]
+  if (PUBLIC_TURN_URL) {
+    servers.push({
+      urls:       PUBLIC_TURN_URL,
+      username:   PUBLIC_TURN_USERNAME   || undefined,
+      credential: PUBLIC_TURN_CREDENTIAL || undefined,
+    })
+  }
+  return servers
 }
 
 // ── Types ─────────────────────────────────────────────────────────
