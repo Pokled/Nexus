@@ -265,7 +265,9 @@
 
 	onDestroy(() => {
 		if (s && selectedChannel) s.emit('chat:leave', selectedChannel.id);
-		p2pManager.leaveChannel();
+		// Do NOT call p2pManager.leaveChannel() here — the DataChannel must survive navigation
+		// (e.g. user goes to /library while staying in the same channel).
+		// leaveChannel() is called automatically by joinChannel() when switching channels.
 		if (typingThrottle) clearTimeout(typingThrottle);
 		Object.values(typingMap).forEach((e) => clearTimeout(e.timer));
 		if (browser) {
