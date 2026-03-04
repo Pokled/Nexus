@@ -15,7 +15,7 @@
 
 > **[→ Live: nexusnode.app](https://nexusnode.app)** — official instance, production VPS
 
-> ⚠️ **Alpha stage** — Forum, real-time chat, voice channels, asset library, garden, whispers, and federated directory are functional. P2P relay (nexus-relay), WireGuard mesh, and mobile apps are still in development. Not yet recommended for large-scale production use.
+> ⚠️ **Alpha stage** — Forum, real-time chat, voice channels, asset library, garden, whispers, federated directory, nexus-relay (P2P TCP tunnel) and nexus-turn (Rust STUN/TURN) are functional. WireGuard mesh and mobile apps are still in development. Not yet recommended for large-scale production use.
 
 ---
 
@@ -105,8 +105,8 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 | Editor | TipTap (WYSIWYG) |
 | Real-time | Socket.IO |
 | Voice | WebRTC P2P mesh |
-| TURN relay | coturn (self-hosted) |
-| **P2P relay** | **Rust — tokio + hyper (nexus-relay)** |
+| TURN relay | **nexus-turn** — Rust, self-hosted, hardened |
+| **P2P relay** | **nexus-relay** — Rust, tokio + hyper |
 
 ---
 
@@ -132,7 +132,7 @@ The installer offers **three network modes**:
 
 > **Nexus Relay** is the recommended default — works on a Raspberry Pi behind a home router, no domain, no port forwarding, no Cloudflare account.
 
-The script installs and configures Node.js, PostgreSQL, Redis, coturn (TURN relay), Caddy (HTTPS), and PM2. It detects your public IP, generates secure secrets, bootstraps the community, and creates your admin account. **No manual configuration needed.**
+The script installs and configures Node.js, PostgreSQL, Redis, nexus-turn (Rust STUN/TURN relay), Caddy (HTTPS), and PM2. It detects your public IP, generates secure secrets, bootstraps the community, and creates your admin account. **No manual configuration needed.**
 
 > Supported: Ubuntu 22.04/24.04, Debian 11/12. Windows users → [WSL guide](docs/en/INSTALL.md#-windows-users--wsl-guide).
 
@@ -162,7 +162,6 @@ docker-compose up -d
 | Screen sharing + clip recording | ✅ Done |
 | Admin panel | ✅ Done |
 | SEO (sitemap, RSS, JSON-LD) | ✅ Done |
-| Self-hosted TURN server (coturn) | ✅ Done |
 | One-click installer (`install.sh`) | ✅ Done |
 | Instance directory + auto DNS | ✅ Done |
 | Voice member stats & interaction panel | ✅ Done |
@@ -172,7 +171,7 @@ docker-compose up -d
 | **Federated asset directory** (cross-instance asset sharing) | ✅ **Done** — v0.7 |
 | **Whispers** (ephemeral chat rooms, 1h TTL) | ✅ **Done** — v0.7 |
 | **nexus-relay** — P2P TCP tunnel (no domain, no open ports) | ✅ **Done** — Phase 3.0-A |
-| Rust STUN/TURN server (`nexus-turn`) | ⏳ Planned |
+| **nexus-turn** — Rust STUN/TURN, rate-limited, hardened (replaces coturn) | ✅ **Done** — Phase 3.0-C |
 | WireGuard P2P mesh (inter-instance) | ⏳ Planned |
 | File sharing + collaborative whiteboard | ⏳ Planned |
 | Mobile (Capacitor) / Desktop (Tauri) | ⏳ Planned |

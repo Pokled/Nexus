@@ -235,7 +235,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Forward HTTP bidirectionnel (JSON framing 4-byte length prefix)
 - [x] Enregistrement automatique `slug.nexusnode.app` sans DNS ni CF account
 - [x] Reconnexion automatique avec backoff exponentiel (1s → 2s → 4s → max 30s)
-- [x] GitHub Release `v0.1.1-relay` — binaires amd64 + arm64 (fix traitement concurrent)
+- [x] GitHub Release `v0.1.2-p2p` — binaires amd64 + arm64 (rate limiting auth + fix traitement concurrent)
 - [x] Intégration dans `install.sh` : option 2 "Nexus Relay (recommandé)"
 - [x] Service systemd côté client (`nexus-relay-client.service`)
 
@@ -278,7 +278,9 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] MESSAGE-INTEGRITY vérification (MD5 key + HMAC-SHA1, RFC 5389 §15.4)
 - [x] nexus-core génère les creds par utilisateur → `voice:init` Socket.IO (pas d'IPC)
 - [x] ChannelBind / ChannelData (optimisation relay, moins d'overhead header)
-- [x] 2.9MB statique, `install.sh` intégré, service systemd, GitHub Release `v0.1.1-turn`
+- [x] Rate limiter UDP par IP (30 pkt/sec) — protection flood unauthentifié
+- [x] Quotas d'allocations : 10/IP, 1000 total, 50 permissions/allocation (protection port exhaustion)
+- [x] 2.9MB statique, `install.sh` intégré, service systemd, GitHub Release `v0.1.2-p2p`
 
 #### Phase 3.0-D — `nexus-p2p` core (vision long terme 2027-2028)
 
