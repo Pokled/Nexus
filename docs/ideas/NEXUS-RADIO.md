@@ -20,6 +20,26 @@ Ils ont arrêté. Ou ils continuent, esseulés.
 Parce qu'ils n'avaient plus d'audience interactive.
 Pas de retour. Pas de communauté. Juste des ondes qui partent dans la nuit.
 
+### Les chiffres du vide
+
+Dans le répertoire Icecast/Shoutcast au pic de l'internet radio (2010–2015) :
+**~100 000 stations actives dans le monde.**
+Stations avec plus de 10 auditeurs simultanés : **moins de 5%.**
+
+Aujourd'hui, entre 10 000 et 50 000 streams Icecast actifs à tout moment.
+Nombre moyen d'auditeurs simultanés : **2 à 3** — souvent l'opérateur qui teste son propre flux.
+
+**50 000 Ellies Arroway pointées vers le vide.**
+Chacune convaincu qu'il y a quelqu'un qui écoute.
+La plupart ont tort.
+
+> *"If it's just us... seems like an awful waste of space."*
+> — David Arroway à sa fille Ellie, dans le film Contact (1997)
+
+C'est exactement ça. Des milliers de voix qui émettent. Personne pour répondre.
+Pas parce que les signaux sont mauvais. Parce qu'il n'existe aucune structure
+pour transformer des auditeurs simultanés en communauté.
+
 ---
 
 ## Ce que Nexus peut faire
@@ -247,6 +267,118 @@ Tempête de janvier 2027 : internet coupé 18 heures.
   Les auditeurs avec RTL-SDR reçoivent les CRDT deltas — le forum fonctionne hors-ligne.
   "Radio Fil Bleu était là quand tout le reste s'est tu."
 ```
+
+---
+
+## Ce que l'histoire a déjà prouvé
+
+La recherche sur les radios internet mondiales révèle un pattern constant.
+**Les stations qui ont survécu** avaient une couche communautaire structurellement attachée.
+**Les stations qui sont mortes** avaient des auditeurs, mais pas de communauté.
+
+### Les survivantes — et pourquoi
+
+**SomaFM** (San Francisco, 2000 — toujours en vie) :
+En 2002, la RIAA impose des redevances rétroactives qui tuent presque toutes les radios internet overnight.
+SomaFM survit parce que sa communauté — dispersée sur Reddit et IRC — se mobilise en 48h et fait des dons
+pour couvrir les factures. Des dizaines de milliers de dollars en quelques jours.
+La communauté a sauvé la station. Mais elle vit *ailleurs* — pas sur la plateforme de la station elle-même.
+**C'est le problème que Nexus résout.**
+
+**Radio Paradise** (Californie, 2000 — toujours en vie) :
+La seule radio internet à avoir construit une couche communautaire *intégrée* dans le stream :
+les auditeurs votent les chansons en temps réel, ce qui influence la playlist.
+Ce retour direct donne aux auditeurs un sentiment de propriété sur la station.
+2 millions d'auditeurs uniques par mois. Entièrement financée par abonnements volontaires.
+**Modèle le plus proche de Nexus-Radio.**
+
+**SDF anonradio** (1987 — toujours en vie, 40 ans) :
+Tourne sur SDF (Super Dimensional Fortress), un des plus vieux systèmes Unix publics d'internet.
+Radio + forum + chat + identité persistante = **une seule infrastructure**.
+Les auditeurs ne partent pas sur Discord. La communauté *est* la station.
+**C'est exactement l'architecture Nexus.**
+
+**EchoLink / AllStarLink** (HAM radio + internet) :
+400 000+ opérateurs radioamateurs connectés. Actif depuis 20+ ans.
+La licence radioamateur crée l'investissement initial (effort = appartenance).
+Les "nets" hebdomadaires (rendez-vous récurrents sur une fréquence) sont des communautés
+qui se retrouvent autour d'un programme — exactement comme un salon vocal Nexus avec récurrence.
+
+### Les mortes — et pourquoi
+
+**WOXY "97X" (Cincinnati)** :
+Radio culte du rock indépendant américain. Communauté passionnée.
+Fermée en 2010 faute de financement.
+Quand le stream s'est éteint, les fans n'avaient **nulle part où se retrouver ensemble**.
+Même pour faire leur deuil. La communauté s'est dispersée immédiatement.
+Un forum Nexus actif aurait survécu à l'arrêt du stream.
+
+**Last.fm** :
+À son apogée (2007–2010) : 40 millions d'utilisateurs. Social radio, profils de goûts, recommandations.
+Acquis par CBS, revendu, la radio tuée en 2014 (licences trop chères).
+Quand la radio est morte, la communauté s'est effondrée.
+**La communauté dépendait du stream.** Chez Nexus, c'est l'inverse :
+le stream est une fonctionnalité de la communauté — pas l'inverse.
+
+**Lofi Girl** (YouTube, 20 000+ auditeurs simultanés) :
+En 2020, YouTube suspend le stream par erreur de DMCA.
+Tollé mondial. Restauré en quelques heures.
+Mais les 20 000 auditeurs simultanés sont **des inconnus anonymes les uns pour les autres**.
+Aucun forum. Aucun profil. Aucune mémoire collective.
+Si le stream meurt demain, il ne reste rien. La communauté n'existe pas — c'est une foule.
+
+### La leçon universelle
+
+```
+Stations mortes    :  audience → espoir de communauté
+Stations vivantes  :  communauté → broadcast comme expression
+```
+
+**Ce n'est pas la qualité du programme qui fait la différence.
+C'est la direction du flux.**
+
+La communauté doit exister *d'abord*, ou être construite *simultanément*.
+Le broadcast seul ne génère pas de communauté. Il génère une foule.
+Et une foule n'a pas de mémoire, pas de fidélité, pas de résilience.
+
+---
+
+## Le parallèle Contact (1997)
+
+*Contact* de Carl Sagan, film de Robert Zemeckis avec Jodie Foster.
+
+Ellie Arroway, enfant, scanne les fréquences radio dans sa chambre.
+Son père lui dit : **"Small moves, Ellie. Small moves."**
+*(Petit à petit, Ellie. Petit à petit.)*
+
+Adulte, elle pointe le radiotélescope d'Arecibo vers le ciel pendant des années.
+Le projet est coupé. Les gens disent que c'est inutile. Elle continue.
+
+Parce qu'elle croit : le signal existe. Il n'a pas encore été trouvé.
+
+Elle demande à son père enfant :
+*"Tu penses qu'on est seuls dans l'univers ?"*
+
+Il répond :
+**"If it's just us... seems like an awful waste of space."**
+*(Si c'est juste nous... ça serait une belle perte d'espace.)*
+
+---
+
+**Les 50 000 opérateurs de radio internet sont Ellie.**
+Ils pointent leur émetteur vers le vide. Ils programment des semaines, des mois.
+Ils sont convaincus que quelqu'un écoute — ou devrait écouter.
+La plupart ont 2-3 auditeurs. Souvent eux-mêmes, en test.
+
+La différence entre Ellie et eux : Ellie cherchait un signal *sortant*.
+Les opérateurs radio cherchent un signal *entrant* — une réponse.
+
+**Nexus est la réponse.**
+
+Pas "quelqu'un écoute ton stream".
+Mais "voici ta communauté. Elle existait déjà. Elle t'attendait."
+
+Le signal était là. Il fallait un endroit où il pouvait atterrir.
 
 ---
 
