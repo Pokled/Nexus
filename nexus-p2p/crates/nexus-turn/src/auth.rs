@@ -35,21 +35,27 @@ pub fn generate_credentials(user_id: &str, secret: &[u8], ttl_seconds: u64) -> (
 
 /// Validate time-based credentials.
 ///
+/// username format: "{expires_unix_ts}:{user_id}"  ← expires, NOT creation time
+///
 /// Returns true if:
-/// 1. The timestamp has not expired (+ 60s grace)
-/// 2. The password matches HMAC-SHA1(secret, username)
+/// 1. now ≤ expires + 60s grace (not expired)
+/// 2. expires ≤ now + ttl_seconds (not unreasonably far in future — anti-forge)
+/// 3. HMAC-SHA1(secret, username) == password
 pub fn validate_credentials(username: &str, password: &str, secret: &[u8], ttl_seconds: u64) -> bool {
-    let ts: u64 = username.split(':').next()
+    let expires: u64 = username.split(':').next()
         .and_then(|s| s.parse().ok())
         .unwrap_or(0);
 
     let now = now_secs();
-    if now > ts + ttl_seconds + 60 {
-        debug!("TURN: credentials expired (ts={ts}, now={now})");
+
+    // Credential expired (+ 60s clock-skew grace)
+    if now > expires + 60 {
+        debug!("TURN: credentials expired (expires={expires}, now={now})");
         return false;
     }
-    if ts > now + 60 {
-        debug!("TURN: credentials from the future (ts={ts}, now={now})");
+    // Expiry is unreasonably far in the future (forged TTL)
+    if expires > now + ttl_seconds + 60 {
+        debug!("TURN: credentials TTL too long (expires={expires}, now={now}, max={ttl_seconds})");
         return false;
     }
 
