@@ -19,6 +19,7 @@
 | **Phase 3** | Infrastructure P2P + Fondation Rust | 🔨 En cours |
 | Phase 4 | Enrichissement de la plateforme | ⏳ Planifiée |
 | Phase 5 | Mobile et réputation | ⏳ Planifiée |
+| **Phase Horizon** | NEXUS-ETHER — Souveraineté de la couche physique | 🌌 Vision |
 
 ---
 
@@ -373,15 +374,21 @@ nexus-core    (Fastify/Node.js) ────────────────
 ## PHASE 4 — Enrichissement de la plateforme
 ### Objectif : Nexus devient la plateforme communautaire complète
 
+**Livré en avance (v0.9) :**
+- [x] **NexusCanvas** — tableau blanc collaboratif P2P dans les salons vocaux (CRDT LWW, curseurs vocaux, export PNG)
+
+**Connaissance & Découverte :**
+- [ ] **Calendrier d'événements** — grade organisateur, cartes OSM, Rich Snippets Google, alertes Socket.IO 15min — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)
+- [ ] **Recherche globale (Mesh Index)** — Meilisearch inter-instances, push crawling, fallback Gossip P2P — [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md)
+- [ ] **Nodes** — connaissance structurée durable, Anchors, validée via le Jardin — [SPEC 013](../en/specs/013-node/SPEC.md)
+- [ ] **Galaxy Bar** — switcher multi-instances, SSO décentralisé, notifications bio-luminescentes — [SPEC 012](../en/specs/012-nexus-galaxy-bar/SPEC.md)
+
+**Outils :**
 - [ ] Partage de fichiers (hébergé sur le nœud, pas de CDN central)
-- [ ] Whiteboard collaboratif (temps réel via WebSocket)
 - [ ] Système de tâches léger (Trello-like, par communauté)
 - [ ] Ollama IA locale — assistant de savoir (indexe le forum local)
-- [ ] **Nexus Guard Protocol — intégration TypeScript** : migrer le moteur de scoring toxicité dans `nexus-core/src/socket/index.ts` comme middleware `chat:send` — score 0–10, seuil configurable via `.env`, logs en DB
-- [ ] Guard Protocol — seuil configurable via panneau admin (sans redémarrage)
-- [ ] Guard Protocol — blocage URL fiable (regex + whitelist configurable)
-- [ ] Marketplace plugins — API stable pour extensions tierces (fondations posées dans `plugins/`)
-- [ ] Data Sharding distribué pour les fichiers lourds (inspiration IPFS/BitTorrent — nœuds volontaires)
+- [ ] **Nexus Guard Protocol** — middleware scoring toxicité dans `chat:send`, seuil configurable, logs DB
+- [ ] Marketplace plugins — API stable pour extensions tierces (fondations dans `plugins/`)
 
 ---
 
@@ -419,5 +426,56 @@ nexus-core    (Fastify/Node.js) ────────────────
 
 ---
 
-*Version 1.7 — 2 mars 2026*
-*"Le P2P est l'âme. Rust est le corps."*
+---
+
+## PHASE HORIZON — NEXUS-ETHER
+### La couche physique. La dernière frontière.
+
+> *"Les ondes radio n'ont pas besoin de permission."*
+
+Nexus décentralise la couche applicative.
+Mais nous dépendons encore d'une chose : l'infrastructure physique d'internet.
+Des câbles en fibre contrôlés par des FAI. Des satellites contrôlés par des entreprises.
+
+**NEXUS-ETHER décentralise la couche physique elle-même.**
+
+Le pont qui rend ça possible : **les CRDTs**.
+Déjà dans Nexus (NexusCanvas). Déjà en production.
+Le même CRDT qui synchronise un coup de pinceau peut synchroniser un post de forum
+sur un lien LoRa à 250 bits/s — même avec 2 heures de délai.
+
+```
+Couche 1 — Mesh local       LoRa / Wi-Fi ad-hoc   0–50 km      sans infrastructure
+Couche 2 — Radio régionale  HF / NVIS             500–3000 km   rebond ionosphérique
+Couche 3 — Ionosphère       HF ondes courtes      Mondial       sans câble, sans satellite
+```
+
+```
+nexus-p2p/
+└── nexus-ether/          ← workspace futur
+    ├── nexus-modem/      ← modem logiciel (encodage HF / LoRa en Rust)
+    ├── nexus-mesh/       ← relais mesh LoRa / Wi-Fi ad-hoc
+    └── nexus-sync/       ← sérialisation des deltas CRDT (Cap'n Proto / FlatBuffers)
+```
+
+**nexus-relay devient un orchestrateur multi-chemins :**
+`ethernet → wifi-mesh → lora → hf-radio` — fallback automatique, les CRDTs gèrent la convergence.
+
+**Ce que ça signifie concrètement :**
+Une communauté dans une zone sinistrée. La fibre est coupée. La 4G est détruite.
+Un Raspberry Pi sur batterie. Un module LoRa sur le toit. 55€ au total.
+La communauté continue. Les annonces passent. Les gens savent qui est en vie.
+
+**C'est ça, la souveraineté.**
+
+Ce n'est pas une feature pour demain. C'est un **appel à contributeurs :**
+→ Radioamateurs, makers LoRa, contributeurs Meshtastic, développeurs Rust embarqué.
+→ L'architecture est là. La fondation CRDT est livrée.
+→ La couche radio attend les bonnes mains.
+
+→ **[Spec complète : docs/ideas/NEXUS-ETHER.md](../ideas/NEXUS-ETHER.md)**
+
+---
+
+*Version 1.8 — 4 mars 2026*
+*"Le P2P est l'âme. Rust est le corps. La radio est la résilience."*

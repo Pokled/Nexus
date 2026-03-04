@@ -19,6 +19,7 @@
 | **Phase 3** | P2P Infrastructure + Rust Foundation | 🔨 In Progress |
 | Phase 4 | Platform enrichment | ⏳ Planned |
 | Phase 5 | Mobile and reputation | ⏳ Planned |
+| **Phase Horizon** | NEXUS-ETHER — Physical layer sovereignty | 🌌 Vision |
 
 ---
 
@@ -267,14 +268,16 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Graceful fallback if WebRTC fails (12s ICE timeout, subtle toast, _hadAttempt/_hadSuccess flags)
 - [x] Asset transfer between peers (32 KB chunks, p2p:asset:* protocol, p2pAssetPeers store, ⚡ yellow button)
 
-#### Phase 3.0-C — `nexus-turn` (replaces coturn)
+#### Phase 3.0-C — `nexus-turn` (replaces coturn) ✅ VALIDATED — March 4, 2026
 
 > coturn is a 2000s C project. Complex to configure, significant attack surface.
+> **Replaced by a 2.9MB Rust binary — zero dependency, dynamic credentials.**
 
-- [ ] STUN/TURN server in Rust — RFC 5766 + RFC 8656
-- [ ] Dynamic credentials provided by nexus-core via IPC (no static config)
-- [ ] Structured logs (JSON), Prometheus metrics
-- [ ] ~5MB static, zero configuration at install
+- [x] STUN/TURN server in Rust — RFC 5389 (STUN) + RFC 5766 (TURN)
+- [x] HMAC-SHA1 time-based credentials (username={expires}:{userId})
+- [x] Rate limiter UDP per IP (30 pkt/sec) + allocation quotas + ban map
+- [x] 2.9MB static binary, integrated in `install.sh`, systemd service
+- [x] Validated: STUN Binding Request → 0x0101 Binding Success ✅
 
 #### Phase 3.0-D — `nexus-p2p` core (long-term vision 2027-2028)
 
@@ -367,15 +370,21 @@ nexus-core    (Fastify/Node.js) ────────────────
 ## PHASE 4 — Platform enrichment
 ### Goal: Nexus becomes the complete community platform
 
+**Already delivered early (v0.9):**
+- [x] **NexusCanvas** — P2P collaborative whiteboard in voice channels (CRDT LWW, voice-aware cursors, PNG export)
+
+**Knowledge & Discovery:**
+- [ ] **Event Calendar** — organizer-grade, OSM maps, JSON-LD Google Rich Snippets, Socket.IO 15min alerts — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)
+- [ ] **Global Search (Mesh Index)** — inter-instance Meilisearch, push crawling, P2P gossip fallback — [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md)
+- [ ] **Nodes** — durable structured knowledge, Anchors, community-validated via Garden — [SPEC 013](../en/specs/013-node/SPEC.md)
+- [ ] **Galaxy Bar** — multi-instance switcher, decentralized SSO, bio-luminescent notifications — [SPEC 012](../en/specs/012-nexus-galaxy-bar/SPEC.md)
+
+**Tools:**
 - [ ] File sharing (hosted on the node, no central CDN)
-- [ ] Collaborative whiteboard (real-time via WebSocket)
 - [ ] Lightweight task system (Trello-like, per community)
 - [ ] Local Ollama AI — knowledge assistant (indexes local forum)
-- [ ] **Nexus Guard Protocol — TypeScript integration**: migrate toxicity scoring engine into `nexus-core/src/socket/index.ts` as a `chat:send` middleware — score 0–10, configurable threshold via `.env`, logged to DB
-- [ ] Guard Protocol — configurable threshold via admin panel (no restart)
-- [ ] Guard Protocol — reliable URL blocking (regex + configurable whitelist)
-- [ ] Plugin marketplace — stable API for third-party extensions (foundations laid in `plugins/`)
-- [ ] Distributed data sharding for large files (inspired by IPFS/BitTorrent — voluntary nodes)
+- [ ] **Nexus Guard Protocol** — toxicity scoring middleware in `chat:send`, configurable threshold, DB logs
+- [ ] Plugin marketplace — stable API for third-party extensions (foundations in `plugins/`)
 
 ---
 
@@ -413,5 +422,56 @@ nexus-core    (Fastify/Node.js) ────────────────
 
 ---
 
-*Version 1.7 — March 2, 2026*
-*"P2P is the soul. Rust is the body."*
+---
+
+## PHASE HORIZON — NEXUS-ETHER
+### The physical layer. The last frontier.
+
+> *"Radio waves don't need permission."*
+
+Nexus decentralizes the application layer.
+But we still depend on one thing: the physical internet infrastructure.
+Fiber cables controlled by ISPs. Satellites controlled by corporations.
+
+**NEXUS-ETHER decentralizes the physical layer itself.**
+
+The bridge that makes it possible: **CRDTs**.
+Already in Nexus (NexusCanvas). Already in production.
+The same CRDT that synchronizes a whiteboard stroke can synchronize a forum post
+over a LoRa link at 250 bps — even with a 2-hour delay.
+
+```
+Layer 1 — Local mesh     LoRa / Wi-Fi ad-hoc   0–50 km     no infrastructure
+Layer 2 — Regional radio HF / NVIS             500–3000 km  ionospheric bounce
+Layer 3 — Ionosphere     HF shortwave          Global       no cables, no satellites
+```
+
+```
+nexus-p2p/
+└── nexus-ether/          ← future workspace
+    ├── nexus-modem/      ← software modem (HF / LoRa encoding in Rust)
+    ├── nexus-mesh/       ← LoRa / Wi-Fi ad-hoc mesh relay
+    └── nexus-sync/       ← CRDT delta serialization (Cap'n Proto / FlatBuffers)
+```
+
+**nexus-relay becomes a multi-path orchestrator:**
+`ethernet → wifi-mesh → lora → hf-radio` — automatic fallback, CRDT handles convergence.
+
+**What this means in practice:**
+A community in a disaster zone. Fiber cut. 4G destroyed.
+A Raspberry Pi on a battery. A LoRa module on the roof. €55 total.
+The community continues. Announcements get through. People know who is alive.
+
+**That is sovereignty.**
+
+This is not a tomorrow feature. It is a **call to contributors:**
+→ Amateur radio operators, LoRa makers, Meshtastic contributors, embedded Rust developers.
+→ The architecture is here. The CRDT foundation is shipped.
+→ The radio layer is waiting for the right hands.
+
+→ **[Full spec: docs/ideas/NEXUS-ETHER.md](../ideas/NEXUS-ETHER.md)**
+
+---
+
+*Version 1.8 — March 4, 2026*
+*"P2P is the soul. Rust is the body. Radio is the resilience."*
