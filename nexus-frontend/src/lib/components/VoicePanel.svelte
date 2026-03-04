@@ -869,6 +869,17 @@
                     </svg>
                 </button>
 
+                <!-- Partage d'écran -->
+                <button onclick={() => { isSharing ? stopScreenShare() : startScreenShare('monitor') }}
+                    title={isSharing ? 'Arrêter le partage' : "Partager l'écran"}
+                    class="flex-1 flex items-center justify-center p-1.5 rounded-lg transition-colors
+                           {isSharing ? 'text-emerald-400 bg-emerald-900/30' : 'text-gray-400 hover:text-white hover:bg-gray-800'}">
+                    <svg xmlns='http://www.w3.org/2000/svg' class='w-4 h-4 {isSharing ? "animate-pulse" : ""}' fill='none' viewBox='0 0 24 24' stroke='currentColor' stroke-width='2'>
+                        <rect x='2' y='3' width='20' height='14' rx='2'/>
+                        <path d='M8 21h8M12 17v4'/>
+                    </svg>
+                </button>
+
                 <!-- Settings audio -->
                 <button onclick={() => { showVoiceSettings = !showVoiceSettings; showMediaHub = false }}
                     title="Paramètres audio"
