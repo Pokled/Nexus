@@ -268,14 +268,17 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Fallback gracieux si WebRTC échoue (ICE timeout 12s, toast discret, flags _hadAttempt/_hadSuccess)
 - [x] Transfert d'assets entre pairs (chunks 32 Ko, protocole p2p:asset:*, store p2pAssetPeers, bouton ⚡ jaune)
 
-#### Phase 3.0-C — `nexus-turn` (remplace coturn)
+#### Phase 3.0-C — `nexus-turn` (remplace coturn) ✅ VALIDÉE — 4 mars 2026
 
 > coturn est un projet C des années 2000. Complexe à configurer, surface d'attaque importante.
+> **Remplacé par un binaire Rust de 2.9MB — zéro dépendance, credentials dynamiques.**
 
-- [ ] Serveur STUN/TURN en Rust — RFC 5766 + RFC 8656
-- [ ] Credentials dynamiques fournis par nexus-core via IPC (pas de config statique)
-- [ ] Logs structurés (JSON), métriques Prometheus
-- [ ] ~5MB statique, configuration zéro à l'installation
+- [x] Serveur STUN/TURN en Rust — RFC 5389 (STUN) + RFC 5766 (TURN)
+- [x] Credentials dynamiques HMAC-SHA1 (time-based, coturn `use-auth-secret` compatible)
+- [x] MESSAGE-INTEGRITY vérification (MD5 key + HMAC-SHA1, RFC 5389 §15.4)
+- [x] nexus-core génère les creds par utilisateur → `voice:init` Socket.IO (pas d'IPC)
+- [x] ChannelBind / ChannelData (optimisation relay, moins d'overhead header)
+- [x] 2.9MB statique, `install.sh` intégré, service systemd, GitHub Release `v0.1.0-turn`
 
 #### Phase 3.0-D — `nexus-p2p` core (vision long terme 2027-2028)
 
