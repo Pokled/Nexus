@@ -12,17 +12,19 @@
 
     // ── Props ─────────────────────────────────────────────────────────────────
     let {
-        channelId,  // text channel id for session recap
-        socket,     // Socket.IO instance
+        channelId,      // text channel id for session recap
+        voiceChannelId, // voice channel id — used to join the P2P mesh
+        socket,         // Socket.IO instance
         userId,
         username,
         onclose = () => {},
     }: {
-        channelId:  string | null
-        socket:     any
-        userId:     string
-        username:   string
-        onclose:    () => void
+        channelId:      string | null
+        voiceChannelId: string | null
+        socket:         any
+        userId:         string
+        username:       string
+        onclose:        () => void
     } = $props()
 
     // ── Canvas state ──────────────────────────────────────────────────────────
@@ -451,6 +453,8 @@
         window.addEventListener('p2p:message', onP2PMessage)
         window.addEventListener('keydown', onKeydown)
         socket?.on('voice:speaking', onVoiceSpeaking)
+        // Join the voice channel P2P mesh — ICE servers are already set from voice:init
+        if (voiceChannelId) p2pManager.joinChannel(voiceChannelId)
 
         // Periodic cleanup of stale cursors (> 4 s)
         cursorInterval = setInterval(() => {
@@ -472,6 +476,9 @@
         window.removeEventListener('keydown', onKeydown)
         socket?.off('voice:speaking', onVoiceSpeaking)
         clearInterval(cursorInterval)
+        // Restore text channel P2P (or leave if no text channel)
+        if (channelId) p2pManager.joinChannel(channelId)
+        else p2pManager.leaveChannel()
     })
 </script>
 

@@ -51,7 +51,15 @@ class P2PManager {
   private _iceServers: RTCIceServer[] = []
 
   setIceServers(servers: RTCIceServer[]): void {
+    const wasEmpty = this._iceServers.length === 0
     this._iceServers = servers
+    // If we just got ICE servers for the first time while already in a channel,
+    // previous connections likely failed (no STUN/TURN) — reconnect now.
+    if (wasEmpty && servers.length > 0 && this.channelId) {
+      const ch = this.channelId
+      this.leaveChannel()
+      setTimeout(() => this.joinChannel(ch), 200)
+    }
   }
 
   private iceConfig(): RTCConfiguration {

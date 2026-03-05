@@ -851,6 +851,7 @@
 				{#if showCanvas}
 					<NexusCanvas
 						channelId={canvasRecapChannelId}
+						voiceChannelId={voiceState.channelId}
 						socket={s}
 						userId={userId}
 						username={myUsername}
