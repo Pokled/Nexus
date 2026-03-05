@@ -1,10 +1,13 @@
 <script lang="ts">
 	import '../app.css';
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import type { LayoutData } from './$types';
 	import { page } from '$app/stores';
+	import { browser } from '$app/environment';
 	import { initSocket, unreadCountStore, onlineMembersStore } from '$lib/socket';
 	import { tryAutoConnect } from '$lib/socket';
+	import { resolveTheme, themeToVars } from '$lib/profileThemes';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
@@ -21,6 +24,9 @@
 			? $page.url.pathname === '/' || $page.url.pathname.startsWith('/forum')
 			: $page.url.pathname.startsWith(href)
 
+	// App-wide theme — uses the logged-in user's theme, falls back to default
+	const appVars = $derived(themeToVars(resolveTheme((data as any).appTheme)))
+
 	onMount(() => {
 		if (data.user && data.token) {
 			// SSR provided a valid session — use it directly
@@ -29,6 +35,26 @@
 			// No SSR session (guest page) — try reconnecting from stored token
 			tryAutoConnect()
 		}
+	})
+
+	// ── Galaxy Bar mobile drawer ───────────────────────────────────────────────
+	let gallerySidebarOpen = $state(false)
+
+	// Ferme le drawer sur changement de page (navigation SvelteKit)
+	$effect(() => {
+		const _ = $page.url.pathname
+		gallerySidebarOpen = false
+	})
+
+	// Bloque le scroll du body quand le drawer est ouvert
+	$effect(() => {
+		if (!browser) return
+		if (gallerySidebarOpen) {
+			document.body.classList.add('no-scroll')
+		} else {
+			document.body.classList.remove('no-scroll')
+		}
+		return () => document.body.classList.remove('no-scroll')
 	})
 
 	// ── User dropdown ──────────────────────────────────────────────────────────
@@ -92,15 +118,40 @@
 	}
 </script>
 
-<div class="min-h-screen bg-gray-950 text-gray-100 flex flex-col">
+<svelte:head>
+	{#if communityLogo}
+		<link rel="icon" href={communityLogo} />
+	{/if}
+</svelte:head>
+
+<div class="min-h-screen flex flex-col" style="{appVars}; background: var(--p-bg); color: var(--p-text)">
 
 	<!-- ══ NAV ════════════════════════════════════════════════════════════════ -->
-	<nav class="border-b border-gray-800 bg-gray-900 sticky top-0 z-50 shrink-0">
+	<nav class="border-b border-gray-800 sticky top-0 z-50 shrink-0"
+	     style="background: var(--p-card-bg); border-color: var(--p-card-border)">
 		<div class="px-4 flex items-center gap-1 h-14">
+			<!-- Hamburger Galaxy Bar — mobile only -->
+			<button
+				class="lg:hidden mr-1 p-2 rounded min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors
+				       {gallerySidebarOpen ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}"
+				onclick={() => gallerySidebarOpen = !gallerySidebarOpen}
+				aria-label="Menu communauté"
+				aria-expanded={gallerySidebarOpen}
+				aria-controls="galaxy-sidebar">
+				{#if gallerySidebarOpen}
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+					</svg>
+				{:else}
+					<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+					</svg>
+				{/if}
+			</button>
 			<a href="/" class="text-lg font-bold text-white tracking-tight mr-4 shrink-0 max-w-[180px] truncate">
 				{communityName}
 			</a>
-			<div class="flex items-center gap-1 flex-1">
+			<div class="hidden lg:flex items-center gap-1 flex-1">
 				<a href="/" class="px-3 py-2 rounded text-sm transition-colors {isActive('/') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Forum</a>
 				<a href="/communities" class="px-3 py-2 rounded text-sm transition-colors {isActive('/communities') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Annuaire</a>
 				{#if user}
@@ -206,8 +257,28 @@
 	<!-- ══ BODY ═══════════════════════════════════════════════════════════════ -->
 	<div class="flex flex-1">
 
+		<!-- ── Backdrop Galaxy Bar — mobile ───────────────────────────────────── -->
+		{#if gallerySidebarOpen}
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="lg:hidden fixed inset-0 bg-black/60 z-[54] backdrop-blur-sm"
+		     role="button" tabindex="-1" aria-label="Fermer le menu"
+		     onclick={() => gallerySidebarOpen = false}
+		     onkeydown={e => e.key === 'Escape' && (gallerySidebarOpen = false)}
+		     transition:fade={{ duration: 200 }}></div>
+		{/if}
+
 		<!-- ── Galaxy Bar (gauche, 220px) ─────────────────────────────────────── -->
-		<aside class="hidden lg:flex fixed left-0 top-14 bottom-0 w-[220px] flex-col border-r border-gray-800 bg-gray-900 overflow-y-auto overflow-x-hidden z-30">
+		<aside
+			id="galaxy-sidebar"
+			class="flex flex-col fixed left-0 top-14 bottom-0 w-[280px] lg:w-[220px]
+			       border-r border-gray-800 overflow-y-auto overflow-x-hidden
+			       z-[55] lg:z-30
+			       transition-transform duration-300 ease-in-out
+			       {gallerySidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}"
+			style="background: var(--p-card-bg); border-color: var(--p-card-border)"
+			role={gallerySidebarOpen ? 'dialog' : undefined}
+			aria-modal={gallerySidebarOpen ? 'true' : undefined}
+			aria-label="Menu communauté">
 
 			<!-- Instance active (cette instance) -->
 			<div class="px-3 pt-4 pb-3 shrink-0">
@@ -340,7 +411,7 @@
 		</aside>
 
 		<!-- ── Contenu principal ───────────────────────────────────────────────── -->
-		<main class="flex-1 min-w-0 lg:pl-[220px] xl:pr-[220px] flex flex-col">
+		<main class="flex-1 min-w-0 lg:pl-[220px] xl:pr-[220px] flex flex-col" style="padding-bottom: var(--bottom-nav-h)">
             {#if communityBanner && ($page.url.pathname === '/' || $page.url.pathname.startsWith('/forum'))}
                 <div class="relative w-full h-32 overflow-hidden">
                     <img src={communityBanner} alt="Bannière" class="w-full h-full object-cover" />
@@ -363,7 +434,8 @@
         </main>
 
 		<!-- ── Members Bar (droite, 220px) ────────────────────────────────────── -->
-		<aside class="hidden xl:flex fixed right-0 top-14 bottom-0 w-[220px] flex-col border-l border-gray-800 bg-gray-900/60 overflow-y-auto z-30">
+		<aside class="hidden xl:flex fixed right-0 top-14 bottom-0 w-[220px] flex-col border-l border-gray-800 overflow-y-auto z-30"
+		       style="background: var(--p-card-bg); border-color: var(--p-card-border)">
 			{#if user}
 				<div class="px-3 pt-4 pb-2 shrink-0">
 					<h2 class="text-[11px] uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-1.5">
@@ -400,4 +472,76 @@
 		</aside>
 
 	</div>
+
+	<!-- ══ BOTTOM NAV mobile (lg:hidden) ═══════════════════════════════════ -->
+	<nav class="lg:hidden fixed bottom-0 left-0 right-0 z-45 border-t border-gray-800 flex items-stretch"
+	     style="background: var(--p-card-bg); border-color: var(--p-card-border); padding-bottom: env(safe-area-inset-bottom, 0px)">
+
+		<!-- Forum -->
+		<a href="/" class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 {isActive('/') ? 'text-indigo-400' : 'text-gray-500'}">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+				<polyline stroke-linecap="round" stroke-linejoin="round" points="9 22 9 12 15 12 15 22"/>
+			</svg>
+			<span class="text-[10px] font-medium">Forum</span>
+		</a>
+
+		<!-- Chat (si connecté) -->
+		{#if user}
+		<a href="/chat" class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 relative {isActive('/chat') ? 'text-indigo-400' : 'text-gray-500'}">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+			</svg>
+			{#if unreadCount > 0}
+				<span class="absolute top-1.5 right-[calc(50%-14px)] min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold px-1 flex items-center justify-center">
+					{unreadCount > 9 ? '9+' : unreadCount}
+				</span>
+			{/if}
+			<span class="text-[10px] font-medium">Chat</span>
+		</a>
+		{/if}
+
+		<!-- Bibliothèque -->
+		<a href="/library" class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 {isActive('/library') ? 'text-indigo-400' : 'text-gray-500'}">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+				<path stroke-linecap="round" stroke-linejoin="round" d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+			</svg>
+			<span class="text-[10px] font-medium">Biblio</span>
+		</a>
+
+		<!-- Annuaire -->
+		<a href="/communities" class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 {isActive('/communities') ? 'text-indigo-400' : 'text-gray-500'}">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<circle cx="12" cy="12" r="10"/>
+				<line x1="2" y1="12" x2="22" y2="12"/>
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+			</svg>
+			<span class="text-[10px] font-medium">Annuaire</span>
+		</a>
+
+		<!-- Profil / Connexion -->
+		{#if user}
+		<a href="/users/{user.username}"
+		   class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 {$page.url.pathname.startsWith('/users/') ? 'text-indigo-400' : 'text-gray-500'}">
+			{#if user.avatar}
+				<img src={user.avatar} class="w-5 h-5 rounded-full object-cover" alt="" />
+			{:else}
+				<div class="w-5 h-5 rounded-full bg-indigo-700 flex items-center justify-center text-[9px] font-bold text-white">
+					{user.username.charAt(0).toUpperCase()}
+				</div>
+			{/if}
+			<span class="text-[10px] font-medium">Profil</span>
+		</a>
+		{:else}
+		<a href="/auth/login" class="flex-1 flex flex-col items-center justify-center py-2 min-h-[56px] gap-0.5 text-gray-500">
+			<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+				<polyline stroke-linecap="round" stroke-linejoin="round" points="10 17 15 12 10 7"/>
+				<line x1="15" y1="12" x2="3" y2="12"/>
+			</svg>
+			<span class="text-[10px] font-medium">Connexion</span>
+		</a>
+		{/if}
+	</nav>
 </div>

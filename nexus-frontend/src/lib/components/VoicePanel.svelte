@@ -12,7 +12,7 @@
     import { onMount } from 'svelte'
     import { voicePanelTarget } from '$lib/voicePanel'
 
-    let { mode = 'float' }: { mode?: 'float' | 'sidebar' } = $props()
+    let { mode = 'float', extraClass = '' }: { mode?: 'float' | 'sidebar'; extraClass?: string } = $props()
 
     let showMediaHub      = $state(false)
     let showVoiceSettings = $state(false)
@@ -444,7 +444,7 @@
 
     {#if mode === 'float'}
     <!-- Barre vocale flottante -->
-    <div class='fixed bottom-0 left-0 lg:left-[220px] right-0 z-40 pointer-events-none'>
+    <div class='fixed left-0 lg:left-[220px] right-0 z-40 pointer-events-none {extraClass}' style='bottom: var(--bottom-nav-h)'>
         <div class='mx-auto max-w-4xl px-4 pb-2 pointer-events-auto'>
             <div class='relative group'>
                 <!-- Effet de glow externe -->
@@ -491,7 +491,7 @@
 
                     <!-- Avatars des participants - Version avec tooltip fixed -->
                     <div class='flex items-center -space-x-2 relative' style="z-index: 50; overflow: visible;">
-                        {#each peers.slice(0, 6) as peer (peer.socketId)}
+                        {#each peers.slice(0, 6) as peer, i (peer.socketId)}
                             {@const pStats   = statsMap.get(peer.socketId)}
                             {@const pQuality = getQuality(pStats)}
                             <button
@@ -499,7 +499,7 @@
                                 onmouseenter={(e) => onMouseEnter(peer, e)}
                                 onmouseleave={onMouseLeave}
                                 data-peer-id={peer.socketId}
-                                class='relative focus:outline-none hover:z-20 group/avatar transition-all duration-200'
+                                class='relative focus:outline-none hover:z-20 group/avatar transition-all duration-200 {i >= 3 ? "hidden sm:flex" : "flex"}'
                                 style="z-index: {10 + peers.indexOf(peer)};"
                                 title='{peer.username} — cliquer pour les détails'
                             >
@@ -533,14 +533,21 @@
                         {/each}
                         
                         {#if peers.length > 6}
-                            <div class='relative w-8 h-8 rounded-full 
-                                        bg-gradient-to-br from-gray-700 to-gray-800 
-                                        border-2 border-gray-900 flex items-center justify-center 
+                            <div class='relative w-8 h-8 rounded-full
+                                        bg-gradient-to-br from-gray-700 to-gray-800
+                                        border-2 border-gray-900 flex items-center justify-center
                                         text-[10px] text-gray-300 font-medium
                                         hover:scale-110 transition-transform duration-200
                                         ring-1 ring-gray-600'
                                  style="z-index: 5;">
                                 +{peers.length - 6}
+                            </div>
+                        {/if}
+                        <!-- Mobile: +N badge pour avatars au-delà de 3 -->
+                        {#if peers.length > 3}
+                            <div class='sm:hidden w-8 h-8 rounded-full bg-gray-700 border-2 border-gray-800
+                                        flex items-center justify-center text-[10px] font-bold text-gray-300 shrink-0'>
+                                +{peers.length - 3}
                             </div>
                         {/if}
                     </div>
@@ -580,7 +587,7 @@
                         <!-- Media Center -->
                         <button
                             onclick={() => showMediaHub = !showMediaHub}
-                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
+                            class='hidden sm:flex p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
                                    {showMediaHub
                                        ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/50 ring-2 ring-indigo-400/50'
                                        : 'bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-500/30'}'
@@ -593,7 +600,7 @@
                         <!-- Partage d'écran -->
                         <button
                             onclick={() => { isSharing ? stopScreenShare() : startScreenShare('monitor'); showMediaHub = false }}
-                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
+                            class='hidden sm:flex p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
                                    {isSharing
                                        ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/50 ring-2 ring-emerald-400/50"
                                        : "bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-emerald-500/20 border border-gray-700 hover:border-emerald-500/30"}'
@@ -609,9 +616,9 @@
                         <!-- Mute -->
                         <button
                             onclick={toggleMute}
-                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
-                                   {muted 
-                                       ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-900/50 ring-1 ring-red-700/50 animate-pulse' 
+                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative min-w-[44px] min-h-[44px] flex items-center justify-center
+                                   {muted
+                                       ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-900/50 ring-1 ring-red-700/50 animate-pulse'
                                        : 'bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-500/30'}'
                             title={muted ? 'Réactiver le micro' : 'Couper le micro'}
                             style="pointer-events: auto; position: relative; z-index: 101;"
@@ -635,9 +642,9 @@
                         <!-- Deafen -->
                         <button
                             onclick={toggleDeafen}
-                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
-                                   {deafened 
-                                       ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-900/50 ring-1 ring-red-700/50 animate-pulse' 
+                            class='hidden sm:flex p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
+                                   {deafened
+                                       ? 'bg-gradient-to-r from-red-600 to-red-500 text-white shadow-lg shadow-red-900/50 ring-1 ring-red-700/50 animate-pulse'
                                        : 'bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-500/30'}'
                             title={deafened ? 'Réactiver le son' : 'Se rendre sourd'}
                             style="pointer-events: auto; position: relative; z-index: 101;"
@@ -651,9 +658,9 @@
                         <!-- PTT Mode -->
                         <button
                             onclick={togglePTTMode}
-                            class='p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
-                                   {pttMode 
-                                       ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-900/50 ring-1 ring-orange-700/50' 
+                            class='hidden sm:flex p-2 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
+                                   {pttMode
+                                       ? 'bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-lg shadow-orange-900/50 ring-1 ring-orange-700/50'
                                        : 'bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 hover:shadow-lg hover:shadow-indigo-500/20 border border-gray-700 hover:border-indigo-500/30'}'
                             title='Push-to-Talk (Alt pour parler)'
                             style="pointer-events: auto; position: relative; z-index: 101;"
@@ -669,7 +676,7 @@
                                 onmousedown={startPTT}
                                 onmouseup={stopPTT}
                                 onmouseleave={stopPTT}
-                                class='px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider select-none
+                                class='hidden sm:flex px-4 py-1.5 rounded-lg font-bold text-xs uppercase tracking-wider select-none
                                        transition-all duration-150 transform active:scale-95 relative
                                        bg-gradient-to-r from-orange-600 to-orange-500
                                        hover:from-orange-500 hover:to-orange-400
@@ -687,8 +694,8 @@
                         <!-- ⚙️ Paramètres son -->
                         <button
                             onclick={() => { showVoiceSettings = !showVoiceSettings; showMediaHub = false }}
-                            class='px-2 py-1.5 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
-                                   flex items-center gap-1
+                            class='hidden sm:flex px-2 py-1.5 rounded-lg transition-all duration-200 transform hover:scale-110 active:scale-95 relative
+                                   items-center gap-1
                                    {showVoiceSettings
                                        ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-lg shadow-amber-500/50 ring-2 ring-amber-400/50"
                                        : "bg-gray-800/80 text-gray-300 hover:text-white hover:bg-gray-700 border border-gray-700 hover:border-amber-500/30"}'
@@ -697,6 +704,20 @@
                         >
                             <span class="text-base leading-none">⚙️</span>
                             <span class="text-[11px] font-medium">Son</span>
+                        </button>
+
+                        <!-- ··· bouton mobile-only (ouvre VoiceSettings) -->
+                        <button
+                            onclick={() => { showVoiceSettings = !showVoiceSettings; showMediaHub = false }}
+                            class='sm:hidden p-2 rounded-lg bg-gray-800/80 text-gray-300 border border-gray-700
+                                   min-w-[44px] min-h-[44px] flex items-center justify-center
+                                   transition-all duration-200'
+                            title='Paramètres'
+                            style="pointer-events: auto; position: relative; z-index: 101;"
+                        >
+                            <svg class='w-4 h-4' fill='currentColor' viewBox='0 0 24 24'>
+                                <circle cx='5' cy='12' r='2'/><circle cx='12' cy='12' r='2'/><circle cx='19' cy='12' r='2'/>
+                            </svg>
                         </button>
 
                         <!-- Séparateur -->
@@ -711,7 +732,7 @@
                                    hover:from-red-500 hover:to-red-400
                                    active:from-red-700 active:to-red-600
                                    text-white shadow-lg shadow-red-900/50
-                                   flex items-center gap-1.5
+                                   flex items-center gap-1.5 min-w-[44px] min-h-[44px] justify-center
                                    ring-1 ring-red-700/50 hover:ring-red-600/50'
                             title='Quitter le salon vocal'
                             style="pointer-events: auto; position: relative; z-index: 101;"
@@ -730,18 +751,30 @@
                      parent, pour que absolute bottom-full soit visible.
                 ─────────────────────────────────────────────────────────────── -->
                 {#if showMediaHub}
-                    <div class="absolute bottom-full mb-2 right-0 w-[400px] z-[200]
-                                animate-in fade-in slide-in-from-bottom-4 duration-300"
+                    <div class="fixed inset-0 sm:absolute sm:inset-auto sm:bottom-full sm:mb-2 sm:right-0 sm:w-[400px] z-[200]
+                                flex flex-col sm:block animate-in fade-in slide-in-from-bottom-4 duration-300"
                          style="pointer-events: auto;">
-                        <div class="relative bg-gradient-to-b from-gray-900 to-gray-950
-                                    border border-indigo-500/30 rounded-2xl shadow-2xl shadow-indigo-500/20
-                                    overflow-hidden backdrop-blur-md">
+                        <div class="relative flex-1 sm:flex-none bg-gradient-to-b from-gray-900 to-gray-950
+                                    border border-indigo-500/30 sm:rounded-2xl shadow-2xl shadow-indigo-500/20
+                                    overflow-hidden backdrop-blur-md flex flex-col">
                             <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
-                            <MediaCenter />
+                            <!-- Header fermeture mobile-only -->
+                            <div class="sm:hidden flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/95 shrink-0">
+                                <span class="text-sm font-semibold text-white">Partage d'écran</span>
+                                <button onclick={() => showMediaHub = false}
+                                        class="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-white">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-y-auto sm:flex-none sm:overflow-visible">
+                                <MediaCenter />
+                            </div>
                             <button
                                 onclick={() => showMediaHub = false}
-                                class="absolute top-4 right-4 text-gray-500 hover:text-white
-                                       bg-black/40 w-7 h-7 rounded-full flex items-center justify-center
+                                class="hidden sm:flex absolute top-4 right-4 text-gray-500 hover:text-white
+                                       bg-black/40 w-7 h-7 rounded-full items-center justify-center
                                        backdrop-blur-sm border border-gray-700 hover:border-indigo-500/50
                                        transition-all duration-200 hover:scale-110"
                                 style="pointer-events: auto; z-index: 201;"
@@ -754,18 +787,30 @@
 
                 <!-- ── VoiceSettings popup ────────────────────────────────────── -->
                 {#if showVoiceSettings}
-                    <div class="absolute bottom-full mb-2 right-0 w-[340px] z-[200]
-                                animate-in fade-in slide-in-from-bottom-4 duration-300"
+                    <div class="fixed inset-0 sm:absolute sm:inset-auto sm:bottom-full sm:mb-2 sm:right-0 sm:w-[340px] z-[200]
+                                flex flex-col sm:block animate-in fade-in slide-in-from-bottom-4 duration-300"
                          style="pointer-events: auto;">
-                        <div class="relative bg-gradient-to-b from-gray-900 to-gray-950
-                                    border border-amber-500/30 rounded-2xl shadow-2xl shadow-amber-500/10
-                                    overflow-hidden backdrop-blur-md">
+                        <div class="relative flex-1 sm:flex-none bg-gradient-to-b from-gray-900 to-gray-950
+                                    border border-amber-500/30 sm:rounded-2xl shadow-2xl shadow-amber-500/10
+                                    overflow-hidden backdrop-blur-md flex flex-col">
                             <div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
-                            <VoiceSettings />
+                            <!-- Header fermeture mobile-only -->
+                            <div class="sm:hidden flex items-center justify-between px-4 py-3 border-b border-gray-800 bg-gray-900/95 shrink-0">
+                                <span class="text-sm font-semibold text-white">Paramètres audio</span>
+                                <button onclick={() => showVoiceSettings = false}
+                                        class="min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-400 hover:text-white">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            </div>
+                            <div class="flex-1 overflow-y-auto sm:flex-none sm:overflow-visible">
+                                <VoiceSettings />
+                            </div>
                             <button
                                 onclick={() => showVoiceSettings = false}
-                                class="absolute top-4 right-4 text-gray-500 hover:text-white
-                                       bg-black/40 w-7 h-7 rounded-full flex items-center justify-center
+                                class="hidden sm:flex absolute top-4 right-4 text-gray-500 hover:text-white
+                                       bg-black/40 w-7 h-7 rounded-full items-center justify-center
                                        backdrop-blur-sm border border-gray-700 hover:border-amber-500/50
                                        transition-all duration-200 hover:scale-110"
                                 style="pointer-events: auto; z-index: 201;"

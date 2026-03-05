@@ -5,7 +5,7 @@
 
   <p><strong>The community platform that no one can take from you.<br/>Forum + Chat + Voice + P2P Canvas — on your server, under your control, forever.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v0.9.0-7c3aed)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v1.0.0-7c3aed)](CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](docs/en/ARCHITECTURE.md)
@@ -66,6 +66,7 @@ Works on a Raspberry Pi behind a home router. No domain. No open ports. No cloud
 | **Federated community directory** | ✅ | ❌ | ⚠️ | ❌ | ✅ |
 | **Asset library (frames, badges, banners)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Ephemeral whisper rooms** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Per-user profile themes (app-wide)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Integrated internet radio tuner** | 📻 Soon | ❌ | ❌ | ❌ | ❌ |
 | **Cooperative radio ad network** | 📻 Soon | ❌ | ❌ | ❌ | ❌ |
 | Open source | ✅ AGPL | ❌ | ✅ | ✅ | ✅ |
@@ -261,6 +262,9 @@ docker-compose up -d
 | P2P DataChannels — instant typing, optimistic reactions | v0.8 |
 | nexus-turn — Rust STUN/TURN replacing coturn | v0.9 |
 | **NexusCanvas — collaborative P2P whiteboard in voice channels** | **v0.9** |
+| **Profile theme system** — 6 presets, per-user app-wide CSS engine, live editor | **v1.0** |
+| **Mobile-responsive UI** — chat drawer, bottom nav, voice accessible on mobile | **v1.0** |
+| **Asset library 12 MB** + per-type upload design guidelines | **v1.0** |
 
 ### Coming
 

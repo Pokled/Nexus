@@ -96,17 +96,17 @@
 		<!-- Effet de glow subtil -->
 		<div class="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent"></div>
 		
-		<div class="flex items-start gap-6">
+		<div class="flex items-start gap-3 sm:gap-6">
 			<!-- Avatar du créateur (grand cercle) -->
 			<div class="relative flex-shrink-0">
 				{#if thread.author_avatar}
 					<img 
 						src={thread.author_avatar} 
 						alt={thread.author_username}
-						class="w-20 h-20 rounded-full object-cover ring-4 ring-indigo-500/20 shadow-2xl"
+						class="w-12 h-12 sm:w-20 sm:h-20 rounded-full object-cover ring-4 ring-indigo-500/20 shadow-2xl"
 					/>
 				{:else}
-					<div class="w-20 h-20 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 
+					<div class="w-12 h-12 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 
 								flex items-center justify-center text-3xl font-bold text-white
 								ring-4 ring-indigo-500/20 shadow-2xl">
 						{thread.author_username.charAt(0).toUpperCase()}
@@ -178,7 +178,7 @@
 					</form>
 				{:else}
 					<div class="flex items-start gap-2 group/title">
-						<h1 class="text-3xl font-bold text-white leading-tight">{thread.title}</h1>
+						<h1 class="text-xl sm:text-3xl font-bold text-white leading-tight">{thread.title}</h1>
 						{#if canEditTitle}
 							<button
 								type="button"

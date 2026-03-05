@@ -65,6 +65,12 @@ export const actions: Actions = {
 			body['links'] = links
 		}
 
+		// Profile theme — stored in metadata.theme
+		const metadataThemeRaw = form.get('metadata_theme') as string | null
+		if (metadataThemeRaw) {
+			try { body['metadata'] = { theme: JSON.parse(metadataThemeRaw) } } catch { /* ignore */ }
+		}
+
 		if (Object.keys(body).length === 0) {
 			return { error: 'Aucune modification à enregistrer.' }
 		}

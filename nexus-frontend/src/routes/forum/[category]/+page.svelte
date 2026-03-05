@@ -259,8 +259,8 @@
 		<div class="flex items-start gap-6">
 			<!-- Icône de catégorie -->
 			<div class="relative">
-				<div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 
-							flex items-center justify-center text-4xl shadow-xl shadow-indigo-600/30
+				<div class="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 
+							flex items-center justify-center text-2xl sm:text-4xl shadow-xl shadow-indigo-600/30
 							ring-4 ring-indigo-500/20">
 					{getCategoryIcon()}
 				</div>
@@ -276,7 +276,7 @@
 					<span class="text-sm font-medium text-indigo-400">{categoryName}</span> 
 				</div>
 
-				<h1 class="text-4xl font-bold text-white tracking-tight mb-2">{categoryName}</h1>
+				<h1 class="text-2xl sm:text-4xl font-bold text-white tracking-tight mb-2">{categoryName}</h1>
 
 				<!-- Stats de la catégorie -->
 				<div class="flex flex-wrap items-center gap-4 mt-4">
@@ -373,7 +373,7 @@
 
 			{#if filterDropdownOpen}
 				<div 
-					class="absolute right-0 mt-2 w-64 rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
+					class="absolute right-0 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
 					transition:fly={{ y: -10, duration: 200 }}
 				>
 					<div class="py-1">
@@ -429,7 +429,7 @@
 
 			{#if sortDropdownOpen}
 				<div 
-					class="absolute right-0 mt-2 w-56 rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
+					class="absolute right-0 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-xl bg-gray-900 border border-gray-700 shadow-2xl shadow-indigo-500/10 overflow-hidden z-50"
 					transition:fly={{ y: -10, duration: 200 }}
 				>
 					<div class="py-1">

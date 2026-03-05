@@ -9,6 +9,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [1.0.0] — 2026-03-05
+
+### Added
+- **Profile theme system** — complete per-user personalization engine
+  - 6 built-in presets: Défaut 🌑, Minuit 🌌, Forêt 🌲, Chaleur 🔥, Rose 🌸, Verre 💎
+  - CSS variable architecture: `--p-bg`, `--p-card-bg`, `--p-card-border`, `--p-accent`, `--p-text`, `--p-text-muted`
+  - Live preview editor in `/users/me/edit` — preset grid + 5 individual hex color pickers
+  - Migration 024 — `metadata JSONB DEFAULT '{}'` on `user_profiles`
+  - Theme stored as `metadata.theme` via PostgreSQL JSONB merge operator (`||`)
+- **App-wide theming** — user's profile theme propagates to the entire interface: top nav, Galaxy Bar sidebar, members sidebar, bottom nav, page background — every logged-in user skins the app with their own preset
+- **Mobile-responsive UI overhaul** — full mobile-first layout
+  - Chat page: sliding channel drawer (hamburger button), VoicePanel always accessible on mobile
+  - Forum pages: responsive category icon, title, and dropdown sizing
+  - Admin settings: responsive two-column form layout
+  - Bottom navigation bar (`lg:hidden`) with `--bottom-nav-h` CSS variable for safe content padding
+- **Community favicon** — dynamic `<link rel="icon">` injected from the community logo in `<svelte:head>`
+- **Asset library — 12 MB upload limit** (up from 5 MB)
+  - `@fastify/multipart` limit updated to 12 MB
+  - Migration 023 — DB constraint updated (`CHECK (file_size <= 12582912)`)
+  - Per-type upload tooltips with design guidelines, recommended dimensions, format advice
+- **Profile badges** — displayed at 56 × 56 px (doubled from 28 × 28 px)
+
+### Fixed
+- Profile `metadata` column was missing from `SELECT` in `GET /users/:username/profile` — theme was saved to DB but never returned to frontend
+- Chat page channel sidebar visual gap on desktop — `fixed top-14` base class leaked through `lg:relative` override; restructured using `max-lg:` Tailwind prefix for mobile-only fixed positioning
+- `@fastify/multipart` file size limit (5 MB) was independent of the DB constraint — both now consistently at 12 MB
+
+---
+
 ## [0.5.0] — 2026-03-01
 
 ### Added

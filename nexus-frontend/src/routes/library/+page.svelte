@@ -9,17 +9,21 @@
 	// Token from layout data (HttpOnly cookie — not readable via document.cookie)
 	const token = $derived(($page.data as any).token as string | null)
 
+	const MAX_FILE_SIZE = 12 * 1024 * 1024 // 12 MB
+
 	const ASSET_TYPES = [
-		{ value: '', label: 'Tous' },
-		{ value: 'frame',   label: 'Cadres' },
-		{ value: 'banner',  label: 'Bannières' },
-		{ value: 'badge',   label: 'Badges' },
-		{ value: 'sticker', label: 'Stickers' },
-		{ value: 'font',    label: 'Polices' },
-		{ value: 'theme',   label: 'Thèmes' },
-		{ value: 'emoji',   label: 'Emojis' },
-		{ value: 'sound',   label: 'Sons' },
+		{ value: '', label: 'Tous', tip: null },
+		{ value: 'frame',   label: 'Cadres',     tip: 'PNG carré avec fond transparent. Cercle transparent au centre touchant les bords (l\'avatar remplira ce cercle). Anneau décoratif à l\'extérieur. 500×500 px min.' },
+		{ value: 'banner',  label: 'Bannières',  tip: 'PNG ou JPG, format paysage. Affiché en haut du profil. 1500×500 px recommandé.' },
+		{ value: 'badge',   label: 'Badges',     tip: 'PNG carré avec fond transparent. S\'affiche à côté du pseudo. 256×256 px recommandé.' },
+		{ value: 'sticker', label: 'Stickers',   tip: 'PNG ou GIF animé avec fond transparent. Utilisé dans le chat. 512×512 px recommandé.' },
+		{ value: 'font',    label: 'Polices',    tip: 'Fichier de police (TTF, OTF, WOFF2). Sera proposée pour personnaliser l\'interface.' },
+		{ value: 'theme',   label: 'Thèmes',     tip: 'Fichier JSON de thème couleurs. Format défini par la communauté.' },
+		{ value: 'emoji',   label: 'Emojis',     tip: 'PNG ou GIF carré avec fond transparent. 128×128 px recommandé.' },
+		{ value: 'sound',   label: 'Sons',       tip: 'MP3 ou OGG. Court extrait audio (notification, ambiance, etc.). 30s max recommandé.' },
 	]
+
+	const currentTypeTip = $derived(ASSET_TYPES.find(t => t.value === uploadType)?.tip ?? null)
 
 	const TYPE_ICONS: Record<string, string> = {
 		frame: '🖼️', banner: '🎨', badge: '🏅', sticker: '⭐',
@@ -79,6 +83,14 @@
 	function onFileChange(e: Event) {
 		const input = e.currentTarget as HTMLInputElement
 		const file  = input.files?.[0] ?? null
+		uploadError = ''
+		if (file && file.size > MAX_FILE_SIZE) {
+			uploadError = `Fichier trop lourd : ${(file.size / 1024 / 1024).toFixed(1)} Mo (max 12 Mo).`
+			uploadFile  = null
+			uploadPreview = null
+			input.value = ''
+			return
+		}
 		uploadFile  = file
 		if (file && file.type.startsWith('image/')) {
 			const reader = new FileReader()
@@ -92,6 +104,7 @@
 	async function submitUpload(e: Event) {
 		e.preventDefault()
 		if (!uploadFile) { uploadError = 'Sélectionne un fichier.'; return }
+		if (uploadFile.size > MAX_FILE_SIZE) { uploadError = 'Fichier trop lourd (max 12 Mo).'; return }
 		uploading   = true
 		uploadError = ''
 
@@ -203,6 +216,15 @@
 					<input bind:value={uploadTags} placeholder="pixel-art, doré, frame"
 						class="w-full px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500" />
 				</div>
+				{#if currentTypeTip}
+				<div class="sm:col-span-2 flex gap-3 px-3 py-3 rounded-lg bg-indigo-950/50 border border-indigo-800/40 text-xs text-indigo-300">
+					<span class="text-base shrink-0 mt-0.5">💡</span>
+					<div class="leading-relaxed">
+						<span class="font-semibold text-indigo-200">Conseils · </span>{currentTypeTip}
+						<span class="block mt-1 text-indigo-400/70">Taille max : <strong class="text-indigo-300">12 Mo</strong></span>
+					</div>
+				</div>
+				{/if}
 				<div class="sm:col-span-2 flex gap-3">
 					<button type="submit" disabled={uploading}
 						class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-sm font-semibold text-white transition-colors">

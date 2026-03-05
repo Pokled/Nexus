@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+/* ── Bottom nav height (source unique de vérité) ─────────────────────────── */
+:root { --bottom-nav-h: 56px; }
+@media (min-width: 1024px) { :root { --bottom-nav-h: 0px; } }
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  :root { --bottom-nav-h: calc(56px + env(safe-area-inset-bottom)); }
+  @media (min-width: 1024px) { :root { --bottom-nav-h: 0px; } }
+}
+/* z-45 : entre VoicePanel(z-40) et topnav(z-50) */
+.z-45 { z-index: 45; }
+/* Bloquer scroll body quand drawer ouvert */
+.no-scroll { overflow: hidden; touch-action: none; }
+
 /* ════════════════════════════════════════════════════════════════════════════
    NEXUS PROSE — styles partagés entre l'éditeur et l'affichage des posts
    Utilisé par :

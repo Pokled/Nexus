@@ -1,12 +1,35 @@
 <script lang="ts">
 	import { enhance } from '$app/forms'
 	import type { PageData, ActionData } from './$types'
+	import { PROFILE_PRESETS, resolveTheme, themeToStyle, type ProfileThemeVars } from '$lib/profileThemes'
 
 	let { data, form }: { data: PageData; form: ActionData } = $props()
 	const profile = $derived(data.profile)
 
 	let submitting = $state(false)
 	let nameColor = $state<string>(profile.name_color ?? '#ffffff')
+
+	// ── Profile Theme ──────────────────────────────────────────────────────────
+	let theme = $state<ProfileThemeVars>(resolveTheme(profile.metadata?.theme))
+	let selectedPresetId = $state<string>(
+		PROFILE_PRESETS.find(p => p.vars.bg === theme.bg && p.vars.accent === theme.accent)?.id ?? 'default'
+	)
+
+	function applyPreset(preset: typeof PROFILE_PRESETS[0]) {
+		theme = { ...preset.vars }
+		selectedPresetId = preset.id
+	}
+
+	const themeJson = $derived(JSON.stringify(theme))
+	const previewStyle = $derived(themeToStyle(theme))
+
+	const colorPickers: Array<{ key: keyof ProfileThemeVars; label: string }> = [
+		{ key: 'bg',         label: 'Fond' },
+		{ key: 'cardBorder', label: 'Bordure' },
+		{ key: 'accent',     label: 'Accent' },
+		{ key: 'text',       label: 'Texte' },
+		{ key: 'textMuted',  label: 'Texte secondaire' },
+	]
 
 	// Links — dynamic list of {label, url} rows
 	let links = $state<Array<{ label: string; url: string }>>(
@@ -289,6 +312,88 @@
 				{/if}
 			</div>
 		</div>
+	</div>
+
+	<!-- ─── ROW 1.5: Thème du profil ──────────────────────────────────────── -->
+	<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5 space-y-5">
+		<h2 class="text-xs uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-2">
+			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z"/></svg>
+			Thème du profil
+		</h2>
+
+		<div class="grid lg:grid-cols-3 gap-6">
+			<!-- Preset grid -->
+			<div class="lg:col-span-2 space-y-3">
+				<p class="text-xs text-gray-400 font-medium">Choisir un preset</p>
+				<div class="grid grid-cols-3 sm:grid-cols-6 gap-2">
+					{#each PROFILE_PRESETS as preset}
+						<button type="button" onclick={() => applyPreset(preset)}
+							class="flex flex-col gap-1.5 p-2 rounded-xl border transition-all
+							       {selectedPresetId === preset.id
+							         ? 'border-indigo-500 bg-indigo-950/40'
+							         : 'border-gray-700 hover:border-gray-500 bg-gray-800/40'}"
+						>
+							<!-- Mini preview card -->
+							<div class="w-full rounded-lg overflow-hidden" style="background:{preset.vars.bg}; aspect-ratio:16/9;">
+								<div class="h-2/3 w-full p-1 space-y-0.5"
+								     style="background:{preset.vars.cardBg}; border-bottom:1px solid {preset.vars.cardBorder};">
+									<div class="h-1 rounded-sm w-3/4" style="background:{preset.vars.accent}"></div>
+									<div class="h-1 rounded-sm w-1/2" style="background:{preset.vars.textMuted}"></div>
+								</div>
+							</div>
+							<p class="text-[10px] text-center truncate leading-tight"
+							   style="color:{selectedPresetId === preset.id ? preset.vars.accent : '#9ca3af'}">
+								{preset.emoji} {preset.name}
+							</p>
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Color fine-tuning -->
+			<div class="space-y-3">
+				<p class="text-xs text-gray-400 font-medium">Personnaliser</p>
+				<div class="space-y-2">
+					{#each colorPickers as picker}
+						<div class="flex items-center gap-2.5">
+							<input type="color"
+								value={theme[picker.key] as string}
+								oninput={(e) => {
+									(theme as Record<string, unknown>)[picker.key] = (e.target as HTMLInputElement).value
+									selectedPresetId = 'custom'
+								}}
+								class="w-8 h-8 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer p-0.5 shrink-0
+								       focus:outline-none focus:border-indigo-500 transition-colors" />
+							<span class="text-xs text-gray-400 flex-1">{picker.label}</span>
+							<span class="text-[10px] text-gray-600 font-mono">{theme[picker.key]}</span>
+						</div>
+					{/each}
+				</div>
+				<p class="text-[11px] text-gray-600">Le fond semi-transparent des cartes suit le preset.</p>
+			</div>
+		</div>
+
+		<!-- Live preview strip -->
+		<div>
+			<p class="text-xs text-gray-400 font-medium mb-2">Aperçu</p>
+			<div class="rounded-xl overflow-hidden h-20 flex items-center gap-4 px-5 transition-all duration-300"
+			     style={previewStyle}>
+				<div class="w-10 h-10 rounded-full shrink-0 flex items-center justify-center text-sm font-bold"
+				     style="background:{theme.accent}; color:{theme.bg}">{initials}</div>
+				<div>
+					<p class="text-sm font-bold leading-tight" style="color:{theme.text}">{profile.display_name || profile.username}</p>
+					<p class="text-xs" style="color:{theme.textMuted}">@{profile.username}</p>
+				</div>
+				<div class="ml-auto flex flex-col gap-1">
+					<div class="h-1.5 w-20 rounded-full" style="background:{theme.accent}"></div>
+					<div class="h-1.5 w-14 rounded-full" style="background:{theme.cardBorder}"></div>
+					<div class="h-1.5 w-16 rounded-full" style="background:{theme.textMuted}; opacity:.5"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Hidden serialised theme -->
+		<input type="hidden" name="metadata_theme" value={themeJson} />
 	</div>
 
 	<!-- ─── ROW 2: Réseaux sociaux ─────────────────────────────────────────── -->

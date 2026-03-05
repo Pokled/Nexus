@@ -181,8 +181,8 @@
 				{ key: 'NEXUS_COMMUNITY_LANGUAGE',    label: 'Langue',     value: i.language,    desc: 'Code ISO 639-1 (ex: fr, en, de)' },
 				{ key: 'NEXUS_COMMUNITY_COUNTRY',     label: 'Pays',       value: i.country,     desc: 'Code ISO 3166-1 alpha-2 (ex: FR, US, DE)' },
 			] as field}
-				<div class="flex items-start gap-4">
-					<div class="w-44 shrink-0">
+				<div class="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-4">
+					<div class="sm:w-44 sm:shrink-0">
 						<p class="text-sm font-medium text-gray-300">{field.label}</p>
 						<p class="text-xs text-gray-600 font-mono mt-0.5">{field.key}</p>
 					</div>

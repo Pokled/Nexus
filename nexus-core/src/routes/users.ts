@@ -37,6 +37,7 @@ const PatchProfileBody = z.object({
   banner_asset_id:    z.string().uuid().optional().nullable(),
   frame_asset_id:     z.string().uuid().optional().nullable(),
   badge_asset_id:     z.string().uuid().optional().nullable(),
+  metadata:           z.record(z.string(), z.unknown()).optional(),
 })
 
 const GITHUB_CACHE_TTL = 3600 // 1 hour
@@ -110,6 +111,7 @@ export default async function userRoutes(app: FastifyInstance) {
     if (data.banner_asset_id   !== undefined) { fields.push(`banner_asset_id = $${i++}`);   values.push(data.banner_asset_id)   }
     if (data.frame_asset_id    !== undefined) { fields.push(`frame_asset_id = $${i++}`);    values.push(data.frame_asset_id)    }
     if (data.badge_asset_id    !== undefined) { fields.push(`badge_asset_id = $${i++}`);    values.push(data.badge_asset_id)    }
+    if (data.metadata          !== undefined) { fields.push(`metadata = metadata || $${i++}::jsonb`); values.push(JSON.stringify(data.metadata)) }
 
     if (fields.length === 0) {
       return reply.code(400).send({ error: 'No fields to update', code: 'EMPTY_UPDATE' })
@@ -154,7 +156,7 @@ export default async function userRoutes(app: FastifyInstance) {
          p.bio, p.status, p.location, p.tags, p.links,
          p.github_username, p.youtube_channel, p.twitter_username,
          p.instagram_username, p.website_url, p.name_color,
-         p.banner_asset_id, p.frame_asset_id, p.badge_asset_id,
+         p.banner_asset_id, p.frame_asset_id, p.badge_asset_id, p.metadata,
          ab.file_path  AS banner_asset_path,
          af.file_path  AS frame_asset_path,
          af.thumbnail_path AS frame_asset_thumb,

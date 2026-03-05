@@ -17,7 +17,7 @@
 | **Phase 2** | Real-time Chat + Directory + Network Identity | ✅ Complete |
 | **Phase 2.5** | Community customization + Light federation | ✅ Complete |
 | **Phase 3** | P2P Infrastructure + Rust Foundation | 🔨 In Progress |
-| Phase 4 | Platform enrichment | ⏳ Planned |
+| **Phase 4** | Platform enrichment | 🔨 In Progress (v1.0 partial) |
 | Phase 5 | Mobile and reputation | ⏳ Planned |
 | **Phase Horizon** | NEXUS-ETHER — Physical layer sovereignty | 🌌 Vision |
 | **Phase Radio** | NEXUS-RADIO — Internet radio tuner + cooperative ad network | 📻 Vision |
@@ -371,8 +371,11 @@ nexus-core    (Fastify/Node.js) ────────────────
 ## PHASE 4 — Platform enrichment
 ### Goal: Nexus becomes the complete community platform
 
-**Already delivered early (v0.9):**
-- [x] **NexusCanvas** — P2P collaborative whiteboard in voice channels (CRDT LWW, voice-aware cursors, PNG export)
+**Already delivered early:**
+- [x] **NexusCanvas** (v0.9) — P2P collaborative whiteboard in voice channels (CRDT LWW, voice-aware cursors, PNG export)
+- [x] **Profile theme system** (v1.0) — 6 built-in presets (Défaut, Minuit, Forêt, Chaleur, Rose, Verre), CSS variable engine (`--p-bg`, `--p-card-bg`, `--p-accent`…), live editor with color pickers, app-wide propagation (nav, sidebars, background)
+- [x] **Mobile-responsive UI** (v1.0) — chat channel drawer, bottom navigation bar, VoicePanel accessible on mobile, responsive forum + admin pages
+- [x] **Asset library 12 MB** (v1.0) — raised from 5 MB, per-type upload design guidelines
 
 **Knowledge & Discovery:**
 - [ ] **Event Calendar** — organizer-grade, OSM maps, JSON-LD Google Rich Snippets, Socket.IO 15min alerts — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)

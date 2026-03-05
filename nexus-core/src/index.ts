@@ -42,7 +42,7 @@ server.register(fastifyStatic, {
 
 // ── Multipart (file uploads) ─────────────────────────────────
 server.register(fastifyMultipart, {
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB max
+  limits: { fileSize: 12 * 1024 * 1024 }, // 12 MB max
 })
 
 // ── Root & health ────────────────────────────────────────────

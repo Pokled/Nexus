@@ -33,19 +33,19 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, request }) => {
 
 	const { user } = await userRes.json();
 
-	// Fetch unread notification count (non-blocking)
+	// Fetch notifications + user profile theme in parallel (non-blocking)
 	let unreadCount = 0;
-	try {
-		const countRes = await apiFetch(fetch, '/notifications/unread-count', {
-			headers: { Authorization: `Bearer ${token}` }
-		});
-		if (countRes.ok) {
-			const json = await countRes.json();
-			unreadCount = json.count ?? 0;
-		}
-	} catch {
-		// Ignore notification errors
-	}
+	let appTheme: Record<string, unknown> | null = null;
+	await Promise.all([
+		apiFetch(fetch, '/notifications/unread-count', { headers: { Authorization: `Bearer ${token}` } })
+			.then(r => r.ok ? r.json() : null)
+			.then(j => { if (j) unreadCount = j.count ?? 0 })
+			.catch(() => {}),
+		apiFetch(fetch, `/users/${user.username}/profile`, { headers: { Authorization: `Bearer ${token}` } })
+			.then(r => r.ok ? r.json() : null)
+			.then(j => { if (j?.metadata?.theme) appTheme = j.metadata.theme })
+			.catch(() => {}),
+	]);
 
-	return { user, communityName, communityLogoUrl, communityBannerUrl, memberCount, unreadCount, token: token || null };
+	return { user, communityName, communityLogoUrl, communityBannerUrl, memberCount, unreadCount, token: token || null, appTheme };
 };

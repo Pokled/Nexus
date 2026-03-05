@@ -2,6 +2,7 @@
 	import type { PageData } from './$types'
 	import GitHubWidget from '$lib/components/widgets/GitHubWidget.svelte'
 	import { page } from '$app/stores'
+	import { resolveTheme, themeToStyle } from '$lib/profileThemes'
 
 	let { data }: { data: PageData } = $props()
 	const profile = $derived(data.profile)
@@ -93,6 +94,10 @@
 	)
 	const frameSrc   = $derived(profile.frame_asset_path ? `/uploads/${profile.frame_asset_path}` : null)
 	const badgeSrc   = $derived(profile.badge_asset_path ? `/uploads/${profile.badge_asset_path}` : null)
+
+	// Theme
+	const theme = $derived(resolveTheme(profile.metadata?.theme))
+	const scopeStyle = $derived(themeToStyle(theme))
 </script>
 
 <svelte:head>
@@ -106,10 +111,13 @@
 	<meta property="og:type" content="profile" />
 </svelte:head>
 
+<!-- ── Profile scope — CSS variables injected here ─────────────────────── -->
+<div class="profile-scope min-h-full -mx-4 sm:-mx-6 px-0" style={scopeStyle}>
+
 <!-- ═══════════════════════════════════════════════════════════════
      BANNER — avatar + name embedded inside, button top-right
      ═══════════════════════════════════════════════════════════════ -->
-<div class="relative w-full h-64 bg-gradient-to-br from-gray-950 via-indigo-950/40 to-gray-950">
+<div class="relative w-full h-40 sm:h-64" style="background: linear-gradient(135deg, color-mix(in srgb, var(--p-bg) 60%, var(--p-accent) 40%), var(--p-bg))">
 
 	<!-- Image layer (clipped to banner bounds) -->
 	<div class="absolute inset-0 overflow-hidden">
@@ -120,8 +128,8 @@
 				class="w-full h-full object-cover"
 			/>
 		{/if}
-		<div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/50 to-transparent"></div>
-		<div class="absolute inset-0 bg-gradient-to-r from-gray-950/50 via-transparent to-gray-950/50"></div>
+		<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+		<div class="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30"></div>
 	</div>
 
 	<!-- Action button — top-right corner, inside banner -->
@@ -142,8 +150,9 @@
 		<a
 			href="/chat"
 			class="absolute top-4 right-4 z-20 flex items-center gap-1.5 px-3.5 py-1.5
-			       rounded-lg bg-indigo-700/80 backdrop-blur-sm border border-indigo-500/40
-			       hover:bg-indigo-600/90 text-xs text-white transition-all font-medium"
+			       rounded-lg backdrop-blur-sm border border-white/20
+			       text-xs text-white transition-all font-medium"
+			style="background: color-mix(in srgb, var(--p-accent) 70%, transparent)"
 		>
 			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
 				<path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/>
@@ -158,8 +167,9 @@
 
 			<!-- Avatar: translate-y-1/2 makes it half-overflow below the banner -->
 			<div class="relative w-28 h-28 shrink-0 translate-y-1/2">
-				<div class="w-full h-full rounded-full border-4 border-gray-950 overflow-hidden
-				            bg-indigo-800 shadow-2xl ring-1 ring-white/5">
+				<div class="w-full h-full rounded-full border-4 overflow-hidden
+				            shadow-2xl ring-1 ring-white/10"
+				     style="border-color: var(--p-bg); background: var(--p-accent)">
 					{#if profile.avatar_url}
 						<img src={profile.avatar_url} alt="Avatar de {profile.display_name || profile.username}" class="w-full h-full object-cover" />
 					{:else}
@@ -167,13 +177,13 @@
 						     aria-hidden="true">{initials}</div>
 					{/if}
 				</div>
-				<!-- Frame overlay: same size as avatar, no clip so frame can extend slightly outside -->
+				<!-- Frame overlay -->
 				{#if frameSrc}
 					<img src={frameSrc} alt="Cadre" class="absolute inset-0 w-full h-full pointer-events-none select-none" />
 				{/if}
 			</div>
 
-			<!-- Name + @username + grade (inside banner, pb-5 from banner bottom) -->
+			<!-- Name + @username + grade -->
 			<div class="pb-5 min-w-0">
 				<h1
 					class="text-2xl font-bold leading-tight truncate drop-shadow-lg"
@@ -183,7 +193,7 @@
 				</h1>
 				<p
 					class="text-sm drop-shadow font-medium"
-					style="color: {profile.name_color ? profile.name_color + 'b3' : '#9ca3af'}"
+					style="color: {profile.name_color ? profile.name_color + 'b3' : 'var(--p-text-muted)'}"
 				>
 					@{profile.username}
 				</p>
@@ -197,57 +207,59 @@
 				{/if}
 				{#if badgeSrc}
 					<img src={badgeSrc} alt={profile.badge_asset_name ?? 'Badge'} title={profile.badge_asset_name ?? 'Badge'}
-						class="inline-block mt-1.5 ml-1 w-7 h-7 rounded object-contain drop-shadow" />
+						class="inline-block mt-1.5 ml-1 w-14 h-14 rounded object-contain drop-shadow" />
 				{/if}
 			</div>
 		</div>
 	</div>
 </div>
 
-<!-- Spacer: half of avatar height (w-28 = 112px → 56px = h-14) -->
-<div class="h-16 bg-gray-950"></div>
+<!-- Spacer: half of avatar height -->
+<div class="h-16" style="background: var(--p-bg)"></div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      MAIN — 2-column layout
      ═══════════════════════════════════════════════════════════════ -->
 <div class="max-w-6xl mx-auto px-6 pb-16">
-	<div class="flex gap-5 items-start">
+	<div class="flex flex-col sm:flex-row gap-5 items-start">
 
 		<!-- ─── LEFT SIDEBAR ─────────────────────────────────────────── -->
-		<aside class="w-72 shrink-0 space-y-3">
+		<aside class="w-full sm:w-72 sm:shrink-0 space-y-3">
 
 			<!-- Level card -->
-			<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4 backdrop-blur-sm">
+			<div class="rounded-xl p-4 backdrop-blur-sm"
+			     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
 				<div class="flex items-center justify-between mb-3">
-					<span class="text-xs uppercase tracking-widest text-gray-500 font-medium">Niveau</span>
-					<span class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-br from-indigo-400 to-purple-500 leading-none">
+					<span class="text-xs uppercase tracking-widest font-medium" style="color: var(--p-text-muted)">Niveau</span>
+					<span class="text-3xl font-black leading-none" style="color: var(--p-accent)">
 						{level}
 					</span>
 				</div>
 				<!-- XP bar -->
-				<div class="h-1.5 bg-gray-800 rounded-full overflow-hidden">
+				<div class="h-1.5 rounded-full overflow-hidden" style="background: color-mix(in srgb, var(--p-card-border) 80%, transparent)">
 					<div
-						class="h-full rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all"
-						style="width: {levelProgress}%"
+						class="h-full rounded-full transition-all"
+						style="width: {levelProgress}%; background: var(--p-accent)"
 					></div>
 				</div>
 				<div class="flex justify-between mt-1.5">
-					<span class="text-[11px] text-gray-600">{profile.points.toLocaleString('fr-FR')} pts</span>
-					<span class="text-[11px] text-gray-600">{levelMax.toLocaleString('fr-FR')} pts</span>
+					<span class="text-[11px]" style="color: var(--p-text-muted)">{profile.points.toLocaleString('fr-FR')} pts</span>
+					<span class="text-[11px]" style="color: var(--p-text-muted)">{levelMax.toLocaleString('fr-FR')} pts</span>
 				</div>
 			</div>
 
 			<!-- Status + Location -->
 			{#if profile.status || profile.location}
-				<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4 space-y-2.5">
+				<div class="rounded-xl p-4 space-y-2.5"
+				     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
 					{#if profile.status}
-						<div class="flex items-center gap-2.5 text-sm text-gray-300">
+						<div class="flex items-center gap-2.5 text-sm" style="color: var(--p-text)">
 							<span class="text-base shrink-0">💬</span>
 							<span class="leading-snug">{profile.status}</span>
 						</div>
 					{/if}
 					{#if profile.location}
-						<div class="flex items-center gap-2.5 text-sm text-gray-400">
+						<div class="flex items-center gap-2.5 text-sm" style="color: var(--p-text-muted)">
 							<span class="text-base shrink-0">📍</span>
 							<span class="leading-snug">{profile.location}</span>
 						</div>
@@ -257,11 +269,13 @@
 
 			<!-- Tags -->
 			{#if profile.tags?.length > 0}
-				<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4">
-					<p class="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3">Tags</p>
+				<div class="rounded-xl p-4"
+				     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+					<p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--p-text-muted)">Tags</p>
 					<div class="flex flex-wrap gap-1.5">
 						{#each profile.tags as tag}
-							<span class="bg-indigo-900/40 border border-indigo-800/50 text-indigo-300 rounded-full px-2.5 py-0.5 text-xs font-medium">
+							<span class="rounded-full px-2.5 py-0.5 text-xs font-medium"
+							      style="background: color-mix(in srgb, var(--p-accent) 15%, transparent); border: 1px solid color-mix(in srgb, var(--p-accent) 30%, transparent); color: var(--p-accent)">
 								#{tag}
 							</span>
 						{/each}
@@ -271,19 +285,15 @@
 
 			<!-- Social networks -->
 			{#if socialLinks.length > 0}
-				<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4">
-					<p class="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3">Réseaux</p>
+				<div class="rounded-xl p-4"
+				     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+					<p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--p-text-muted)">Réseaux</p>
 					<ul class="space-y-2">
 						{#each socialLinks as social}
 							<li>
-								<a
-									href={social.url}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="flex items-center gap-3 py-1.5 group"
-								>
-									<!-- Icon -->
-									<span class="w-5 h-5 shrink-0 text-gray-500 group-hover:{social.color} transition-colors">
+								<a href={social.url} target="_blank" rel="noopener noreferrer"
+								   class="flex items-center gap-3 py-1.5 group">
+									<span class="w-5 h-5 shrink-0 transition-colors" style="color: var(--p-text-muted)">
 										{#if social.label === 'GitHub'}
 											<svg viewBox="0 0 16 16" class="w-5 h-5 fill-current" aria-hidden="true">
 												<path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
@@ -307,8 +317,8 @@
 										{/if}
 									</span>
 									<div class="min-w-0">
-										<p class="text-xs text-gray-500 leading-none">{social.label}</p>
-										<p class="text-sm {social.color} truncate group-hover:underline">{social.handle}</p>
+										<p class="text-xs leading-none" style="color: var(--p-text-muted)">{social.label}</p>
+										<p class="text-sm truncate group-hover:underline" style="color: var(--p-accent)">{social.handle}</p>
 									</div>
 								</a>
 							</li>
@@ -318,10 +328,11 @@
 			{/if}
 
 			<!-- Member since -->
-			<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4 text-center">
-				<p class="text-xs uppercase tracking-widest text-gray-600 font-medium">Membre depuis</p>
-				<p class="text-sm font-semibold text-gray-200 mt-1.5">{memberSinceFormatted}</p>
-				<p class="text-xs text-gray-600 mt-0.5">{daysSince.toLocaleString('fr-FR')} jours sur Nexus</p>
+			<div class="rounded-xl p-4 text-center"
+			     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+				<p class="text-xs uppercase tracking-widest font-medium" style="color: var(--p-text-muted)">Membre depuis</p>
+				<p class="text-sm font-semibold mt-1.5" style="color: var(--p-text)">{memberSinceFormatted}</p>
+				<p class="text-xs mt-0.5" style="color: var(--p-text-muted)">{daysSince.toLocaleString('fr-FR')} jours sur Nexus</p>
 			</div>
 
 		</aside>
@@ -330,53 +341,48 @@
 		<main class="flex-1 min-w-0 space-y-4">
 
 			<!-- Stats row -->
-			<div class="grid grid-cols-4 gap-3">
+			<div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
 				{#each stats as stat}
-					<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-4 text-center
-					            hover:border-gray-700 transition-colors group">
-						<p class="text-xs uppercase tracking-widest text-gray-600 font-medium mb-2">{stat.icon}</p>
-						<p class="text-2xl font-black text-white tabular-nums leading-none">{stat.value}</p>
-						<p class="text-xs text-gray-500 mt-1.5 font-medium">{stat.label}</p>
+					<div class="rounded-xl p-4 text-center transition-colors"
+					     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+						<p class="text-xs uppercase tracking-widest font-medium mb-2" style="color: var(--p-text-muted)">{stat.icon}</p>
+						<p class="text-2xl font-black tabular-nums leading-none" style="color: var(--p-text)">{stat.value}</p>
+						<p class="text-xs mt-1.5 font-medium" style="color: var(--p-text-muted)">{stat.label}</p>
 					</div>
 				{/each}
 			</div>
 
 			<!-- Bio -->
 			{#if profile.bio}
-				<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-					<p class="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3">À propos</p>
-					<p class="text-gray-300 whitespace-pre-line text-sm leading-relaxed">{profile.bio}</p>
+				<div class="rounded-xl p-5"
+				     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+					<p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--p-text-muted)">À propos</p>
+					<p class="whitespace-pre-line text-sm leading-relaxed" style="color: var(--p-text)">{profile.bio}</p>
 				</div>
 			{/if}
 
 			<!-- GitHub widget -->
 			{#if profile.github_username}
 				<div>
-					<p class="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3 px-1">GitHub</p>
+					<p class="text-xs uppercase tracking-widest font-medium mb-3 px-1" style="color: var(--p-text-muted)">GitHub</p>
 					<GitHubWidget nexusUsername={profile.username} />
 				</div>
 			{/if}
 
 			<!-- Custom links -->
 			{#if profile.links?.length > 0}
-				<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5">
-					<p class="text-xs uppercase tracking-widest text-gray-500 font-medium mb-3">Liens</p>
+				<div class="rounded-xl p-5"
+				     style="background: var(--p-card-bg); border: 1px solid var(--p-card-border)">
+					<p class="text-xs uppercase tracking-widest font-medium mb-3" style="color: var(--p-text-muted)">Liens</p>
 					<div class="grid grid-cols-2 gap-2">
 						{#each profile.links as link}
-							<a
-								href={link.url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="flex items-center justify-between gap-3 p-3 rounded-lg
-								       bg-gray-800/50 border border-gray-700/50
-								       hover:border-indigo-700/60 hover:bg-indigo-900/10
-								       transition-all group"
-							>
-								<span class="text-sm font-medium text-indigo-300 group-hover:text-indigo-200 truncate">
-									{link.label}
-								</span>
-								<svg class="w-3.5 h-3.5 text-gray-600 group-hover:text-indigo-400 shrink-0 transition-colors"
-								     fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+							<a href={link.url} target="_blank" rel="noopener noreferrer"
+							   class="flex items-center justify-between gap-3 p-3 rounded-lg transition-all group"
+							   style="background: color-mix(in srgb, var(--p-card-border) 40%, transparent); border: 1px solid var(--p-card-border)">
+								<span class="text-sm font-medium truncate" style="color: var(--p-accent)">{link.label}</span>
+								<svg class="w-3.5 h-3.5 shrink-0 transition-colors" fill="none" stroke="currentColor"
+								     stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"
+								     style="color: var(--p-text-muted)">
 									<path stroke-linecap="round" stroke-linejoin="round" d="M13.5 6H5.25A2.25 2.25 0 003 8.25v10.5A2.25 2.25 0 005.25 21h10.5A2.25 2.25 0 0018 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"/>
 								</svg>
 							</a>
@@ -385,13 +391,15 @@
 				</div>
 			{/if}
 
-			<!-- Empty state — nothing to show yet -->
+			<!-- Empty state -->
 			{#if !profile.bio && !profile.github_username && !profile.links?.length}
-				<div class="bg-gray-900/40 border border-gray-800/50 rounded-xl p-10 text-center">
+				<div class="rounded-xl p-10 text-center"
+				     style="background: color-mix(in srgb, var(--p-card-bg) 60%, transparent); border: 1px solid var(--p-card-border)">
 					<p class="text-4xl mb-3">👤</p>
-					<p class="text-gray-500 text-sm">Ce profil est encore vide.</p>
+					<p class="text-sm" style="color: var(--p-text-muted)">Ce profil est encore vide.</p>
 					{#if isOwnProfile}
-						<a href="/users/me/edit" class="inline-block mt-3 text-indigo-400 hover:text-indigo-300 text-sm underline underline-offset-2">
+						<a href="/users/me/edit" class="inline-block mt-3 text-sm underline underline-offset-2"
+						   style="color: var(--p-accent)">
 							Compléter mon profil →
 						</a>
 					{/if}
@@ -401,3 +409,5 @@
 		</main>
 	</div>
 </div>
+
+</div><!-- end .profile-scope -->

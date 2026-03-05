@@ -117,6 +117,7 @@
 
 	// Sélectionner un salon vocal (sidebar) — ne connecte pas, ne déconnecte pas
 	function handleJoinVoice(ch: Channel) {
+		drawerOpen = false;
 		if (!s) return;
 		voiceError = null;
 		if (selectedChannel && (selectedChannel as any).type !== 'voice') {
@@ -138,6 +139,20 @@
 			voiceError = VOICE_ERRORS[err.message] ?? VOICE_ERRORS['DENIED'];
 		}
 	}
+
+	// ── Mobile drawer ─────────────────────────────────────────────────────────
+	let drawerOpen = $state(false)
+
+	// Bloque le scroll quand le drawer est ouvert
+	$effect(() => {
+		if (!browser) return
+		if (drawerOpen) {
+			document.body.classList.add('no-scroll')
+		} else {
+			document.body.classList.remove('no-scroll')
+		}
+		return () => document.body.classList.remove('no-scroll')
+	})
 
 	// ── D&D reorder (admin only) ───────────────────────────────────────────────
 	let dragSrcId = $state<string | null>(null);
@@ -191,6 +206,7 @@
 	let s: Socket | null = null;
 
 	function joinChannel(channel: Channel) {
+		drawerOpen = false;
 		if (!s) return;
 		if (selectedChannel && selectedChannel.id !== channel.id) {
 			s.emit('chat:leave', selectedChannel.id);
@@ -580,8 +596,28 @@
 <!-- Full-height layout -->
 <div class="fixed top-14 bottom-0 lg:left-[220px] xl:right-[220px] left-0 right-0 flex overflow-hidden bg-gray-950 border-l border-gray-800 z-10">
 
-	<!-- ── Channel sidebar ──────────────────────────────────────────────────── -->
-	<aside class="w-56 shrink-0 border-r border-gray-800 bg-gray-900 flex flex-col">
+	<!-- ── Backdrop drawer mobile ───────────────────────────────────────────── -->
+	{#if drawerOpen}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="lg:hidden fixed inset-0 bg-black/60 z-[55] backdrop-blur-sm"
+	     role="button" tabindex="-1" aria-label="Fermer les canaux"
+	     onclick={() => drawerOpen = false}
+	     onkeydown={e => e.key === 'Escape' && (drawerOpen = false)}
+	     transition:fade={{ duration: 200 }}></div>
+	{/if}
+
+	<!-- ── Channel sidebar (drawer on mobile) ────────────────────────────── -->
+	<aside
+		id="channels-drawer"
+		role={drawerOpen ? 'dialog' : undefined}
+		aria-modal={drawerOpen ? 'true' : undefined}
+		aria-label="Canaux"
+		class="
+			flex flex-col border-r border-gray-800 bg-gray-900 transition-transform duration-300 ease-in-out
+			max-lg:fixed max-lg:top-14 max-lg:bottom-0 max-lg:left-0 max-lg:z-[60] max-lg:w-[280px]
+			lg:w-56 lg:shrink-0
+			{drawerOpen ? 'translate-x-0' : 'max-lg:-translate-x-full'}
+		">
 		<div class="h-12 flex items-center px-4 border-b border-gray-800">
 			<span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Canaux</span>
 		</div>
@@ -697,6 +733,9 @@
 		<VoicePanel mode="sidebar" />
 	</aside>
 
+	<!-- VoicePanel flottant mobile-only (drawer fermé → contrôles accessibles) -->
+	<VoicePanel mode="float" extraClass="lg:hidden" />
+
 	<!-- ── Main chat area ───────────────────────────────────────────────────── -->
 	<div class="flex-1 flex flex-col min-w-0">
 
@@ -707,6 +746,12 @@
 
 				<!-- Channel header -->
 				<div class="h-12 shrink-0 border-b border-gray-800/60 bg-[#0e0c09]/80 flex items-center gap-2 px-4">
+					<button class="lg:hidden -ml-1 mr-1 p-2 rounded text-gray-400 hover:text-white hover:bg-gray-800/60 min-w-[44px] min-h-[44px] flex items-center justify-center"
+					        onclick={() => drawerOpen = true} aria-label="Ouvrir les canaux" aria-expanded={drawerOpen} aria-controls="channels-drawer">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+						</svg>
+					</button>
 					<span class="text-xl">🔊</span>
 					<span class="font-semibold text-gray-100">{selectedChannel.name}</span>
 					{#if selectedChannel.description}
@@ -863,6 +908,12 @@
 				<!-- ── Text chat ──────────────────────────────────────────────────── -->
 				<!-- Header -->
 				<div class="h-12 shrink-0 border-b border-gray-800 bg-gray-900/50 flex items-center gap-2 px-4">
+					<button class="lg:hidden -ml-1 mr-1 p-2 rounded text-gray-400 hover:text-white hover:bg-gray-800/60 min-w-[44px] min-h-[44px] flex items-center justify-center"
+					        onclick={() => drawerOpen = true} aria-label="Ouvrir les canaux" aria-expanded={drawerOpen} aria-controls="channels-drawer">
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+						</svg>
+					</button>
 					<span class="text-gray-500 font-mono">#</span>
 					<span class="font-semibold text-white">{selectedChannel.name}</span>
 					{#if selectedChannel.description}
@@ -1073,7 +1124,7 @@
 			{/if}
 
 			<!-- Input area -->
-			<div class="px-4 pb-4 shrink-0">
+			<div class="px-4 shrink-0" style="padding-bottom: max(1rem, var(--bottom-nav-h))">
 				<!-- @mention dropdown -->
 				{#if showMentions && mentionSuggestions.length > 0}
 					<div class="relative">

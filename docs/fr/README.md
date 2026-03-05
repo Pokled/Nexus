@@ -5,7 +5,7 @@
 
   <p><strong>La plateforme communautaire que personne ne peut te prendre.<br/>Forum + Chat + Voix + Canvas P2P — sur ton serveur, sous ton contrôle, pour toujours.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v0.9.0-7c3aed)](../../CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v1.0.0-7c3aed)](../../CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](ARCHITECTURE.md)
@@ -66,6 +66,7 @@ Fonctionne sur un Raspberry Pi derrière une box FAI. Sans domaine. Sans ouvrir 
 | **Annuaire fédéré de communautés** | ✅ | ❌ | ⚠️ | ❌ | ✅ |
 | **Bibliothèque d'assets (cadres, badges, bannières)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Salles whisper éphémères** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Thèmes de profil personnalisés (app globale)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Tuner radio internet intégré** | 📻 Bientôt | ❌ | ❌ | ❌ | ❌ |
 | **Régie publicitaire coopérative radio** | 📻 Bientôt | ❌ | ❌ | ❌ | ❌ |
 | Open source | ✅ AGPL | ❌ | ✅ | ✅ | ✅ |
@@ -261,6 +262,9 @@ docker-compose up -d
 | DataChannels P2P — frappe instantanée, réactions optimistes | v0.8 |
 | nexus-turn — STUN/TURN Rust remplaçant coturn | v0.9 |
 | **NexusCanvas — tableau blanc collaboratif P2P dans les salons vocaux** | **v0.9** |
+| **Système de thèmes de profil** — 6 presets, CSS vars, éditeur live, app entière | **v1.0** |
+| **UI responsive mobile** — drawer de chat, nav bas, voix accessible sur mobile | **v1.0** |
+| **Bibliothèque d'assets 12 Mo** + conseils de design par type d'asset | **v1.0** |
 
 ### À venir
 
