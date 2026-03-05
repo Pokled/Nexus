@@ -1,8 +1,7 @@
 <script lang="ts">
 	import type { PageData, ActionData } from './$types'
 	import { enhance } from '$app/forms'
-	import { PUBLIC_API_URL } from '$env/static/public'
-	import { tokenStore } from '$lib/socket'
+	import { page } from '$app/stores'
 
 	let { data, form }: { data: PageData; form: ActionData } = $props()
 	const i = data.instance
@@ -17,12 +16,12 @@
 	let uploadingBanner = $state(false)
 
 	async function uploadBrandingFile(type: 'logo' | 'banner', file: File) {
-		const token = $tokenStore
+		const token = ($page.data as any).token as string | null
 		if (!token) return
 
 		const fd = new FormData()
 		fd.append('file', file)
-		const res = await fetch(`${PUBLIC_API_URL}/admin/branding/upload?type=${type}`, {
+		const res = await fetch(`/api/v1/admin/branding/upload?type=${type}`, {
 			method:  'POST',
 			headers: { Authorization: `Bearer ${token}` },
 			body:    fd,
