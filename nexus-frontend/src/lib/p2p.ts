@@ -47,10 +47,19 @@ class P2PManager {
   private incomingChunks = new Map<string, { total: number; chunks: string[]; received: number }>()
 
   // ── ICE configuration ────────────────────────────────────────────────────
+  // Dynamic ICE servers injected from voice:init (same nexus-turn credentials as voice WebRTC)
+  private _iceServers: RTCIceServer[] = []
+
+  setIceServers(servers: RTCIceServer[]): void {
+    this._iceServers = servers
+  }
+
   private iceConfig(): RTCConfiguration {
-    const turnUrl    = (import.meta.env.PUBLIC_TURN_URL        as string | undefined) ?? ''
-    const turnUser   = (import.meta.env.PUBLIC_TURN_USERNAME   as string | undefined) ?? ''
-    const turnCred   = (import.meta.env.PUBLIC_TURN_CREDENTIAL as string | undefined) ?? ''
+    if (this._iceServers.length > 0) return { iceServers: this._iceServers }
+    // Fallback: static build-time env vars (legacy / dev)
+    const turnUrl  = (import.meta.env.PUBLIC_TURN_URL        as string | undefined) ?? ''
+    const turnUser = (import.meta.env.PUBLIC_TURN_USERNAME   as string | undefined) ?? ''
+    const turnCred = (import.meta.env.PUBLIC_TURN_CREDENTIAL as string | undefined) ?? ''
     if (!turnUrl) return { iceServers: [] }
     return { iceServers: [{ urls: turnUrl, username: turnUser, credential: turnCred }] }
   }

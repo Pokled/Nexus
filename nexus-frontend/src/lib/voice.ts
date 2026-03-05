@@ -7,6 +7,7 @@
 import { writable, derived, get } from 'svelte/store'
 import type { Socket } from 'socket.io-client'
 import { voiceSettingsStore, type VoiceSettings } from './voiceSettings'
+import { p2pManager } from './p2p'
 export { voiceSettingsStore } from './voiceSettings'
 export type { VoiceSettings } from './voiceSettings'
 
@@ -955,7 +956,10 @@ function onVoiceInit({ channelId, peers, mySeatIndex, iceServers }: {
   mySeatIndex: number
   iceServers?: RTCIceServer[]
 }): void {
-  if (iceServers && iceServers.length > 0) _dynamicIceServers = iceServers
+  if (iceServers && iceServers.length > 0) {
+    _dynamicIceServers = iceServers
+    p2pManager.setIceServers(iceServers)  // share with P2P DataChannel mesh
+  }
   for (const [sid, pc] of _peerConns) {
     destroyPeerAudio(sid)
     pc.close()
