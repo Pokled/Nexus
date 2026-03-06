@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* ── Theme CSS vars (définis dynamiquement par +layout.svelte via appVars) ──
+   Portée actuelle :
+     · Layout chrome (nav, galaxy bar, members bar, bottom nav) ✓
+     · Page profil utilisateur (/users/:username) ✓
+     · Fond général (cascade depuis le root div)
+   Portée future (SPEC 013) : cards forum, chat, library, garden
+   Classes utilitaires disponibles pour migration progressive :
+*/
+.t-bg       { background: var(--p-bg); }
+.t-card     { background: var(--p-card-bg); border-color: var(--p-card-border); }
+.t-border   { border-color: var(--p-card-border); }
+.t-text     { color: var(--p-text); }
+.t-muted    { color: var(--p-text-muted); }
+.t-accent   { color: var(--p-accent); }
+
 /* ── Bottom nav height (source unique de vérité) ─────────────────────────── */
 :root { --bottom-nav-h: 56px; }
 @media (min-width: 1024px) { :root { --bottom-nav-h: 0px; } }

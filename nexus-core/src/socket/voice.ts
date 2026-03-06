@@ -6,14 +6,21 @@ import * as crypto from 'crypto'
 // TURN_SECRET + TURN_PUBLIC_IP env vars — set by install.sh.
 
 function buildIceServers(userId: string): object[] {
-  const secret = process.env.TURN_SECRET
-  const ip     = process.env.TURN_PUBLIC_IP
-  const port   = process.env.TURN_PORT || '3478'
-  if (!ip) return []
+  const secret   = process.env.TURN_SECRET
+  const ip       = process.env.TURN_PUBLIC_IP
+  const port     = process.env.TURN_PORT || '3478'
+  const fallback = process.env.STUN_FALLBACK_URLS  // relay mode: no nexus-turn
+
+  // No nexus-turn configured — use fallback STUN URLs if provided
+  if (!ip) {
+    if (!fallback) return []
+    return fallback.split(',').map(url => ({ urls: url.trim() }))
+  }
+
   const servers: object[] = [{ urls: `stun:${ip}:${port}` }]
   if (secret) {
-    const expires  = Math.floor(Date.now() / 1000) + 86400 // 24h TTL
-    const username = `${expires}:${userId}`
+    const expires    = Math.floor(Date.now() / 1000) + 86400 // 24h TTL
+    const username   = `${expires}:${userId}`
     const credential = crypto.createHmac('sha1', secret).update(username).digest('base64')
     servers.push({ urls: `turn:${ip}:${port}`, username, credential })
   }

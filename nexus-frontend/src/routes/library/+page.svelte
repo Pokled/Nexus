@@ -30,7 +30,8 @@
 		font: '🔤', theme: '🎭', emoji: '😀', sound: '🔊',
 	}
 
-	let searchInput = $state(data.q)
+	let searchInput = $state('')
+	$effect(() => { searchInput = data.q ?? ''; })
 	let uploading   = $state(false)
 	let uploadError = $state('')
 	let showUpload  = $state(false)

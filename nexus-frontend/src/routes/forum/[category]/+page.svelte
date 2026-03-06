@@ -4,8 +4,6 @@
 	import type { FlyParams, FadeParams } from 'svelte/transition';
 
 	let { data }: { data: PageData } = $props();
-	console.log('🎯 category reçue:', data.category);
-	console.log('🎯 category.name:', data.category?.name);
 
 	// ── Données typées ────────────────────────────────────────────────
 	const threads = $derived(data.threads as Thread[] || []);

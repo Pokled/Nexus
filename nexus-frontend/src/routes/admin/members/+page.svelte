@@ -1,8 +1,42 @@
 <script lang="ts">
 	import { enhance } from '$app/forms'
 	import type { PageData } from './$types'
+	import { page } from '$app/stores'
+	import { PUBLIC_API_URL } from '$env/static/public'
 
 	let { data }: { data: PageData } = $props()
+
+	// ── Reset link génération ────────────────────────────────────────────────
+	let resetLinkResult = $state<{ username: string; reset_url: string; expires_at: string } | null>(null)
+	let resetLinkError  = $state('')
+	let generatingFor   = $state<string | null>(null)
+
+	async function generateResetLink(userId: string) {
+		generatingFor = userId
+		resetLinkError = ''
+		resetLinkResult = null
+		try {
+			const token = ($page.data as any).token as string | null
+			const res = await fetch(`${PUBLIC_API_URL}/api/v1/admin/members/${userId}/reset-link`, {
+				method:  'POST',
+				headers: token ? { Authorization: `Bearer ${token}` } : {},
+			})
+			if (!res.ok) {
+				const j = await res.json().catch(() => ({}))
+				resetLinkError = j.error ?? 'Erreur lors de la génération du lien.'
+			} else {
+				resetLinkResult = await res.json()
+			}
+		} catch {
+			resetLinkError = 'Erreur réseau.'
+		} finally {
+			generatingFor = null
+		}
+	}
+
+	function copyToClipboard(text: string) {
+		navigator.clipboard.writeText(text)
+	}
 
 	let search = $state('')
 
@@ -130,6 +164,14 @@
 									<a href="/admin/grades" class="text-xs text-indigo-400 hover:text-indigo-300">
 										Grade
 									</a>
+									<button
+										onclick={() => generateResetLink(member.user_id)}
+										disabled={generatingFor === member.user_id}
+										title="Générer un lien de réinitialisation de mot de passe"
+										class="text-xs text-amber-500 hover:text-amber-400 disabled:opacity-50"
+									>
+										{generatingFor === member.user_id ? '…' : '🔑 Reset'}
+									</button>
 									<form method="POST" action="?/kick" use:enhance class="inline">
 										<input type="hidden" name="user_id" value={member.user_id} />
 										<button
@@ -155,3 +197,55 @@
 		</table>
 	</div>
 </div>
+
+<!-- Reset link result modal -->
+{#if resetLinkResult || resetLinkError}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		onclick={() => { resetLinkResult = null; resetLinkError = '' }}
+	>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div
+			class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-full max-w-lg mx-4 p-6"
+			onclick={(e) => e.stopPropagation()}
+		>
+			{#if resetLinkResult}
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-base font-semibold text-white">Lien de réinitialisation</h2>
+					<button
+						onclick={() => resetLinkResult = null}
+						class="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none"
+					>✕</button>
+				</div>
+
+				<p class="text-sm text-gray-400 mb-4">
+					Transmettez ce lien à <strong class="text-gray-200">{resetLinkResult.username}</strong> par un canal sécurisé. Il expire dans <strong class="text-amber-400">1 heure</strong> et ne peut être utilisé qu'une seule fois.
+				</p>
+
+				<div class="bg-gray-800 border border-gray-700 rounded-lg p-3 mb-4 flex items-center gap-2">
+					<code class="text-xs text-amber-300 break-all flex-1 select-all">{resetLinkResult.reset_url}</code>
+					<button
+						onclick={() => copyToClipboard(resetLinkResult!.reset_url)}
+						class="shrink-0 px-3 py-1.5 rounded bg-amber-700/40 hover:bg-amber-700/60 text-amber-300 text-xs font-medium transition-colors"
+					>
+						Copier
+					</button>
+				</div>
+
+				<p class="text-xs text-gray-600">
+					🔒 Expire le {new Date(resetLinkResult.expires_at).toLocaleString('fr-FR')}
+				</p>
+			{:else if resetLinkError}
+				<div class="flex items-center justify-between mb-4">
+					<h2 class="text-base font-semibold text-white">Erreur</h2>
+					<button
+						onclick={() => resetLinkError = ''}
+						class="text-gray-500 hover:text-gray-300 transition-colors text-lg leading-none"
+					>✕</button>
+				</div>
+				<p class="text-sm text-red-400">{resetLinkError}</p>
+			{/if}
+		</div>
+	</div>
+{/if}

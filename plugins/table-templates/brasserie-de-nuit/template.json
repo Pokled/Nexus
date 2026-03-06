@@ -1,0 +1,24 @@
+{
+  "id": "brasserie-de-nuit",
+  "name": "Brasserie de Nuit",
+  "author": "Nexus Core Team",
+  "description": "Ambiance intime, bois chaud, lumière ambre. Polyvalent — réunions et jeux.",
+  "version": "1.0.0",
+  "license": "AGPL-3.0",
+
+  "theme": {
+    "--table-bg":      "#1c1814",
+    "--table-rim":     "#2d2520",
+    "--table-grain":   "wood",
+    "--accent":        "#c8914a",
+    "--accent-hover":  "#d9a05c",
+    "--text-primary":  "#e8e0d5",
+    "--text-muted":    "#9a8f82",
+    "--bg":            "#131210",
+    "--voice-ring":    "#c8914a"
+  },
+
+  "defaults": {
+    "widgets": ["jukebox", "dice"]
+  }
+}

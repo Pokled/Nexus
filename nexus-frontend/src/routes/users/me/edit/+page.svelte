@@ -359,7 +359,7 @@
 							<input type="color"
 								value={theme[picker.key] as string}
 								oninput={(e) => {
-									(theme as Record<string, unknown>)[picker.key] = (e.target as HTMLInputElement).value
+									(theme as unknown as Record<string, unknown>)[picker.key] = (e.target as HTMLInputElement).value
 									selectedPresetId = 'custom'
 								}}
 								class="w-8 h-8 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer p-0.5 shrink-0

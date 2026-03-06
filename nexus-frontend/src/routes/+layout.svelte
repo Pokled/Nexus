@@ -5,15 +5,24 @@
 	import type { LayoutData } from './$types';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
-	import { initSocket, unreadCountStore, onlineMembersStore } from '$lib/socket';
+	import { initSocket, unreadCountStore, chatMentionStore, onlineMembersStore, getSocket } from '$lib/socket';
 	import { tryAutoConnect } from '$lib/socket';
+	import type { UserStatus } from '$lib/socket';
 	import { resolveTheme, themeToVars } from '$lib/profileThemes';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
 	const user            = $derived(data.user);
 	const unreadCount     = $derived($unreadCountStore);
+	const chatMentions    = $derived($chatMentionStore);
 	const onlineMembers   = $derived($onlineMembersStore);
+
+	// Reset chat mention badge when user is on /chat
+	$effect(() => {
+		if ($page.url.pathname.startsWith('/chat') && $chatMentionStore > 0) {
+			chatMentionStore.set(0)
+		}
+	})
 	const communityName   = $derived(data.communityName ?? 'Nexus');
 	const communityLogo   = $derived((data as any).communityLogoUrl  as string | null);
 	const communityBanner = $derived((data as any).communityBannerUrl as string | null);
@@ -27,13 +36,31 @@
 	// App-wide theme — uses the logged-in user's theme, falls back to default
 	const appVars = $derived(themeToVars(resolveTheme((data as any).appTheme)))
 
-	onMount(() => {
+	// All community members (for offline section in presence sidebar)
+	let allMembers = $state<{ user_id: string; username: string; avatar: string | null }[]>([])
+
+	// Offline = members who are NOT currently in the online list
+	const offlineMembers = $derived(
+		allMembers.filter(m => !onlineMembers.some(o => o.userId === m.user_id))
+	)
+	let showOffline = $state(false)
+
+	onMount(async () => {
 		if (data.user && data.token) {
 			// SSR provided a valid session — use it directly
 			initSocket(data.token, data.unreadCount ?? 0)
 		} else {
 			// No SSR session (guest page) — try reconnecting from stored token
 			tryAutoConnect()
+		}
+
+		// Fetch full member list for the offline sidebar section
+		if (data.user) {
+			try {
+				const { PUBLIC_API_URL } = await import('$env/static/public')
+				const res = await fetch(`${PUBLIC_API_URL}/api/v1/instance/members`)
+				if (res.ok) allMembers = (await res.json()).members ?? []
+			} catch { /* ignore */ }
 		}
 	})
 
@@ -83,38 +110,51 @@
 	}
 
 	// ── Galaxy Bar ─────────────────────────────────────────────────────────────
-	// Phase 3 : remplacer par données réelles du nexus-directory (SSO inter-instances)
-	type GalaxyInstance = { name: string; subtitle: string; color: string; logoUrl?: string; unread: number; memberCount: number; vocalCount: number }
-	type GalaxyCategory = { name: string; instances: GalaxyInstance[] }
-
-	const GALAXY_CATEGORIES: GalaxyCategory[] = [
-		{
-			name: 'Tech',
-			instances: [
-				{ name: 'Gaming',    subtitle: 'gaming.nexus.io',  color: '#8b5cf6', unread: 3, memberCount: 128, vocalCount: 2 },
-				{ name: 'Dev Nexus', subtitle: 'dev.nexus.io',     color: '#10b981', unread: 1, memberCount: 47,  vocalCount: 0 },
-			],
-		},
-		{
-			name: 'Amis',
-			instances: [
-				{ name: 'Minecraft', subtitle: 'mc.nexus.io',      color: '#f97316', unread: 0, memberCount: 8,   vocalCount: 1 },
-				{ name: 'Manjaro',   subtitle: 'linux.nexus.io',   color: '#35bef8', unread: 2, memberCount: 23,  vocalCount: 0 },
-			],
-		},
-	]
-
-	let expandedKey       = $state<string | null>(null)
-	let collapsedCats     = $state<Set<string>>(new Set())
-
-	function toggleCat(name: string) {
-		const next = new Set(collapsedCats)
-		if (next.has(name)) next.delete(name)
-		else next.add(name)
-		collapsedCats = next
-	}
+	// Phase 3 (SPEC 012) : réseau inter-instances P2P — données réelles à venir
+	let expandedKey = $state<string | null>(null)
 	function toggleExpand(key: string) {
 		expandedKey = expandedKey === key ? null : key
+	}
+
+	// ── Custom status ─────────────────────────────────────────────────────────
+	let showStatusModal = $state(false)
+	let statusEmoji     = $state('')
+	let statusText      = $state('')
+
+	const PRESET_STATUSES = [
+		{ emoji: '💼', text: 'Au travail' },
+		{ emoji: '🎮', text: 'En train de jouer' },
+		{ emoji: '🎵', text: 'En train d\'écouter' },
+		{ emoji: '📚', text: 'En train de lire' },
+		{ emoji: '🍕', text: 'En pause déj' },
+		{ emoji: '🤔', text: 'Réfléchis' },
+		{ emoji: '😴', text: 'Ne pas déranger' },
+		{ emoji: '🏃', text: 'De retour plus tard' },
+	]
+
+	// Find logged-in user's current status from the store
+	const myStatus = $derived(onlineMembers.find(m => m.userId === (user as any)?.id)?.status ?? null)
+
+	function openStatusModal() {
+		statusEmoji = myStatus?.emoji ?? ''
+		statusText  = myStatus?.text ?? ''
+		showStatusModal = true
+	}
+
+	function saveStatus() {
+		const sock = getSocket()
+		if (!sock) return
+		const payload = (statusEmoji || statusText)
+			? { emoji: statusEmoji.trim(), text: statusText.trim() }
+			: null
+		sock.emit('presence:set_status', payload)
+		showStatusModal = false
+	}
+
+	function clearStatus() {
+		const sock = getSocket()
+		if (sock) sock.emit('presence:set_status', null)
+		showStatusModal = false
 	}
 </script>
 
@@ -155,7 +195,12 @@
 				<a href="/" class="px-3 py-2 rounded text-sm transition-colors {isActive('/') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Forum</a>
 				<a href="/communities" class="px-3 py-2 rounded text-sm transition-colors {isActive('/communities') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Annuaire</a>
 				{#if user}
-					<a href="/chat" class="px-3 py-2 rounded text-sm transition-colors {isActive('/chat') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Chat</a>
+					<a href="/chat" class="relative px-3 py-2 rounded text-sm transition-colors {isActive('/chat') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">
+						Chat
+						{#if chatMentions > 0}
+							<span class="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 rounded-full bg-red-500 text-white text-[9px] font-bold px-1 flex items-center justify-center">{chatMentions > 9 ? '9+' : chatMentions}</span>
+						{/if}
+					</a>
 				{/if}
 				<a href="/library" class="px-3 py-2 rounded text-sm transition-colors {isActive('/library') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Bibliothèque</a>
 				<a href="/garden" class="px-3 py-2 rounded text-sm transition-colors {isActive('/garden') ? 'text-white bg-gray-800' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}">Jardin</a>
@@ -219,6 +264,22 @@
 										{#if xpInfo.to}<div class="text-[10px] text-gray-600 mt-1">Encore {(xpInfo.to - xpInfo.pts).toLocaleString('fr-FR')} pts pour le prochain palier</div>{/if}
 									</div>
 								</div>
+								<!-- Status quick-set -->
+								<button
+									onclick={() => { dropdownOpen = false; openStatusModal(); }}
+									class="w-full flex items-center gap-3 px-4 py-2.5 bg-gray-800/40 border-b border-gray-700/40 hover:bg-gray-800/80 transition-colors text-left"
+								>
+									<span class="text-base shrink-0">{myStatus?.emoji || '😶'}</span>
+									<span class="flex-1 min-w-0">
+										{#if myStatus?.text}
+											<span class="text-xs text-gray-300 truncate block">{myStatus.text}</span>
+										{:else}
+											<span class="text-xs text-gray-600">Définir un statut…</span>
+										{/if}
+									</span>
+									<svg class="w-3.5 h-3.5 text-gray-600 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+								</button>
+
 								<div class="py-1.5">
 									<a href="/users/{user.username}" onclick={() => dropdownOpen = false} class="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors"><span class="text-base">👤</span><span>Mon profil</span></a>
 									<a href="/users/me/edit" onclick={() => dropdownOpen = false} class="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/60 transition-colors"><span class="text-base">✏️</span><span>Modifier mon profil</span></a>
@@ -335,68 +396,14 @@
 			<!-- Séparateur -->
 			<div class="mx-4 border-t border-gray-800 mb-2 shrink-0"></div>
 
-			<!-- Catégories + instances demo (Phase 3) -->
-			<div class="flex-1 px-3 pb-3 space-y-1 overflow-y-auto overflow-x-hidden">
-				{#each GALAXY_CATEGORIES as cat}
-					<!-- Header catégorie -->
-					<button
-						onclick={() => toggleCat(cat.name)}
-						class="w-full flex items-center gap-1.5 px-2 py-1 text-[10px] uppercase tracking-widest font-semibold text-gray-500 hover:text-gray-400 transition-colors group"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 shrink-0 transition-transform {collapsedCats.has(cat.name) ? '-rotate-90' : ''}" fill="currentColor" viewBox="0 0 24 24"><path d="M7 10l5 5 5-5z"/></svg>
-						{cat.name}
-					</button>
-
-					{#if !collapsedCats.has(cat.name)}
-						{#each cat.instances as inst}
-							{@const key = `${cat.name}::${inst.name}`}
-							<div>
-								<button
-									onclick={() => toggleExpand(key)}
-									class="w-full group flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gray-800/60 transition-colors cursor-not-allowed opacity-60 hover:opacity-90"
-									title="{inst.name} — Phase 3"
-								>
-									<!-- Logo / couleur -->
-									<div class="w-8 h-8 shrink-0 flex items-center justify-center text-white font-bold text-sm" style="background-color: {inst.color}; border-radius: 28%">
-										{inst.name.charAt(0).toUpperCase()}
-									</div>
-									<!-- Name + subtitle -->
-									<div class="flex-1 min-w-0 text-left">
-										<div class="text-sm text-gray-300 truncate group-hover:text-white transition-colors">{inst.name}</div>
-										<div class="text-[11px] text-gray-600 truncate">{inst.subtitle}</div>
-									</div>
-									<!-- Badge unread -->
-									{#if inst.unread > 0}
-										<span class="w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{inst.unread}</span>
-									{/if}
-									<!-- Chevron -->
-									<svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-gray-600 shrink-0 opacity-0 group-hover:opacity-100 transition-all {expandedKey === key ? 'rotate-180 opacity-100' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-										<path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
-									</svg>
-								</button>
-
-								<!-- Expanded demo details -->
-								{#if expandedKey === key}
-									<div class="mt-0.5 mx-1 rounded-xl bg-gray-800/60 border border-gray-700/60 p-3 text-xs space-y-2">
-										<div class="flex items-center gap-2 text-gray-400">
-											<span class="text-base">👥</span>
-											<span><strong class="text-gray-200">{inst.memberCount}</strong> membres</span>
-										</div>
-										{#if inst.vocalCount > 0}
-											<div class="flex items-center gap-2 text-gray-400">
-												<span class="text-base">🎙️</span>
-												<span><strong class="text-gray-200">{inst.vocalCount}</strong> salon{inst.vocalCount > 1 ? 's' : ''} vocal actif</span>
-											</div>
-										{/if}
-										<div class="mt-1 px-2 py-1.5 rounded-lg bg-indigo-900/30 border border-indigo-800/30 text-[10px] text-indigo-400 text-center">
-											Disponible en Phase 3 — réseau P2P
-										</div>
-									</div>
-								{/if}
-							</div>
-						{/each}
-					{/if}
-				{/each}
+			<!-- Galaxy Network — Phase 3 (SPEC 012) -->
+			<div class="flex-1 px-3 pb-3 overflow-y-auto overflow-x-hidden flex flex-col items-center justify-center gap-2 text-center">
+				<div class="w-10 h-10 rounded-2xl bg-indigo-950/60 border border-indigo-800/40 flex items-center justify-center">
+					<svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 017.843 4.582M12 3a8.997 8.997 0 00-7.843 4.582m15.686 0A11.953 11.953 0 0112 10.5c-2.998 0-5.74-1.1-7.843-2.918m15.686 0A8.959 8.959 0 0121 12c0 .778-.099 1.533-.284 2.253m0 0A17.919 17.919 0 0112 16.5c-3.162 0-6.133-.815-8.716-2.247m0 0A9.015 9.015 0 013 12c0-1.605.42-3.113 1.157-4.418" />
+					</svg>
+				</div>
+				<p class="text-[11px] text-gray-600 leading-relaxed px-2">Réseau inter-communautés<br>bientôt disponible</p>
 			</div>
 
 			<!-- Bouton ajouter / découvrir -->
@@ -445,20 +452,79 @@
 				</div>
 				<div class="flex flex-col gap-0.5 px-2 pb-4">
 					{#each onlineMembers as member (member.userId)}
-						<a href="/users/{member.username}" class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-800/70 transition-colors group">
-							<div class="relative shrink-0">
-								{#if member.avatar}
-									<img src={member.avatar} alt="Avatar" class="w-7 h-7 rounded-full object-cover" />
-								{:else}
-									<div class="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-[11px] font-bold text-white select-none">{member.username.charAt(0).toUpperCase()}</div>
-								{/if}
-								<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-gray-900"></span>
-							</div>
-							<span class="text-sm text-gray-400 group-hover:text-white truncate transition-colors">{member.username}</span>
-						</a>
+						{@const isMe = member.userId === (user as any)?.id}
+						{#if isMe}
+							<!-- Own entry — clickable to set status -->
+							<button onclick={openStatusModal} class="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-800/70 transition-colors group text-left">
+								<div class="relative shrink-0">
+									{#if member.avatar}
+										<img src={member.avatar} alt="Avatar" class="w-7 h-7 rounded-full object-cover" />
+									{:else}
+										<div class="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-[11px] font-bold text-white select-none">{member.username.charAt(0).toUpperCase()}</div>
+									{/if}
+									<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-gray-900"></span>
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="text-sm text-indigo-300 group-hover:text-white truncate transition-colors font-medium leading-tight">{member.username}</div>
+									{#if member.status?.text || member.status?.emoji}
+										<div class="text-[10px] text-gray-500 truncate leading-tight">{member.status.emoji} {member.status.text}</div>
+									{:else}
+										<div class="text-[10px] text-gray-700 truncate leading-tight group-hover:text-gray-500 transition-colors">Définir un statut…</div>
+									{/if}
+								</div>
+							</button>
+						{:else}
+							<a href="/users/{member.username}" class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-800/70 transition-colors group">
+								<div class="relative shrink-0">
+									{#if member.avatar}
+										<img src={member.avatar} alt="Avatar" class="w-7 h-7 rounded-full object-cover" />
+									{:else}
+										<div class="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-[11px] font-bold text-white select-none">{member.username.charAt(0).toUpperCase()}</div>
+									{/if}
+									<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-gray-900"></span>
+								</div>
+								<div class="min-w-0 flex-1">
+									<div class="text-sm text-gray-400 group-hover:text-white truncate transition-colors leading-tight">{member.username}</div>
+									{#if member.status?.text || member.status?.emoji}
+										<div class="text-[10px] text-gray-500 truncate leading-tight">{member.status.emoji} {member.status.text}</div>
+									{/if}
+								</div>
+							</a>
+						{/if}
 					{/each}
 					{#if onlineMembers.length === 0}
 						<p class="px-2 py-3 text-xs text-gray-600 text-center">Aucun membre en ligne</p>
+					{/if}
+
+					<!-- Offline section -->
+					{#if offlineMembers.length > 0}
+						<div class="px-1 pt-3 pb-1">
+							<button
+								onclick={() => showOffline = !showOffline}
+								class="w-full flex items-center gap-1.5 px-1 py-0.5 text-[11px] uppercase tracking-widest text-gray-600 hover:text-gray-400 transition-colors font-semibold"
+							>
+								<span class="w-1.5 h-1.5 rounded-full bg-gray-700 inline-block shrink-0"></span>
+								<span class="flex-1 text-left">Hors ligne — {offlineMembers.length}</span>
+								<svg class="w-3 h-3 transition-transform {showOffline ? 'rotate-180' : ''}" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+							</button>
+						</div>
+						{#if showOffline}
+							<div class="flex flex-col gap-0.5 px-2 pb-2">
+								{#each offlineMembers as member (member.user_id)}
+									<a href="/users/{member.username}" class="flex items-center gap-2.5 px-2 py-1.5 rounded-lg hover:bg-gray-800/50 transition-colors group opacity-50 hover:opacity-80">
+										<div class="relative shrink-0">
+											{#if member.avatar}
+												<img src={member.avatar} alt="Avatar" class="w-6 h-6 rounded-full object-cover grayscale" />
+											{:else}
+												<div class="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-500 select-none">{member.username.charAt(0).toUpperCase()}</div>
+											{/if}
+											<span class="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-gray-700 border-2 border-gray-900"></span>
+										</div>
+										<span class="text-xs text-gray-600 group-hover:text-gray-400 truncate transition-colors">{member.username}</span>
+									</a>
+								{/each}
+							</div>
+						{/if}
 					{/if}
 				</div>
 			{:else}
@@ -545,3 +611,67 @@
 		{/if}
 	</nav>
 </div>
+
+<!-- ── Status modal ──────────────────────────────────────────────────────── -->
+{#if showStatusModal}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		role="presentation"
+		onclick={(e) => { if (e.target === e.currentTarget) showStatusModal = false }}>
+		<div class="bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-5"
+			onclick={(e) => e.stopPropagation()}>
+			<h2 class="text-sm font-bold text-white mb-4">Définir ton statut</h2>
+
+			<!-- Current status preview -->
+			<div class="flex items-center gap-2.5 mb-4 px-3 py-2 bg-gray-800 rounded-xl border border-gray-700">
+				<span class="text-xl w-8 text-center">{statusEmoji || '😶'}</span>
+				<span class="text-sm text-gray-300 flex-1 truncate">{statusText || 'Aucun statut'}</span>
+			</div>
+
+			<!-- Emoji + text inputs -->
+			<div class="flex gap-2 mb-3">
+				<input
+					type="text"
+					placeholder="😀"
+					bind:value={statusEmoji}
+					maxlength={8}
+					class="w-14 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-center text-lg outline-none focus:border-indigo-600 transition-colors"
+				/>
+				<input
+					type="text"
+					placeholder="Ce que tu fais…"
+					bind:value={statusText}
+					maxlength={60}
+					class="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-600 transition-colors"
+				/>
+			</div>
+
+			<!-- Preset statuses -->
+			<div class="grid grid-cols-2 gap-1.5 mb-4">
+				{#each PRESET_STATUSES as preset}
+					<button
+						onclick={() => { statusEmoji = preset.emoji; statusText = preset.text }}
+						class="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-left text-xs transition-colors border {statusEmoji === preset.emoji && statusText === preset.text ? 'border-indigo-500 bg-indigo-500/20 text-white' : 'border-gray-700 bg-gray-800/60 text-gray-400 hover:border-gray-600 hover:text-white'}"
+					>
+						<span>{preset.emoji}</span>
+						<span class="truncate">{preset.text}</span>
+					</button>
+				{/each}
+			</div>
+
+			<div class="flex gap-2">
+				{#if myStatus}
+					<button onclick={clearStatus} class="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-400 hover:text-white transition-colors">
+						Effacer
+					</button>
+				{/if}
+				<button onclick={() => showStatusModal = false} class="px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-xs text-gray-400 hover:text-white transition-colors ml-auto">
+					Annuler
+				</button>
+				<button onclick={saveStatus} class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs text-white font-medium transition-colors">
+					Enregistrer
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

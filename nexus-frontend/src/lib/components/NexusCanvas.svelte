@@ -483,7 +483,7 @@
 </script>
 
 <!-- ── Overlay backdrop ──────────────────────────────────────────────────────── -->
-<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
     role="dialog"
     aria-label="Table collaborative"
@@ -492,7 +492,7 @@
     onmousedown={(e) => { if (e.target === e.currentTarget) requestClose() }}
 >
     <!-- Canvas container -->
-    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
     <div
         class="relative flex items-start gap-3"
         onmousedown={(e) => e.stopPropagation()}
@@ -553,7 +553,7 @@
 
             <!-- Sticky input overlay -->
             {#if stickyEdit}
-                <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+                <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
                 <div
                     class="absolute z-20"
                     style="left:{stickyEdit.x}px; top:{stickyEdit.y}px;"
@@ -598,7 +598,7 @@
 
     <!-- ── End dialog ──────────────────────────────────────────────────────── -->
     {#if showEndDialog}
-        <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
         <div
             class="absolute inset-0 flex items-center justify-center z-[201]"
             role="presentation"

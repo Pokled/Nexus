@@ -1,0 +1,24 @@
+{
+  "id": "table-de-feutre",
+  "name": "Table de Feutre",
+  "author": "Nexus Core Team",
+  "description": "Tapis vert sombre, ambiance salon privé, poker et jeux de cartes.",
+  "version": "1.0.0",
+  "license": "AGPL-3.0",
+
+  "theme": {
+    "--table-bg":      "#0f1f15",
+    "--table-rim":     "#1a3020",
+    "--table-grain":   "felt",
+    "--accent":        "#2d7a4a",
+    "--accent-hover":  "#3d9a5e",
+    "--text-primary":  "#d4ede0",
+    "--text-muted":    "#7a9f88",
+    "--bg":            "#0c0f0d",
+    "--voice-ring":    "#4ade80"
+  },
+
+  "defaults": {
+    "widgets": ["timer", "scores"]
+  }
+}

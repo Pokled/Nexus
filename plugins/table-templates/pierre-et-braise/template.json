@@ -1,0 +1,24 @@
+{
+  "id": "pierre-et-braise",
+  "name": "Pierre & Braise",
+  "author": "Nexus Core Team",
+  "description": "Pierre anthracite, rouge braise. Dramatique et épique — RPG, Warhammer, storytelling.",
+  "version": "1.0.0",
+  "license": "AGPL-3.0",
+
+  "theme": {
+    "--table-bg":      "#1a1614",
+    "--table-rim":     "#2a2220",
+    "--table-grain":   "stone",
+    "--accent":        "#c0392b",
+    "--accent-hover":  "#d44637",
+    "--text-primary":  "#ddd9d4",
+    "--text-muted":    "#8a8480",
+    "--bg":            "#111114",
+    "--voice-ring":    "#e84545"
+  },
+
+  "defaults": {
+    "widgets": ["dice", "timer"]
+  }
+}

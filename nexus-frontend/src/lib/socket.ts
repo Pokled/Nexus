@@ -2,13 +2,20 @@ import { browser } from '$app/environment'
 import { writable, type Writable } from 'svelte/store'
 import type { Socket } from 'socket.io-client'
 
+export interface UserStatus {
+  emoji: string
+  text:  string
+}
+
 export interface OnlineMember {
   userId:   string
   username: string
   avatar:   string | null
+  status:   UserStatus | null
 }
 
 export const unreadCountStore:   Writable<number>          = writable(0)
+export const chatMentionStore:   Writable<number>          = writable(0)
 export const socket:             Writable<Socket | null>   = writable(null)
 export const onlineMembersStore: Writable<OnlineMember[]>  = writable([])
 export const tokenStore:         Writable<string | null>   = writable(null)
@@ -48,28 +55,39 @@ export async function initSocket(token: string, initialCount: number): Promise<v
     // and causes all subsequent polls to return 400 too.
     transports: ['websocket', 'polling'],
   })
-  
+
 
   // ── Notifications ──────────────────────────────────────────────────────────
   _socket.on('notification:new', ({ unreadCount }: { unreadCount: number }) => {
     unreadCountStore.set(unreadCount)
   })
 
+  // ── Chat mention badge (separate from general notification bell) ────────────
+  _socket.on('chat:mention', () => {
+    chatMentionStore.update(n => n + 1)
+  })
+
   // ── Presence ───────────────────────────────────────────────────────────────
   _socket.on('presence:init', (members: OnlineMember[]) => {
-    onlineMembersStore.set(members)
+    onlineMembersStore.set(members.map(m => ({ ...m, status: m.status ?? null })))
   })
 
   _socket.on('presence:online', (member: OnlineMember) => {
     onlineMembersStore.update(list => {
       // Ignore if already in list (reconnect race condition)
       if (list.some(m => m.userId === member.userId)) return list
-      return [...list, member]
+      return [...list, { ...member, status: member.status ?? null }]
     })
   })
 
   _socket.on('presence:offline', ({ userId }: { userId: string }) => {
     onlineMembersStore.update(list => list.filter(m => m.userId !== userId))
+  })
+
+  _socket.on('presence:status_update', ({ userId, status }: { userId: string; status: UserStatus | null }) => {
+    onlineMembersStore.update(list =>
+      list.map(m => m.userId === userId ? { ...m, status: status ?? null } : m)
+    )
   })
 
   socket.set(_socket)
@@ -85,6 +103,6 @@ export async function tryAutoConnect(): Promise<void> {
   if (savedToken && !_socket) {
     // On relance le socket avec le token stocké
     // Tu peux mettre 0 pour initialCount ou faire un petit fetch rapide avant
-    await initSocket(savedToken, 0); 
+    await initSocket(savedToken, 0);
   }
 }

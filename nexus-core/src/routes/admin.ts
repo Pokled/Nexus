@@ -12,7 +12,7 @@ import { validate } from '../middleware/validate'
 import { rateLimit } from '../middleware/rateLimit'
 import * as ChannelModel from '../models/channel'
 import { io } from '../socket/io'
-import { randomUUID } from 'crypto'
+import { randomUUID, createHash, randomBytes } from 'crypto'
 import { createWriteStream, mkdirSync } from 'fs'
 import { pipeline } from 'stream/promises'
 import path from 'path'
@@ -196,6 +196,48 @@ export default async function adminRoutes(app: FastifyInstance) {
     }
 
     return reply.send({ ok: true })
+  })
+
+  // POST /api/v1/admin/members/:userId/reset-link
+  // Génère un lien de réinitialisation de mot de passe pour un membre.
+  // Utile quand le SMTP n'est pas configuré — l'admin envoie le lien manuellement.
+  app.post('/members/:userId/reset-link', {
+    preHandler: [rateLimit, adminOnly],
+  }, async (request, reply) => {
+    const { userId } = request.params as { userId: string }
+
+    const { rows: userRows } = await db.query<{ id: string; username: string; email: string }>(
+      `SELECT id, username, email FROM users WHERE id = $1`,
+      [userId]
+    )
+    if (!userRows[0]) return reply.code(404).send({ error: 'User not found' })
+
+    const user = userRows[0]
+
+    // Invalider les tokens existants non utilisés
+    await db.query(
+      `DELETE FROM password_resets WHERE user_id = $1 AND used_at IS NULL`,
+      [userId]
+    )
+
+    const rawToken  = randomBytes(32).toString('hex')
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex')
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1h
+
+    await db.query(
+      `INSERT INTO password_resets (user_id, token_hash, expires_at, ip_address)
+       VALUES ($1, $2, $3, $4)`,
+      [userId, tokenHash, expiresAt, request.ip]
+    )
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${rawToken}`
+
+    return reply.send({
+      username:  user.username,
+      email:     user.email,
+      reset_url: resetUrl,
+      expires_at: expiresAt.toISOString(),
+    })
   })
 
   // Kick member from community (not a full ban — can re-join if public)

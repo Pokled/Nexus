@@ -96,6 +96,23 @@ export default async function instanceRoutes(app: FastifyInstance) {
     })
   })
 
+  // GET /api/v1/instance/members — full member list (username + avatar), for presence sidebar
+  app.get('/members', { preHandler: [rateLimit] }, async (_request, reply) => {
+    const communityId = await getCommunityId()
+    if (!communityId) return reply.send({ members: [] })
+
+    const { rows } = await db.query<{ user_id: string; username: string; avatar: string | null }>(
+      `SELECT u.id AS user_id, u.username, u.avatar
+       FROM community_members cm
+       JOIN users u ON u.id = cm.user_id
+       WHERE cm.community_id = $1
+       ORDER BY u.username ASC
+       LIMIT 500`,
+      [communityId]
+    )
+    return reply.send({ members: rows })
+  })
+
   // GET /api/v1/instance/categories
   // Returns the full category tree (recursive, with thread counts)
   app.get('/categories', { preHandler: [rateLimit] }, async (_request, reply) => {

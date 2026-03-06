@@ -14,6 +14,12 @@
 <div class="mx-auto max-w-sm">
 	<h1 class="text-2xl font-bold text-white mb-6">Connexion</h1>
 
+	{#if data.passwordReset}
+		<div class="mb-4 rounded border border-green-700/50 bg-green-900/20 px-4 py-2.5 text-sm text-green-300">
+			✓ Mot de passe réinitialisé. Connectez-vous avec votre nouveau mot de passe.
+		</div>
+	{/if}
+
 	{#if form?.error}
 		<p class="mb-4 rounded bg-red-900/50 border border-red-700 px-4 py-2 text-sm text-red-300">
 			{form.error}
@@ -53,7 +59,12 @@
 		</div>
 
 		<div>
-			<label for="password" class="block text-sm text-gray-400 mb-1">Mot de passe</label>
+			<div class="flex items-center justify-between mb-1">
+				<label for="password" class="text-sm text-gray-400">Mot de passe</label>
+				<a href="/auth/forgot-password" class="text-xs text-indigo-400 hover:text-indigo-300">
+					Mot de passe oublié ?
+				</a>
+			</div>
 			<input
 				id="password"
 				name="password"

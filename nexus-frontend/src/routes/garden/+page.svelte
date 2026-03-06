@@ -22,7 +22,8 @@
 		fruit:  { icon: '🍎', label: 'Fruit',  color: 'text-red-400' },
 	}
 
-	let showForm   = $state(!!form?.error)
+	let showForm   = $state(false)
+	$effect(() => { if (form?.error) showForm = true; })
 	let wateringId = $state<string | null>(null)
 	let toast      = $state<{ msg: string; emoji: string } | null>(null)
 	let toastTimer = $state<ReturnType<typeof setTimeout> | null>(null)

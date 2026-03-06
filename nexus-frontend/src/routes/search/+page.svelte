@@ -8,7 +8,7 @@
 	const posts   = $derived(data.posts);
 
 	let activeTab = $state<'threads' | 'posts'>('threads');
-	let query     = $state(data.q ?? '');
+	let query     = $state('');
 	$effect(() => { query = data.q ?? ''; });
 
 	function formatDate(iso: string) {

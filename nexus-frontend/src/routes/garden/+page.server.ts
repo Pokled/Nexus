@@ -9,7 +9,7 @@ export const load: PageServerLoad = async ({ fetch, url, cookies }) => {
   const params = new URLSearchParams({ limit: '30', offset: String(offset) })
   if (category) params.set('category', category)
 
-  const headers = token ? { Authorization: `Bearer ${token}` } : {}
+  const headers: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {}
   const res = await apiFetch(fetch, `/garden/seeds?${params}`, { headers })
   const { seeds } = res.ok ? await res.json() : { seeds: [] }
 

@@ -1,22 +1,18 @@
 <script lang="ts">
 	import { onMount, onDestroy, tick } from 'svelte';
-	import { fade, slide } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
 	import type { PageData } from './$types';
 	import { socket, getSocket } from '$lib/socket';
 	import { linkifyHtml } from '$lib/linkify';
 	import NexusEditor from '$lib/components/editor/NexusEditor.svelte';
-	import VoicePanel    from '$lib/components/VoicePanel.svelte';
-	import NexusCanvas   from '$lib/components/NexusCanvas.svelte';
-	import Table     from '$lib/components/Table.svelte';
-	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT, togglePTTMode, setPeerVolume,
-	         localScreenStore, remoteScreenStore, screenShareStore } from '$lib/voice';
+	import EmojiPicker from '$lib/components/EmojiPicker.svelte';
+	import ChannelSidebar from '$lib/components/ChannelSidebar.svelte';
+	import VoiceRoom from '$lib/components/VoiceRoom.svelte';
+	import { joinVoice, leaveVoice, voiceStore, startPTT, stopPTT } from '$lib/voice';
 	import type { Socket } from 'socket.io-client';
-	import MediaCenter from '$lib/components/MediaCenter.svelte';
-	import VoiceJukebox from '$lib/components/VoiceJukebox.svelte';
 	import { voicePanelTarget } from '$lib/voicePanel';
 	import { p2pManager, p2pStatus, p2pPeerCount, p2pFallback } from '$lib/p2p';
-	import { jukeboxStore } from '$lib/jukebox';
 
 	let { data }: { data: PageData } = $props();
 
@@ -35,16 +31,19 @@
 	type Channel = (typeof localChannels)[number];
 	type ReactionSummary = { emoji: string; count: number; userReactedIds: string[] };
 	type Message = {
-		id:              string;
-		channel_id:      string;
-		author_id:       string;
-		author_username: string;
-		author_avatar:   string | null;
-		content:         string | null;
-		created_at:      string;
-		edited_at:       string | null;
-		is_deleted:      boolean;
-		reactions:       ReactionSummary[];
+		id:                 string;
+		channel_id:         string;
+		author_id:          string;
+		author_username:    string;
+		author_avatar:      string | null;
+		content:            string | null;
+		created_at:         string;
+		edited_at:          string | null;
+		is_deleted:         boolean;
+		reactions:          ReactionSummary[];
+		reply_to_id?:       string | null;
+		reply_to_username?: string | null;
+		reply_to_content?:  string | null;
 	};
 
 	// ── State ─────────────────────────────────────────────────────────────────
@@ -63,10 +62,22 @@
 	let typingThrottle: ReturnType<typeof setTimeout> | null = null;
 
 	// Emoji picker
-	const QUICK_EMOJIS = ['👍', '❤️', '🔥', '😂', '😮', '😢'];
 	let pickerMsgId    = $state<string | null>(null);
 	// P2P reaction flash — messageId → Set of emojis currently animating
 	let reactionFlash  = $state(new Map<string, Set<string>>());
+
+	// GIF picker
+	let showGifPicker   = $state(false);
+	let gifQuery        = $state('');
+	let gifResults      = $state<{ id: string; preview: string; url: string }[]>([]);
+	let gifLoading      = $state(false);
+	let gifTimer: ReturnType<typeof setTimeout> | null = null;
+	// Computed once at mount — which GIF provider is configured
+	let gifProvider     = $state<'tenor' | 'giphy' | null>(null);
+
+	// Mobile long-press
+	let longPressMsg    = $state<string | null>(null);
+	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 
 	// Inline edit
 	let editingMsg = $state<{ id: string; content: string } | null>(null);
@@ -76,6 +87,17 @@
 	let mentionSuggestions = $state<{ username: string; avatar: string | null }[]>([]);
 	let showMentions       = $state(false);
 	let mentionIndex       = $state(0);
+
+	// Reply/quote
+	let replyTo = $state<{ id: string; author_username: string; content: string } | null>(null);
+
+	// Pinned message
+	let pinnedMessage = $state<Message | null>(null);
+	let showPinned    = $state(true);
+
+	// Link preview cache: url → preview data
+	type LinkPreview = { url: string; title: string | null; description: string | null; image: string | null; siteName: string | null };
+	let linkPreviews = $state(new Map<string, LinkPreview | false>());
 
 	// Rich editor modal
 	let showRichModal = $state(false);
@@ -93,19 +115,6 @@
 			: (textChannels[0]?.id ?? null)
 	);
 	let voiceError = $state<string | null>(null);
-	let showScreenShare = $state(false);
-	const localScreen   = $derived($localScreenStore);
-	const remoteScreens = $derived($remoteScreenStore);
-	const anyScreenSharing = $derived($screenShareStore || $remoteScreenStore.size > 0);
-	$effect(() => { if (anyScreenSharing) showScreenShare = true; });
-
-	function srcStream(node: HTMLVideoElement, stream: MediaStream | null) {
-		node.srcObject = stream ?? null;
-		return {
-			update(s: MediaStream | null) { node.srcObject = s ?? null; },
-			destroy() { node.srcObject = null; }
-		};
-	}
 	let voiceChannelMembers = $state<Record<string, { userId: string; username: string; avatar: string | null; seatIndex?: number }[]>>({});
 
 	const VOICE_ERRORS: Record<string, string> = {
@@ -154,56 +163,8 @@
 		return () => document.body.classList.remove('no-scroll')
 	})
 
-	// ── D&D reorder (admin only) ───────────────────────────────────────────────
-	let dragSrcId = $state<string | null>(null);
-
-	function onDragStart(e: DragEvent, ch: Channel) {
-		dragSrcId = ch.id;
-		e.dataTransfer!.effectAllowed = 'move';
-		// Use text/plain (universal MIME type) — Edge rejects custom format names
-		e.dataTransfer!.setData('text/plain', ch.id);
-	}
-
-	function onDragOver(e: DragEvent) {
-		e.preventDefault();
-		e.dataTransfer!.dropEffect = 'move';
-	}
-
-	async function onDrop(e: DragEvent, targetCh: Channel) {
-		e.preventDefault();
-		if (!dragSrcId || dragSrcId === targetCh.id) return;
-		// Resolve source channel type from state — never rely on dataTransfer.getData for custom types
-		const srcCh = localChannels.find((c: Channel) => c.id === dragSrcId);
-		if (!srcCh) return;
-		const srcType = (srcCh as any).type ?? 'text';
-		const tgtType = (targetCh as any).type ?? 'text';
-		if (srcType !== tgtType) return; // no cross-section drag
-
-		const copy = localChannels.slice();
-		const srcIdx = copy.findIndex((c: Channel) => c.id === dragSrcId);
-		const tgtIdx = copy.findIndex((c: Channel) => c.id === targetCh.id);
-		if (srcIdx === -1 || tgtIdx === -1) return;
-		const [removed] = copy.splice(srcIdx, 1);
-		copy.splice(tgtIdx, 0, removed);
-		localChannels = copy;
-		dragSrcId = null;
-
-		// Persist optimistically
-		try {
-			const { PUBLIC_API_URL } = await import('$env/static/public');
-			await fetch(`${PUBLIC_API_URL}/admin/channels/reorder`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
-				},
-				body: JSON.stringify({ ids: localChannels.map((c: Channel) => c.id) }),
-			});
-		} catch { /* ignore, order will reset on next page load */ }
-	}
-
 	// ── Socket ────────────────────────────────────────────────────────────────
-	let s: Socket | null = null;
+	let s = $state<Socket | null>(null);
 
 	function joinChannel(channel: Channel) {
 		drawerOpen = false;
@@ -216,6 +177,9 @@
 		noMoreHistory = false;
 		pickerMsgId = null;
 		editingMsg = null;
+		replyTo = null;
+		pinnedMessage = null;
+		showPinned = true;
 		s.emit('chat:join', channel.id);
 		// P2P — join the DataChannel pool for this text channel
 		if ((channel as any).type !== 'voice') p2pManager.joinChannel(channel.id);
@@ -263,6 +227,12 @@
 			messages = messages.map((m) => m.id === messageId ? { ...m, is_deleted: true, content: null } : m);
 		});
 
+		sock.on('chat:pinned', ({ channelId, message }: { channelId: string; message: Message | null }) => {
+			if (channelId !== selectedChannel?.id) return;
+			pinnedMessage = message;
+			showPinned = true;
+		});
+
 		sock.on('voice:channel_update', ({ channelId, members }: { channelId: string; members: { userId: string; username: string; avatar: string | null }[] }) => {
 			voiceChannelMembers = { ...voiceChannelMembers, [channelId]: members };
 		});
@@ -277,8 +247,56 @@
 	}
 
 	function normalizeMsg(msg: Message): Message {
-		return { ...msg, reactions: msg.reactions ?? [], is_deleted: msg.is_deleted ?? false, edited_at: msg.edited_at ?? null };
+		return {
+			...msg,
+			reactions:         msg.reactions ?? [],
+			is_deleted:        msg.is_deleted ?? false,
+			edited_at:         msg.edited_at ?? null,
+			reply_to_id:       msg.reply_to_id ?? null,
+			reply_to_username: msg.reply_to_username ?? null,
+			reply_to_content:  msg.reply_to_content ?? null,
+		};
 	}
+
+	// ── Link preview ──────────────────────────────────────────────────────────
+	const URL_RE = /https?:\/\/[^\s<>"']+/gi;
+
+	async function fetchPreview(url: string) {
+		if (linkPreviews.has(url)) return;
+		linkPreviews = new Map(linkPreviews).set(url, false); // mark as loading
+		try {
+			const { PUBLIC_API_URL } = await import('$env/static/public');
+			const res = await fetch(`${PUBLIC_API_URL}/api/v1/chat/unfurl?url=${encodeURIComponent(url)}`, {
+				headers: token ? { Authorization: `Bearer ${token}` } : {}
+			});
+			if (res.ok) {
+				const data = await res.json();
+				linkPreviews = new Map(linkPreviews).set(url, data);
+			}
+		} catch { /* ignore */ }
+	}
+
+	function extractUrls(content: string | null): string[] {
+		if (!content) return [];
+		// Strip HTML tags, find bare URLs
+		const text = content.replace(/<[^>]*>/g, ' ');
+		return [...new Set((text.match(URL_RE) ?? []).slice(0, 1))]; // max 1 preview per message
+	}
+
+	// Fetch previews for new messages (only plain-text URL messages)
+	$effect(() => {
+		for (const msg of messages) {
+			if (msg.is_deleted || !msg.content) continue;
+			// Only unfurl if the message is just a URL (no other significant text)
+			const text = msg.content.replace(/<[^>]*>/g, '').trim();
+			if (!URL_RE.test(text)) continue;
+			URL_RE.lastIndex = 0;
+			const urls = extractUrls(msg.content);
+			for (const url of urls) {
+				if (!linkPreviews.has(url)) fetchPreview(url);
+			}
+		}
+	});
 
 	function handleGlobalKeydown(e: KeyboardEvent) {
 		if (!voiceState.pttMode) return;
@@ -291,6 +309,10 @@
 
 	onMount(async () => {
 		if (!browser) return;
+		// Detect configured GIF provider
+		const { PUBLIC_TENOR_KEY, PUBLIC_GIPHY_KEY } = await import('$env/static/public');
+		if (PUBLIC_TENOR_KEY) gifProvider = 'tenor';
+		else if (PUBLIC_GIPHY_KEY) gifProvider = 'giphy';
 
 		const existing = getSocket();
 		if (existing) {
@@ -327,6 +349,66 @@
 	function onDocClick(e: MouseEvent) {
 		const target = e.target as HTMLElement;
 		if (!target.closest('[data-picker]')) pickerMsgId = null;
+		if (!target.closest('[data-gif-picker]')) { showGifPicker = false; }
+		if (!target.closest('[data-msg-actions]')) longPressMsg = null;
+	}
+
+	// ── GIF picker ────────────────────────────────────────────────────────────
+	async function searchGifs(q: string) {
+		if (!q.trim() || !gifProvider) { gifResults = []; return; }
+		gifLoading = true;
+		try {
+			const { PUBLIC_TENOR_KEY, PUBLIC_GIPHY_KEY } = await import('$env/static/public');
+
+			if (gifProvider === 'tenor' && PUBLIC_TENOR_KEY) {
+				const res = await fetch(
+					`https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(q)}&key=${PUBLIC_TENOR_KEY}&limit=20&media_filter=gif`
+				);
+				if (res.ok) {
+					const data = await res.json();
+					gifResults = (data.results ?? []).map((r: any) => ({
+						id:      r.id,
+						preview: r.media_formats?.tinygif?.url ?? r.media_formats?.gif?.url,
+						url:     r.media_formats?.gif?.url,
+					}));
+				}
+			} else if (gifProvider === 'giphy' && PUBLIC_GIPHY_KEY) {
+				const res = await fetch(
+					`https://api.giphy.com/v1/gifs/search?q=${encodeURIComponent(q)}&api_key=${PUBLIC_GIPHY_KEY}&limit=20&rating=g`
+				);
+				if (res.ok) {
+					const data = await res.json();
+					gifResults = (data.data ?? []).map((r: any) => ({
+						id:      r.id,
+						preview: r.images?.fixed_height_small?.url ?? r.images?.downsized?.url,
+						url:     r.images?.downsized?.url ?? r.images?.original?.url,
+					}));
+				}
+			}
+		} catch { /* ignore */ }
+		finally { gifLoading = false; }
+	}
+
+	function onGifInput() {
+		if (gifTimer) clearTimeout(gifTimer);
+		gifTimer = setTimeout(() => searchGifs(gifQuery), 400);
+	}
+
+	function sendGif(url: string) {
+		if (!s || !selectedChannel) return;
+		const content = `<img src="${url}" alt="GIF" style="max-width:360px;border-radius:8px;">`;
+		s.emit('chat:send', { channelId: selectedChannel.id, content });
+		showGifPicker = false;
+		gifQuery = '';
+		gifResults = [];
+	}
+
+	// ── Mobile long-press ─────────────────────────────────────────────────────
+	function handleTouchStart(msgId: string) {
+		longPressTimer = setTimeout(() => { longPressMsg = msgId; }, 450);
+	}
+	function handleTouchEnd() {
+		if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
 	}
 
 	// ── Scroll ────────────────────────────────────────────────────────────────
@@ -346,7 +428,7 @@
 		try {
 			const { PUBLIC_API_URL } = await import('$env/static/public');
 			const res = await fetch(
-				`${PUBLIC_API_URL}/chat/channels/${selectedChannel?.id}/history?limit=50&before=${encodeURIComponent(before)}`,
+				`${PUBLIC_API_URL}/api/v1/chat/channels/${selectedChannel?.id}/history?limit=50&before=${encodeURIComponent(before)}`,
 				{ headers: token ? { Authorization: `Bearer ${token}` } : {} }
 			);
 			if (res.ok) {
@@ -366,17 +448,37 @@
 	// ── Send ──────────────────────────────────────────────────────────────────
 	function sendMessage() {
 		if (!s || !selectedChannel || !inputText.trim()) return;
-		s.emit('chat:send', { channelId: selectedChannel.id, content: inputText.trim() });
+		s.emit('chat:send', { channelId: selectedChannel.id, content: inputText.trim(), replyToId: replyTo?.id ?? null });
 		inputText = '';
 		showMentions = false;
+		replyTo = null;
 	}
 
 	function sendRich() {
 		if (!s || !selectedChannel || !richContent.trim()) return;
-		s.emit('chat:send', { channelId: selectedChannel.id, content: richContent });
+		s.emit('chat:send', { channelId: selectedChannel.id, content: richContent, replyToId: replyTo?.id ?? null });
 		richContent = '';
 		editorKey++;
 		showRichModal = false;
+		replyTo = null;
+	}
+
+	// ── Reply / Pin ───────────────────────────────────────────────────────────
+	function startReply(msg: Message) {
+		const tmp = document.createElement('div');
+		tmp.innerHTML = msg.content ?? '';
+		const plain = tmp.textContent ?? '';
+		replyTo = { id: msg.id, author_username: msg.author_username, content: plain.slice(0, 80) };
+		longPressMsg = null;
+		// Focus textarea
+		setTimeout(() => document.querySelector<HTMLTextAreaElement>('textarea#chat-input')?.focus(), 50);
+	}
+
+	function pinMessage(msg: Message) {
+		if (!s || !selectedChannel) return;
+		const already = pinnedMessage?.id === msg.id;
+		s.emit('chat:pin', { channelId: selectedChannel.id, messageId: already ? null : msg.id });
+		longPressMsg = null;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -413,7 +515,7 @@
 			mentionQuery = match[1];
 			try {
 				const { PUBLIC_API_URL } = await import('$env/static/public');
-				const res = await fetch(`${PUBLIC_API_URL}/chat/members?q=${encodeURIComponent(mentionQuery)}`, {
+				const res = await fetch(`${PUBLIC_API_URL}/api/v1/chat/members?q=${encodeURIComponent(mentionQuery)}`, {
 					headers: token ? { Authorization: `Bearer ${token}` } : {}
 				});
 				if (res.ok) {
@@ -440,8 +542,7 @@
 	}
 
 	// ── Reactions ─────────────────────────────────────────────────────────────
-	function toggleEmojiPicker(msgId: string, e: MouseEvent) {
-		e.stopPropagation();
+	function toggleEmojiPicker(msgId: string) {
 		pickerMsgId = pickerMsgId === msgId ? null : msgId;
 	}
 
@@ -486,14 +587,12 @@
 
 	function reactTo(messageId: string, emoji: string) {
 		if (!s) return;
-		// Optimistic local update — no waiting for server roundtrip
 		messages = applyReactionOptimistic(messages, messageId, emoji, userId);
 		flashReaction(messageId, emoji);
-		// P2P broadcast — peers see it near-instantly
 		p2pManager.send({ type: 'p2p:reaction', messageId, emoji, userId, username: currentUsername });
-		// Server — source of truth (will overwrite with authoritative state)
 		s.emit('chat:react', { messageId, emoji });
 		pickerMsgId = null;
+		longPressMsg = null;
 	}
 
 	// P2P message handler — typing + reactions from peers
@@ -570,16 +669,6 @@
 	const myUsername = $derived(((data as unknown as { user?: { username?: string } }).user?.username) ?? '');
 	const myAvatar   = $derived(((data as unknown as { user?: { avatar?: string | null } }).user?.avatar) ?? null);
 
-	// ── Jukebox toolbar ────────────────────────────────────────────────────────
-	let showJukebox = $state(false);
-	let showCanvas  = $state(false);
-	const jbState   = $derived($jukeboxStore);
-	const jbToolbarLabel = $derived(
-		jbState.track
-			? (jbState.track.title.length > 28 ? jbState.track.title.slice(0, 28) + '…' : jbState.track.title)
-			: 'Jukebox'
-	);
-
 	function openVoiceMemberPanel(m: { username: string; avatar: string | null }) {
 		if (m.username === myUsername) {
 			voicePanelTarget.set({ type: 'self', username: myUsername, avatar: myAvatar })
@@ -596,145 +685,25 @@
 <!-- Full-height layout -->
 <div class="fixed top-14 bottom-0 lg:left-[220px] xl:right-[220px] left-0 right-0 flex overflow-hidden bg-gray-950 border-l border-gray-800 z-10">
 
-	<!-- ── Backdrop drawer mobile ───────────────────────────────────────────── -->
-	{#if drawerOpen}
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div class="lg:hidden fixed inset-0 bg-black/60 z-[55] backdrop-blur-sm"
-	     role="button" tabindex="-1" aria-label="Fermer les canaux"
-	     onclick={() => drawerOpen = false}
-	     onkeydown={e => e.key === 'Escape' && (drawerOpen = false)}
-	     transition:fade={{ duration: 200 }}></div>
-	{/if}
-
-	<!-- ── Channel sidebar (drawer on mobile) ────────────────────────────── -->
-	<aside
-		id="channels-drawer"
-		role={drawerOpen ? 'dialog' : undefined}
-		aria-modal={drawerOpen ? 'true' : undefined}
-		aria-label="Canaux"
-		class="
-			flex flex-col border-r border-gray-800 bg-gray-900 transition-transform duration-300 ease-in-out
-			max-lg:fixed max-lg:top-14 max-lg:bottom-0 max-lg:left-0 max-lg:z-[60] max-lg:w-[280px]
-			lg:w-56 lg:shrink-0
-			{drawerOpen ? 'translate-x-0' : 'max-lg:-translate-x-full'}
-		">
-		<div class="h-12 flex items-center px-4 border-b border-gray-800">
-			<span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Canaux</span>
-		</div>
-		<nav class="flex-1 overflow-y-auto py-2 px-2 custom-scrollbar">
-			<!-- Canaux texte -->
-			{#if textChannels.length > 0}
-				<p class="px-2 pt-2 pb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">Texte</p>
-				<div class="space-y-0.5 mb-3">
-					{#each textChannels as ch (ch.id)}
-						<button
-							onclick={() => joinChannel(ch)}
-							draggable={isAdmin}
-							ondragstart={isAdmin ? (e) => onDragStart(e, ch) : undefined}
-							ondragover={isAdmin ? onDragOver : undefined}
-							ondrop={isAdmin ? (e) => onDrop(e, ch) : undefined}
-							class="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm transition-colors
-							       {isAdmin ? 'cursor-grab active:cursor-grabbing' : ''}
-							       {selectedChannel?.id === ch.id ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}"
-						>
-							<span class="text-gray-500">#</span>
-							<span class="truncate">{ch.slug}</span>
-						</button>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Canaux vocaux -->
-			{#if voiceChannels.length > 0}
-				<p class="px-2 pt-1 pb-1 text-[10px] uppercase tracking-widest text-gray-600 font-semibold">Vocal</p>
-				<div class="space-y-0.5">
-					{#each voiceChannels as ch (ch.id)}
-						{@const inThisChannel = voiceState.channelId === ch.id}
-						<button
-							onclick={() => handleJoinVoice(ch)}
-							draggable={isAdmin}
-							ondragstart={isAdmin ? (e) => onDragStart(e, ch) : undefined}
-							ondragover={isAdmin ? onDragOver : undefined}
-							ondrop={isAdmin ? (e) => onDrop(e, ch) : undefined}
-							class="w-full text-left flex items-center gap-1.5 px-2.5 py-1.5 rounded text-sm transition-colors
-							       {isAdmin ? 'cursor-grab active:cursor-grabbing' : ''}
-							       {inThisChannel ? 'bg-green-900/40 text-green-300 border border-green-800/40' : 'text-gray-400 hover:text-white hover:bg-gray-800/60'}"
-							title={inThisChannel ? 'Quitter le salon vocal' : 'Rejoindre le salon vocal'}
-						>
-							<span class="text-base leading-none">{inThisChannel ? '🔴' : '🔊'}</span>
-							<span class="truncate flex-1">{ch.name}</span>
-							{#if inThisChannel}
-								<span class="text-[10px] text-green-400 shrink-0">En ligne</span>
-							{/if}
-						</button>
-						{@const members = inThisChannel
-								? [
-										...voiceState.peers.map((p: any) => ({ username: p.username, avatar: p.avatar ?? null, speaking: p.speaking ?? false })),
-										{ username: myUsername || 'Vous', avatar: myAvatar ?? null, speaking: voiceState.mySpeaking },
-									]
-								: (voiceChannelMembers[ch.id] ?? []).map((m: any) => ({ ...m, speaking: false }))}
-						{#if members.length > 0}
-							<div class="flex flex-col gap-0.5 pl-6 pt-0.5 pb-1.5">
-								{#each members.slice(0, 6) as m}
-									{@const isMe = m.username === myUsername}
-									{@const isInVoice = inThisChannel}
-									<button
-										onclick={() => isInVoice ? openVoiceMemberPanel(m) : undefined}
-										class="flex items-center gap-1.5 w-full text-left rounded px-1 py-0.5 -mx-1 transition-colors
-										       {isInVoice ? 'hover:bg-gray-800/60 cursor-pointer' : 'cursor-default'}"
-										title={isInVoice ? (isMe ? 'Voir mes stats audio' : `Voir les stats de ${m.username}`) : m.username}
-									>
-										{#if m.avatar}
-											<img src={m.avatar} alt={m.username} class="w-4 h-4 rounded-full object-cover shrink-0 {m.speaking ? 'ring-1 ring-green-400' : ''}" />
-										{:else}
-											<div class="w-4 h-4 rounded-full bg-indigo-700 flex items-center justify-center text-[8px] font-bold text-white shrink-0 {m.speaking ? 'ring-1 ring-green-400' : ''}">
-												{m.username.charAt(0).toUpperCase()}
-											</div>
-										{/if}
-										<span class="text-xs truncate leading-tight {isMe ? 'text-green-400' : 'text-gray-400'}">
-											{m.username}{isMe ? ' (vous)' : ''}
-										</span>
-										{#if isInVoice}
-											<svg xmlns="http://www.w3.org/2000/svg" class="w-2.5 h-2.5 text-gray-700 shrink-0 ml-auto opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-												<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-											</svg>
-										{/if}
-									</button>
-								{/each}
-								{#if members.length > 6}
-									<span class="text-[10px] text-gray-600 pl-5">+{members.length - 6} autres</span>
-								{/if}
-							</div>
-						{/if}
-					{/each}
-				</div>
-			{/if}
-
-			{#if localChannels.length === 0}
-				<p class="px-3 py-2 text-xs text-gray-600 italic">Aucun canal</p>
-			{/if}
-		</nav>
-
-		<!-- Erreur micro -->
-		{#if voiceError}
-			<div class="mx-2 mb-2 p-2.5 rounded-lg bg-red-900/30 border border-red-800/40 text-xs text-red-300 leading-relaxed">
-				<div class="flex items-start gap-1.5">
-					<span class="shrink-0 mt-0.5">🎙️</span>
-					<div>
-						<p class="font-medium mb-1">Micro inaccessible</p>
-						<p>{voiceError}</p>
-					</div>
-				</div>
-				<button onclick={() => voiceError = null} class="mt-2 text-[10px] text-red-500 hover:text-red-300 underline">Fermer</button>
-			</div>
-		{/if}
-
-		<!-- Voice controls (sidebar footer Discord-style) -->
-		<VoicePanel mode="sidebar" />
-	</aside>
-
-	<!-- VoicePanel flottant mobile-only (drawer fermé → contrôles accessibles) -->
-	<VoicePanel mode="float" extraClass="lg:hidden" />
+	<!-- ── Channel sidebar ──────────────────────────────────────────────────── -->
+	<ChannelSidebar
+		{textChannels}
+		{voiceChannels}
+		selectedChannelId={selectedChannel?.id ?? null}
+		{voiceState}
+		{voiceChannelMembers}
+		{isAdmin}
+		{myUsername}
+		{myAvatar}
+		{token}
+		{voiceError}
+		bind:drawerOpen
+		bind:localChannels
+		onjoinChannel={joinChannel}
+		onjoinVoice={handleJoinVoice}
+		onopenVoiceMemberPanel={openVoiceMemberPanel}
+		ondismissVoiceError={() => voiceError = null}
+	/>
 
 	<!-- ── Main chat area ───────────────────────────────────────────────────── -->
 	<div class="flex-1 flex flex-col min-w-0">
@@ -742,167 +711,20 @@
 		{#if selectedChannel}
 
 			{#if (selectedChannel as any).type === 'voice'}
-				<!-- ── Voice room view ───────────────────────────────────────────── -->
+				<!-- ── Voice room ────────────────────────────────────────────────── -->
+				<VoiceRoom
+					{selectedChannel}
+					{voiceState}
+					bind:drawerOpen
+					{myUsername}
+					{myAvatar}
+					{token}
+					socket={s}
+					{userId}
+					{canvasRecapChannelId}
+					onjoinCurrentVoice={joinCurrentVoiceChannel}
+				/>
 
-				<!-- Channel header -->
-				<div class="h-12 shrink-0 border-b border-gray-800/60 bg-[#0e0c09]/80 flex items-center gap-2 px-4">
-					<button class="lg:hidden -ml-1 mr-1 p-2 rounded text-gray-400 hover:text-white hover:bg-gray-800/60 min-w-[44px] min-h-[44px] flex items-center justify-center"
-					        onclick={() => drawerOpen = true} aria-label="Ouvrir les canaux" aria-expanded={drawerOpen} aria-controls="channels-drawer">
-						<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-							<path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
-						</svg>
-					</button>
-					<span class="text-xl">🔊</span>
-					<span class="font-semibold text-gray-100">{selectedChannel.name}</span>
-					{#if selectedChannel.description}
-						<span class="text-gray-600 text-sm hidden sm:inline">— {selectedChannel.description}</span>
-					{/if}
-					{#if voiceState.active && voiceState.channelId === selectedChannel.id}
-						<span class="ml-auto flex items-center gap-1.5 text-xs text-amber-600/80">
-							<span class="w-1.5 h-1.5 rounded-full bg-amber-500/80 animate-pulse shrink-0"></span>
-							{voiceState.peers.length + 1} connecté{voiceState.peers.length > 0 ? 's' : ''}
-						</span>
-					{/if}
-				</div>
-
-				<!-- Voice toolbar -->
-				<div class="h-10 shrink-0 flex items-center gap-1 px-3" style="background:rgba(12,10,7,0.95); border-bottom:1px solid rgba(200,145,74,0.10);">
-					<!-- Jukebox button -->
-					<button
-						onclick={() => showJukebox = !showJukebox}
-						class="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs font-medium transition-all focus:outline-none"
-						style="
-							background:{showJukebox ? 'rgba(200,145,74,0.18)' : (jbState.track ? 'rgba(200,145,74,0.10)' : 'transparent')};
-							color:{showJukebox || jbState.track ? '#c8914a' : '#6b6460'};
-							border:1px solid {showJukebox ? 'rgba(200,145,74,0.35)' : (jbState.track ? 'rgba(200,145,74,0.20)' : 'rgba(200,145,74,0.08)')};"
-					>
-						{#if jbState.track && jbState.playing}
-							<span class="relative flex w-2 h-2 shrink-0">
-								<span class="absolute inline-flex h-full w-full rounded-full bg-amber-500/60 animate-ping"></span>
-								<span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-							</span>
-						{:else}
-							<span class="text-sm leading-none">♫</span>
-						{/if}
-						<span>{jbToolbarLabel}</span>
-					</button>
-
-					<!-- Separator -->
-					<div class="w-px h-5 mx-1" style="background:rgba(200,145,74,0.10);"></div>
-
-					<!-- 🎨 Table collaborative -->
-					<button
-						onclick={() => showCanvas = !showCanvas}
-						class="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs font-medium transition-all focus:outline-none"
-						style="
-							background:{showCanvas ? 'rgba(168,85,247,0.18)' : 'transparent'};
-							color:{showCanvas ? '#c084fc' : '#6b6460'};
-							border:1px solid {showCanvas ? 'rgba(168,85,247,0.35)' : 'rgba(168,85,247,0.08)'};"
-						title="Table collaborative P2P"
-					>
-						{#if showCanvas}
-							<span class="relative flex w-2 h-2 shrink-0">
-								<span class="absolute inline-flex h-full w-full rounded-full bg-violet-400/60 animate-ping"></span>
-								<span class="relative inline-flex rounded-full h-2 w-2 bg-violet-400"></span>
-							</span>
-						{:else}
-							<span class="text-sm leading-none">🎨</span>
-						{/if}
-						<span>Tableau</span>
-					</button>
-
-					<!-- Separator -->
-					<div class="w-px h-5 mx-1" style="background:rgba(200,145,74,0.10);"></div>
-
-					<!-- Video share -->
-					<button
-						onclick={() => showScreenShare = !showScreenShare}
-						title={anyScreenSharing ? "Afficher/masquer le partage d'écran" : "Partage d'écran (actif quand quelqu'un partage)"}
-						class="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs font-medium transition-all focus:outline-none {anyScreenSharing ? '' : 'opacity-40'}"
-						style="
-							background:{showScreenShare && anyScreenSharing ? 'rgba(59,130,246,0.18)' : 'transparent'};
-							color:{anyScreenSharing ? '#60a5fa' : '#6b6460'};
-							border:1px solid {showScreenShare && anyScreenSharing ? 'rgba(59,130,246,0.35)' : (anyScreenSharing ? 'rgba(59,130,246,0.20)' : 'rgba(200,145,74,0.08)')};"
-					>
-						{#if anyScreenSharing}
-							<span class="relative flex w-2 h-2 shrink-0">
-								<span class="absolute inline-flex h-full w-full rounded-full bg-blue-400/60 animate-ping"></span>
-								<span class="relative inline-flex rounded-full h-2 w-2 bg-blue-400"></span>
-							</span>
-						{:else}
-							<span class="text-sm leading-none">📺</span>
-						{/if}
-						Vidéo
-					</button>
-
-					<!-- File share (stub) -->
-					<button
-						disabled
-						title="Partage de fichiers (bientôt)"
-						class="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs transition-all focus:outline-none opacity-30 cursor-not-allowed"
-						style="color:#6b6460; border:1px solid rgba(200,145,74,0.08);"
-					>📁 Fichiers</button>
-
-					<!-- Games (stub) -->
-					<button
-						disabled
-						title="Jeux (bientôt)"
-						class="flex items-center gap-1.5 px-3 h-7 rounded-lg text-xs transition-all focus:outline-none opacity-30 cursor-not-allowed"
-						style="color:#6b6460; border:1px solid rgba(200,145,74,0.08);"
-					>🎮 Jeux</button>
-				</div>
-
-				<!-- Jukebox panel (expandable) -->
-				{#if showJukebox}
-					<VoiceJukebox
-						joined={voiceState.active && voiceState.channelId === selectedChannel.id}
-						me={{ username: myUsername }}
-					/>
-				{/if}
-
-				<!-- Screen share panel -->
-				{#if showScreenShare && (localScreen || remoteScreens.size > 0)}
-					<div class="shrink-0 bg-black border-b border-gray-800/60 flex items-center justify-center gap-3 p-3" style="max-height:40vh; overflow:auto;">
-						{#if localScreen}
-							<div class="relative flex-shrink-0 h-44 rounded-lg overflow-hidden bg-gray-900 border border-gray-700">
-								<video class="h-full object-contain" autoplay muted playsinline use:srcStream={localScreen}></video>
-								<span class="absolute bottom-1 left-2 text-xs text-white bg-black/70 px-1.5 py-0.5 rounded">Vous</span>
-							</div>
-						{/if}
-						{#each [...remoteScreens.entries()] as [socketId, stream] (socketId)}
-							{@const peer = voiceState.peers.find(p => p.socketId === socketId)}
-							<div class="relative flex-shrink-0 h-44 rounded-lg overflow-hidden bg-gray-900 border border-gray-700">
-								<video class="h-full object-contain" autoplay playsinline use:srcStream={stream}></video>
-								<span class="absolute bottom-1 left-2 text-xs text-white bg-black/70 px-1.5 py-0.5 rounded">{peer?.username ?? 'Peer'}</span>
-							</div>
-						{/each}
-					</div>
-				{/if}
-
-				<!-- Table (takes remaining space) -->
-				<div class="flex-1 overflow-hidden bg-[#0d0b08] flex items-center justify-center">
-					<Table
-						channelName={selectedChannel.name}
-						channelId={selectedChannel.id}
-						me={{ username: myUsername, avatar: myAvatar }}
-						{token}
-						joined={voiceState.active && voiceState.channelId === selectedChannel.id}
-						onjoin={joinCurrentVoiceChannel}
-						socket={s}
-					/>
-				</div>
-
-				<!-- NexusCanvas overlay — Table collaborative P2P -->
-				{#if showCanvas}
-					<NexusCanvas
-						channelId={canvasRecapChannelId}
-						voiceChannelId={voiceState.channelId}
-						socket={s}
-						userId={userId}
-						username={myUsername}
-						onclose={() => showCanvas = false}
-					/>
-				{/if}
 
 			{:else}
 				<!-- ── Text chat ──────────────────────────────────────────────────── -->
@@ -946,6 +768,33 @@
 					</div>
 				</div>
 
+			<!-- Pinned message banner -->
+			{#if pinnedMessage && showPinned}
+				<div class="shrink-0 flex items-center gap-2 px-4 py-1.5 bg-indigo-950/60 border-b border-indigo-900/40 text-xs">
+					<svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6h2v-6h5v-2l-2-2z"/>
+					</svg>
+					<span class="text-indigo-300 font-semibold shrink-0">Épinglé</span>
+					<span class="text-gray-400 truncate">
+						<span class="text-gray-500">{pinnedMessage.author_username} :</span>
+						{pinnedMessage.content?.replace(/<[^>]*>/g, '').slice(0, 120) ?? ''}
+					</span>
+					{#if isAdmin}
+						<button
+							onclick={() => s?.emit('chat:pin', { channelId: selectedChannel?.id, messageId: null })}
+							class="ml-auto shrink-0 text-gray-600 hover:text-white transition-colors text-base leading-none"
+							title="Désépingler"
+						>×</button>
+					{:else}
+						<button
+							onclick={() => showPinned = false}
+							class="ml-auto shrink-0 text-gray-700 hover:text-gray-400 transition-colors text-base leading-none"
+							title="Masquer"
+						>×</button>
+					{/if}
+				</div>
+			{/if}
+
 			<!-- Messages -->
 			<div
                 class="flex-1 overflow-y-auto px-4 py-4 space-y-1 custom-scrollbar"
@@ -968,131 +817,183 @@
 					</div>
 
 					{#each group.messages as msg, i (msg.id)}
-    				{@const prevMsg = group.messages[i - 1]}
-    				{@const isSameAuthor = prevMsg && prevMsg.author_id === msg.author_id}
-    				{@const timeDiff = prevMsg ? (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) / 1000 / 60 : 0}
-    				{@const shouldGroup = isSameAuthor && timeDiff < 5 && !msg.is_deleted && !prevMsg.is_deleted}
-						<div class="group message-row flex items-start gap-4 px-3 py-1 rounded-xl transition-all relative hover:bg-white/[0.02] {shouldGroup ? 'mt-0' : 'mt-4'}">
-    <div class="w-10 shrink-0 flex justify-center pt-1">
-        {#if !shouldGroup}
-            {#if msg.author_avatar}
-                <img
-                    src={msg.author_avatar}
-                    alt={msg.author_username}
-                    class="w-10 h-10 rounded-2xl object-cover shadow-xl border border-white/5"
-                />
-            {:else}
-                <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center font-black text-[10px] text-white shadow-lg border border-white/10 select-none">
-                    {msg.author_username.charAt(0).toUpperCase()}
-                </div>
-            {/if}
-        {:else}
-            <span class="text-[9px] font-black text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pt-2 select-none">
-                {formatTime(msg.created_at)}
-            </span>
-        {/if}
-    </div>
+					{@const prevMsg = group.messages[i - 1]}
+					{@const isSameAuthor = prevMsg && prevMsg.author_id === msg.author_id}
+					{@const timeDiff = prevMsg ? (new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime()) / 1000 / 60 : 0}
+					{@const shouldGroup = isSameAuthor && timeDiff < 5 && !msg.is_deleted && !prevMsg.is_deleted}
+					{@const actionsVisible = pickerMsgId === msg.id || longPressMsg === msg.id}
+					<div
+						class="group message-row flex items-start gap-4 px-3 py-1 rounded-xl transition-all relative hover:bg-white/[0.02] {shouldGroup ? 'mt-0' : 'mt-4'}"
+						ontouchstart={() => handleTouchStart(msg.id)}
+						ontouchend={handleTouchEnd}
+						ontouchmove={handleTouchEnd}
+					>
+						<!-- Avatar -->
+						<div class="w-10 shrink-0 flex justify-center pt-1">
+							{#if !shouldGroup}
+								{#if msg.author_avatar}
+									<img src={msg.author_avatar} alt={msg.author_username}
+										class="w-10 h-10 rounded-2xl object-cover shadow-xl border border-white/5" />
+								{:else}
+									<div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-700 flex items-center justify-center font-black text-[10px] text-white shadow-lg border border-white/10 select-none">
+										{msg.author_username.charAt(0).toUpperCase()}
+									</div>
+								{/if}
+							{:else}
+								<span class="text-[9px] font-black text-gray-700 opacity-0 group-hover:opacity-100 transition-opacity pt-2 select-none">
+									{formatTime(msg.created_at)}
+								</span>
+							{/if}
+						</div>
 
-    <div class="min-w-0 flex-1">
-        {#if !shouldGroup}
-            <div class="flex items-baseline gap-2 mb-1">
-                <span class="text-sm font-black text-white hover:text-indigo-400 cursor-pointer transition-colors leading-none">
-                    {msg.author_username}
-                </span>
-                <span class="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">
-                    {formatTime(msg.created_at)}
-                </span>
-                {#if msg.edited_at && !msg.is_deleted}
-                    <span class="text-[10px] text-gray-700 font-black uppercase tracking-tighter italic">(modifié)</span>
-                {/if}
-            </div>
-        {/if}
+						<!-- Content -->
+						<div class="min-w-0 flex-1">
+							{#if !shouldGroup}
+								<div class="flex items-baseline gap-2 mb-1">
+									<span class="text-sm font-black text-white hover:text-indigo-400 cursor-pointer transition-colors leading-none">
+										{msg.author_username}
+									</span>
+									<span class="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">
+										{formatTime(msg.created_at)}
+									</span>
+									{#if msg.edited_at && !msg.is_deleted}
+										<span class="text-[10px] text-gray-700 italic">(modifié)</span>
+									{/if}
+								</div>
+							{/if}
 
-        {#if msg.is_deleted}
-            <div class="flex items-center gap-3 py-2 px-4 bg-red-950/20 border border-red-900/30 rounded-xl max-w-fit my-1 shadow-lg shadow-red-900/5">
-                <div class="w-7 h-7 bg-red-600 rounded-lg flex items-center justify-center text-sm shadow-lg shadow-red-900/40">🤖</div>
-                <div class="flex flex-col">
-                    <span class="text-[9px] font-black text-red-500 uppercase tracking-widest leading-none mb-0.5">Nexus Guard Protocol</span>
-                    <em class="text-xs text-red-300/60 not-italic font-bold tracking-tight">Transmission neutralisée : Contenu toxique détecté</em>
-                </div>
-            </div>
-        {:else if editingMsg?.id === msg.id}
-            <div class="bg-gray-800 p-2 rounded-xl border border-indigo-500/50 mt-1 shadow-2xl">
-                <textarea
-                    class="w-full bg-transparent text-sm text-white outline-none resize-none custom-scrollbar"
-                    rows={2}
-                    bind:value={editingMsg.content}
-                    onkeydown={handleEditKeydown}
-                ></textarea>
-                <div class="flex justify-end gap-2 mt-2">
-                    <button onclick={() => { editingMsg = null }} class="text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest">Annuler</button>
-                    <button onclick={confirmEdit} class="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest underline">Valider</button>
-                </div>
-            </div>
-        {:else}
-            <div class="nexus-prose text-sm text-gray-300 leading-relaxed break-words">
-                {@html linkifyHtml(msg.content ?? '')}
-                {#if shouldGroup && msg.edited_at}
-                    <span class="text-[9px] text-gray-700 font-black uppercase ml-2">(modifié)</span>
-                {/if}
-            </div>
-        {/if}
+							<!-- Reply quote -->
+							{#if msg.reply_to_id && !msg.is_deleted}
+								<div class="flex items-start gap-1.5 mb-1.5 pl-2 border-l-2 border-indigo-600/50 opacity-70">
+									<span class="text-[10px] text-indigo-400 font-bold shrink-0">{msg.reply_to_username}</span>
+									<span class="text-[10px] text-gray-500 truncate">{msg.reply_to_content?.replace(/<[^>]*>/g, '').slice(0, 100) ?? '— message supprimé —'}</span>
+								</div>
+							{/if}
 
-        {#if msg.reactions && msg.reactions.length > 0 && !msg.is_deleted}
-            <div class="flex flex-wrap gap-1.5 mt-2">
-                {#each msg.reactions as r (r.emoji)}
-                    <button
-                        onclick={() => reactTo(msg.id, r.emoji)}
-                        class="flex items-center gap-2 px-2.5 py-1 rounded-lg border transition-all text-[11px] font-black
-                               {r.userReactedIds.includes(userId) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-lg shadow-indigo-500/10 scale-105' : 'border-gray-800 bg-gray-800/40 text-gray-500 hover:border-gray-500'}
-                               {reactionFlash.get(msg.id)?.has(r.emoji) ? 'p2p-pop' : ''}"
-                    >
-                        <span>{r.emoji}</span>
-                        <span class="text-[10px]">{r.count}</span>
-                    </button>
-                {/each}
-            </div>
-        {/if}
-    </div>
+							{#if msg.is_deleted}
+								<em class="text-xs text-gray-600 italic select-none">— message supprimé —</em>
+							{:else if editingMsg?.id === msg.id}
+								<div class="bg-gray-800 p-2 rounded-xl border border-indigo-500/50 mt-1 shadow-2xl">
+									<textarea
+										class="w-full bg-transparent text-sm text-white outline-none resize-none custom-scrollbar"
+										rows={2}
+										bind:value={editingMsg.content}
+										onkeydown={handleEditKeydown}
+									></textarea>
+									<div class="flex justify-end gap-2 mt-2">
+										<button onclick={() => { editingMsg = null }} class="text-[10px] font-black text-gray-500 hover:text-white uppercase tracking-widest">Annuler</button>
+										<button onclick={confirmEdit} class="text-[10px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest underline">Valider</button>
+									</div>
+								</div>
+							{:else}
+								<div class="nexus-prose text-sm text-gray-300 leading-relaxed break-words">
+									{@html linkifyHtml(msg.content ?? '')}
+									{#if shouldGroup && msg.edited_at}
+										<span class="text-[9px] text-gray-700 italic ml-2">(modifié)</span>
+									{/if}
+								</div>
+								<!-- Link preview card -->
+								{#each extractUrls(msg.content) as previewUrl (previewUrl)}
+									{@const preview = linkPreviews.get(previewUrl)}
+									{#if preview && preview !== false && (preview.title || preview.image)}
+										<a
+											href={previewUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="mt-2 flex gap-3 bg-gray-800/60 border border-gray-700/60 rounded-xl overflow-hidden max-w-sm hover:border-indigo-600/40 transition-colors no-underline"
+											style="display:flex; text-decoration:none;"
+										>
+											{#if preview.image}
+												<img src={preview.image} alt="" class="w-20 h-20 object-cover shrink-0" loading="lazy" />
+											{/if}
+											<div class="flex-1 p-2.5 min-w-0">
+												{#if preview.siteName}
+													<p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wide truncate">{preview.siteName}</p>
+												{/if}
+												{#if preview.title}
+													<p class="text-xs font-semibold text-white truncate mt-0.5">{preview.title}</p>
+												{/if}
+												{#if preview.description}
+													<p class="text-[11px] text-gray-400 line-clamp-2 mt-0.5">{preview.description}</p>
+												{/if}
+											</div>
+										</a>
+									{/if}
+								{/each}
+							{/if}
 
-    {#if !msg.is_deleted}
-        <div class="hidden group-hover:flex gap-1 absolute right-4 -top-3.5 bg-gray-900 border border-gray-800 rounded-xl px-1.5 py-1 shadow-2xl z-20">
-            <div data-picker class="relative">
-                <button
-                    onclick={(e) => toggleEmojiPicker(msg.id, e)}
-                    class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors text-sm"
-                    title="Réagir"
-                >😀</button>
-                {#if pickerMsgId === msg.id}
-                    <div
-                        data-picker
-                        class="absolute right-0 bottom-full mb-2 flex gap-1 bg-gray-800 border border-gray-700 rounded-xl px-2 py-2 shadow-2xl z-30 animate-in fade-in slide-in-from-bottom-2"
-                    >
-                        {#each QUICK_EMOJIS as emoji}
-                            <button
-                                onclick={() => reactTo(msg.id, emoji)}
-                                class="text-xl hover:scale-125 transition-transform p-1"
-                            >{emoji}</button>
-                        {/each}
-                    </div>
-                {/if}
-            </div>
-            {#if msg.author_id === userId || isAdmin}
-                <div class="w-px h-4 bg-gray-800 self-center mx-1"></div>
-                <button
-                    onclick={() => startEdit(msg)}
-                    class="p-1.5 rounded-lg text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors text-xs"
-                    title="Modifier"
-                >✏️</button>
-                <button
-                    onclick={() => confirmDelete(msg.id)}
-                    class="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs"
-                    title="Supprimer"
-                >🗑️</button>
-            {/if}
-        </div>
-    {/if}
-</div>
+							<!-- Reactions + add-reaction -->
+							{#if !msg.is_deleted}
+								<div class="flex flex-wrap items-center gap-1.5 mt-1.5">
+									{#each msg.reactions as r (r.emoji)}
+										<button
+											onclick={() => reactTo(msg.id, r.emoji)}
+											class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition-all text-[11px] font-black
+												{r.userReactedIds.includes(userId) ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300 shadow-lg shadow-indigo-500/10' : 'border-gray-800 bg-gray-800/40 text-gray-500 hover:border-gray-600 hover:bg-gray-800'}
+												{reactionFlash.get(msg.id)?.has(r.emoji) ? 'p2p-pop' : ''}"
+										>
+											<span>{r.emoji}</span>
+											<span>{r.count}</span>
+										</button>
+									{/each}
+
+									<!-- Add-reaction button (hover or after long-press) -->
+									<div data-picker class="relative {pickerMsgId === msg.id ? '' : 'opacity-0 group-hover:opacity-100 focus-within:opacity-100'} transition-opacity">
+										<button
+											onclick={() => toggleEmojiPicker(msg.id)}
+											class="w-7 h-7 flex items-center justify-center rounded-lg border border-gray-800 bg-gray-900 text-gray-500 hover:text-white hover:border-gray-600 transition-all text-sm"
+											title="Ajouter une réaction"
+										>+</button>
+										{#if pickerMsgId === msg.id}
+											<div data-picker class="absolute left-0 bottom-full mb-1 z-40">
+												<EmojiPicker onselect={(emoji) => reactTo(msg.id, emoji)} />
+											</div>
+										{/if}
+									</div>
+								</div>
+							{/if}
+						</div>
+
+						<!-- Action toolbar — visible on hover (desktop) or long-press (mobile) -->
+						{#if !msg.is_deleted}
+							<div
+								data-msg-actions
+								class="{actionsVisible ? 'flex' : 'hidden group-hover:flex'} gap-1 absolute right-4 -top-3.5 bg-gray-900 border border-gray-800 rounded-xl px-1.5 py-1 shadow-2xl z-20"
+							>
+								<button
+									onclick={() => startReply(msg)}
+									class="p-1.5 rounded-lg text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors text-xs"
+									title="Répondre"
+								>↩️</button>
+								{#if msg.author_id === userId}
+									<button
+										onclick={() => startEdit(msg)}
+										class="p-1.5 rounded-lg text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10 transition-colors text-xs"
+										title="Modifier"
+									>✏️</button>
+								{/if}
+								{#if isAdmin}
+									<button
+										onclick={() => pinMessage(msg)}
+										class="p-1.5 rounded-lg transition-colors text-xs {pinnedMessage?.id === msg.id ? 'text-indigo-400' : 'text-gray-500 hover:text-indigo-400 hover:bg-indigo-500/10'}"
+										title={pinnedMessage?.id === msg.id ? 'Désépingler' : 'Épingler'}
+									>📌</button>
+								{/if}
+								{#if msg.author_id === userId || isAdmin}
+									<button
+										onclick={() => confirmDelete(msg.id)}
+										class="p-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors text-xs"
+										title="Supprimer"
+									>🗑️</button>
+								{/if}
+								<button
+									onclick={() => { navigator.clipboard.writeText(msg.content?.replace(/<[^>]*>/g, '') ?? '') }}
+									class="p-1.5 rounded-lg text-gray-500 hover:text-white hover:bg-gray-800 transition-colors text-xs"
+									title="Copier"
+								>📋</button>
+							</div>
+						{/if}
+					</div>
 					{/each}
 				{/each}
 
@@ -1145,6 +1046,80 @@
 					</div>
 				{/if}
 
+				<!-- GIF picker popup -->
+				{#if showGifPicker}
+					<div data-gif-picker class="relative mb-2">
+						<div class="absolute bottom-full left-0 mb-1 w-80 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl z-30 overflow-hidden">
+							{#if !gifProvider}
+								<!-- No key configured — setup instructions -->
+								<div class="p-4 space-y-3">
+									<p class="text-xs font-semibold text-white">GIFs non configurés</p>
+									<p class="text-xs text-gray-400 leading-relaxed">
+										Ajoutez une clé gratuite dans <code class="bg-gray-800 px-1 rounded text-indigo-300">/var/www/nexus/nexus-frontend/.env</code> puis rebuild :
+									</p>
+									<div class="space-y-1.5 text-xs text-gray-500">
+										<div class="bg-gray-800 rounded p-2 font-mono">
+											<span class="text-green-400"># Tenor (Google)</span><br>
+											<span class="text-amber-300">PUBLIC_TENOR_KEY</span>=votre_clé<br>
+											<span class="text-gray-600 text-[10px]">console.cloud.google.com → Tenor API v2</span>
+										</div>
+										<div class="bg-gray-800 rounded p-2 font-mono">
+											<span class="text-green-400"># Giphy (Meta)</span><br>
+											<span class="text-amber-300">PUBLIC_GIPHY_KEY</span>=votre_clé<br>
+											<span class="text-gray-600 text-[10px]">developers.giphy.com → Create App</span>
+										</div>
+									</div>
+									<p class="text-[10px] text-gray-600">Les deux sont gratuits avec un quota généreux.</p>
+								</div>
+							{:else}
+								<div class="p-2 border-b border-gray-800">
+									<input
+										type="text"
+										placeholder="Rechercher un GIF…"
+										bind:value={gifQuery}
+										oninput={onGifInput}
+										class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white placeholder-gray-500 outline-none focus:border-indigo-600"
+									/>
+								</div>
+								<div class="p-2 grid grid-cols-3 gap-1.5 max-h-56 overflow-y-auto" style="scrollbar-width:thin;">
+									{#if gifLoading}
+										<div class="col-span-3 text-center py-4 text-xs text-gray-500">Recherche…</div>
+									{:else if gifResults.length === 0 && gifQuery}
+										<div class="col-span-3 text-center py-4 text-xs text-gray-500">Aucun résultat</div>
+									{:else if gifResults.length === 0}
+										<div class="col-span-3 text-center py-4 text-xs text-gray-500">Tapez pour rechercher</div>
+									{:else}
+										{#each gifResults as gif (gif.id)}
+											<button
+												onclick={() => sendGif(gif.url)}
+												class="rounded-lg overflow-hidden hover:ring-2 hover:ring-indigo-500 transition-all aspect-square"
+											>
+												<img src={gif.preview} alt="GIF" class="w-full h-full object-cover" loading="lazy" />
+											</button>
+										{/each}
+									{/if}
+								</div>
+								<div class="px-3 py-1.5 border-t border-gray-800 text-[10px] text-gray-600 text-right capitalize">
+									Powered by {gifProvider}
+								</div>
+							{/if}
+						</div>
+					</div>
+				{/if}
+
+				<!-- Reply preview bar -->
+				{#if replyTo}
+					<div class="flex items-center gap-2 px-3 py-1.5 mb-1 bg-gray-800/80 border border-gray-700 rounded-lg text-xs">
+						<span class="text-indigo-400 shrink-0">↩ {replyTo.author_username}</span>
+						<span class="text-gray-500 truncate flex-1">{replyTo.content}</span>
+						<button
+							onclick={() => replyTo = null}
+							class="shrink-0 text-gray-600 hover:text-white transition-colors text-base leading-none"
+							title="Annuler la réponse"
+						>×</button>
+					</div>
+				{/if}
+
 				<div class="flex gap-2 bg-gray-800 rounded-lg border border-gray-700 focus-within:border-indigo-600 transition-colors">
 					<textarea
 						id="chat-input"
@@ -1156,6 +1131,13 @@
 						onkeydown={handleKeydown}
 						oninput={handleInput}
 					></textarea>
+					<!-- GIF button — always visible -->
+					<button
+						data-gif-picker
+						onclick={() => { showGifPicker = !showGifPicker; if (showGifPicker && gifProvider) gifQuery = ''; }}
+						class="px-2 py-2 m-1 rounded transition-colors shrink-0 text-xs font-bold {showGifPicker ? 'bg-gray-700 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-700'}"
+						title="Envoyer un GIF"
+					>GIF</button>
 					<!-- Rich editor button -->
 					<button
 						onclick={() => { showRichModal = true; }}

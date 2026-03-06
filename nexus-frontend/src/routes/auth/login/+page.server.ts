@@ -3,7 +3,10 @@ import type { PageServerLoad, Actions } from './$types';
 import { apiFetch } from '$lib/api';
 
 export const load: PageServerLoad = async ({ url }) => {
-	return { redirectTo: url.searchParams.get('redirectTo') ?? '/' };
+	return {
+		redirectTo:   url.searchParams.get('redirectTo') ?? '/',
+		passwordReset: url.searchParams.get('reset') === '1',
+	};
 };
 
 export const actions: Actions = {

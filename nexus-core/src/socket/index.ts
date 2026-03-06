@@ -94,7 +94,7 @@ export function registerSocketIO(server: Server): void {
 
     // ── Presence tracking (async init) ────────────────────────────────────────
     ;(async () => {
-      // Fetch avatar for the presence sidebar
+      // Fetch avatar + restore status from Redis
       try {
         const { rows } = await db.query<{ avatar: string | null }>(
           `SELECT avatar FROM users WHERE id = $1`, [userId]
@@ -103,6 +103,10 @@ export function registerSocketIO(server: Server): void {
       } catch {
         socket.data.avatar = null
       }
+
+      // Restore status from Redis (persists across reconnects within session)
+      const savedStatus = await redis.get(`nexus:status:${userId}`).catch(() => null)
+      socket.data.status = savedStatus ? JSON.parse(savedStatus) : null
 
       socket.join('presence')
 
@@ -113,7 +117,7 @@ export function registerSocketIO(server: Server): void {
       const allSockets = await server.in('presence').fetchSockets()
       const seen = new Set<string>()
       const onlineList = allSockets
-        .map(s => ({ userId: s.data.userId, username: s.data.username, avatar: s.data.avatar ?? null }))
+        .map(s => ({ userId: s.data.userId, username: s.data.username, avatar: s.data.avatar ?? null, status: (s.data as any).status ?? null }))
         .filter(m => { if (seen.has(m.userId)) return false; seen.add(m.userId); return true })
       socket.emit('presence:init', onlineList)
 
@@ -121,7 +125,7 @@ export function registerSocketIO(server: Server): void {
       const isFirstTab = !allSockets.some(s => s.id !== socket.id && s.data.userId === userId)
       if (isFirstTab) {
         socket.broadcast.to('presence').emit('presence:online', {
-          userId, username, avatar: socket.data.avatar ?? null,
+          userId, username, avatar: socket.data.avatar ?? null, status: (socket.data as any).status ?? null,
         })
       }
     })().catch(() => {})
@@ -133,6 +137,28 @@ export function registerSocketIO(server: Server): void {
       if (!stillOnline) {
         server.to('presence').emit('presence:offline', { userId })
       }
+    })
+
+    // ── presence:set_status ────────────────────────────────────────────────────
+    socket.on('presence:set_status', async (data: { emoji: string; text: string } | null) => {
+      const status = data && (data.emoji || data.text)
+        ? { emoji: (data.emoji ?? '').slice(0, 8), text: (data.text ?? '').slice(0, 60) }
+        : null
+
+      // Persist in Redis with 24h TTL (survives reconnects in same day session)
+      if (status) {
+        await redis.set(`nexus:status:${userId}`, JSON.stringify(status), 'EX', 86400).catch(() => {})
+      } else {
+        await redis.del(`nexus:status:${userId}`).catch(() => {})
+      }
+
+      // Update all sockets of this user
+      ;(await server.in('presence').fetchSockets())
+        .filter(s => s.data.userId === userId)
+        .forEach(s => { (s.data as any).status = status })
+
+      // Broadcast to presence room
+      server.to('presence').emit('presence:status_update', { userId, status })
     })
 
     // ── Whisper rooms ─────────────────────────────────────────────────────────
@@ -147,8 +173,12 @@ export function registerSocketIO(server: Server): void {
 
       socket.join(`channel:${channelId}`)
 
-      const history = await ChannelModel.getHistory(channelId, 50).catch(() => [])
+      const [history, pinned] = await Promise.all([
+        ChannelModel.getHistory(channelId, 50).catch(() => []),
+        ChannelModel.getPinnedMessage(channelId).catch(() => null),
+      ])
       socket.emit('chat:history', { channelId, messages: history })
+      socket.emit('chat:pinned', { channelId, message: pinned })
     })
 
     // ── chat:leave ────────────────────────────────────────────────────────────
@@ -157,8 +187,8 @@ export function registerSocketIO(server: Server): void {
     })
 
     // ── chat:send ─────────────────────────────────────────────────────────────
-    socket.on('chat:send', async (data: { channelId: string; content: string }) => {
-      const { channelId, content } = data ?? {}
+    socket.on('chat:send', async (data: { channelId: string; content: string; replyToId?: string | null }) => {
+      const { channelId, content, replyToId } = data ?? {}
       if (!channelId || !content?.trim()) return
 
       const sanitized = sanitize(content.trim())
@@ -166,9 +196,10 @@ export function registerSocketIO(server: Server): void {
 
       try {
         const message = await ChannelModel.addMessage({
-          channel_id: channelId,
-          author_id:  userId,
-          content:    sanitized,
+          channel_id:   channelId,
+          author_id:    userId,
+          content:      sanitized,
+          reply_to_id:  replyToId ?? null,
         })
         if (io) {
           io.to(`channel:${channelId}`).emit('chat:message', message)
@@ -188,6 +219,8 @@ export function registerSocketIO(server: Server): void {
           if (io) {
             const count = await NotificationModel.getUnreadCount(notifiedUserId).catch(() => 0)
             io.to(`user:${notifiedUserId}`).emit('notification:new', { unreadCount: count })
+            // Separate chat-specific mention badge (won't mix with forum notifications)
+            io.to(`user:${notifiedUserId}`).emit('chat:mention')
           }
         }
       } catch {
@@ -253,7 +286,12 @@ export function registerSocketIO(server: Server): void {
       if (!messageId) return
 
       try {
-        const { ok, channelId } = await ChannelModel.deleteMessage(messageId, userId)
+        const { rows: roleRows } = await db.query(
+          `SELECT 1 FROM community_members WHERE user_id = $1 AND role IN ('admin', 'owner') LIMIT 1`,
+          [userId]
+        )
+        const byAdmin = roleRows.length > 0
+        const { ok, channelId } = await ChannelModel.deleteMessage(messageId, userId, byAdmin)
         if (!ok || !channelId) return
 
         if (io) {
@@ -263,6 +301,35 @@ export function registerSocketIO(server: Server): void {
         // ignore
       }
     })
+    // ── chat:pin ──────────────────────────────────────────────────────────────
+    socket.on('chat:pin', async (data: { channelId: string; messageId: string | null }) => {
+      const { channelId, messageId } = data ?? {}
+      if (!channelId) return
+
+      try {
+        const { rows: roleRows } = await db.query(
+          `SELECT 1 FROM community_members WHERE user_id = $1 AND role IN ('admin', 'owner') LIMIT 1`,
+          [userId]
+        )
+        if (roleRows.length === 0) {
+          console.warn(`[chat:pin] Denied for userId=${userId}`)
+          return
+        }
+
+        await ChannelModel.setPinnedMessage(channelId, messageId ?? null)
+        const pinned = messageId ? await ChannelModel.getPinnedMessage(channelId) : null
+        const payload = { channelId, message: pinned }
+
+        if (io) {
+          io.to(`channel:${channelId}`).emit('chat:pinned', payload)
+        } else {
+          socket.emit('chat:pinned', payload)
+        }
+      } catch (err) {
+        console.error('[chat:pin] Error:', err)
+      }
+    })
+
     // ── voice:request_snapshot — re-envoie le snapshot des canaux vocaux ────────
     // Utile quand le client navigue vers la page chat alors que le socket était
     // déjà connecté (le snapshot initial a été envoyé avant que le listener soit monté).

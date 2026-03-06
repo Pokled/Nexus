@@ -126,7 +126,7 @@ class P2PManager {
     }
 
     const timer = setTimeout(() => {
-      if (pc.connectionState !== 'connected' && pc.connectionState !== 'completed') {
+      if (pc.connectionState !== 'connected') {
         console.log(`[p2p] ⏱ ICE timeout with ${peerId} — falling back to server relay`)
         this.gracefulDrop(peerId, pc)
       }
@@ -135,7 +135,7 @@ class P2PManager {
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState
-      if (state === 'connected' || state === 'completed') {
+      if (state === 'connected') {
         clearTimeout(this.iceTimers.get(peerId))
         this.iceTimers.delete(peerId)
       } else if (state === 'failed') {

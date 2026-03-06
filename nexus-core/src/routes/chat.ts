@@ -8,6 +8,7 @@ import { FastifyInstance } from 'fastify'
 import { rateLimit } from '../middleware/rateLimit'
 import { requireAuth } from '../middleware/auth'
 import * as ChannelModel from '../models/channel'
+import { redis } from '../config/database'
 
 // ── Resolve instance community (cached) ──────────────────────────────────────
 
@@ -56,6 +57,65 @@ export default async function chatRoutes(app: FastifyInstance) {
 
     const messages = await ChannelModel.getHistory(id, limit, before)
     return reply.send({ messages })
+  })
+
+  // GET /api/v1/chat/unfurl?url= — server-side Open Graph fetch (avoids CORS)
+  app.get('/unfurl', {
+    preHandler: [rateLimit, requireAuth],
+  }, async (request, reply) => {
+    const { url } = request.query as { url?: string }
+    if (!url) return reply.code(400).send({ error: 'Missing url' })
+
+    // Basic URL validation
+    let parsed: URL
+    try {
+      parsed = new URL(url)
+      if (!['http:', 'https:'].includes(parsed.protocol)) throw new Error('Bad protocol')
+    } catch {
+      return reply.code(400).send({ error: 'Invalid url' })
+    }
+
+    // Check Redis cache (TTL 1h)
+    const cacheKey = `unfurl:${url}`
+    const cached = await redis.get(cacheKey).catch(() => null)
+    if (cached) {
+      return reply.send(JSON.parse(cached))
+    }
+
+    try {
+      const res = await fetch(parsed.toString(), {
+        headers: { 'User-Agent': 'NexusBot/1.0 (link preview)' },
+        signal: AbortSignal.timeout(4000),
+      })
+      if (!res.ok) return reply.code(422).send({ error: 'Fetch failed' })
+
+      const html = await res.text()
+
+      const getOg = (prop: string) => {
+        const m = html.match(new RegExp(`<meta[^>]+property=["']og:${prop}["'][^>]+content=["']([^"']+)["']`, 'i'))
+            ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${prop}["']`, 'i'))
+        return m?.[1] ?? null
+      }
+      const getMeta = (name: string) => {
+        const m = html.match(new RegExp(`<meta[^>]+name=["']${name}["'][^>]+content=["']([^"']+)["']`, 'i'))
+            ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+name=["']${name}["']`, 'i'))
+        return m?.[1] ?? null
+      }
+      const titleM = html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)
+
+      const result = {
+        url:         parsed.toString(),
+        title:       getOg('title') ?? getMeta('title') ?? titleM?.[1]?.trim() ?? null,
+        description: getOg('description') ?? getMeta('description') ?? null,
+        image:       getOg('image') ?? null,
+        siteName:    getOg('site_name') ?? parsed.hostname,
+      }
+
+      await redis.set(cacheKey, JSON.stringify(result), 'EX', 3600).catch(() => {})
+      return reply.send(result)
+    } catch {
+      return reply.code(422).send({ error: 'Could not fetch preview' })
+    }
   })
 
   // GET /api/v1/chat/members?q= — autocomplete @mention (members of this community)

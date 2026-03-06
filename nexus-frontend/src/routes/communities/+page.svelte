@@ -20,7 +20,7 @@
 
 	let { data }: { data: PageData } = $props()
 
-	const instances: NexusInstance[] = data.instances ?? []
+	const instances = $derived<NexusInstance[]>(data.instances ?? [])
 
 	const LANGUAGES = [
 		{ key: 'all', label: 'Toutes' },

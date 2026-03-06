@@ -18,16 +18,19 @@ export interface ReactionSummary {
 }
 
 export interface ChannelMessage {
-  id:              string
-  channel_id:      string
-  author_id:       string
-  content:         string | null
-  created_at:      string
-  edited_at:       string | null
-  is_deleted:      boolean
-  author_username: string
-  author_avatar:   string | null
-  reactions?:      ReactionSummary[]
+  id:                  string
+  channel_id:          string
+  author_id:           string
+  content:             string | null
+  created_at:          string
+  edited_at:           string | null
+  is_deleted:          boolean
+  author_username:     string
+  author_avatar:       string | null
+  reactions?:          ReactionSummary[]
+  reply_to_id?:        string | null
+  reply_to_username?:  string | null
+  reply_to_content?:   string | null
 }
 
 function slugify(name: string): string {
@@ -105,20 +108,29 @@ export async function reorder(ids: string[]): Promise<void> {
 }
 
 export async function addMessage(data: {
-  channel_id: string
-  author_id:  string
-  content:    string
+  channel_id:   string
+  author_id:    string
+  content:      string
+  reply_to_id?: string | null
 }): Promise<ChannelMessage> {
   const { rows } = await db.query<ChannelMessage>(
     `WITH inserted AS (
-       INSERT INTO channel_messages (channel_id, author_id, content)
-       VALUES ($1, $2, $3)
+       INSERT INTO channel_messages (channel_id, author_id, content, reply_to_id)
+       VALUES ($1, $2, $3, $4)
        RETURNING *
      )
-     SELECT i.*, u.username AS author_username, u.avatar AS author_avatar
+     SELECT
+       i.*,
+       u.username  AS author_username,
+       u.avatar    AS author_avatar,
+       rp.id       AS reply_to_id,
+       ru.username AS reply_to_username,
+       CASE WHEN rp.is_deleted THEN NULL ELSE rp.content END AS reply_to_content
      FROM inserted i
-     JOIN users u ON u.id = i.author_id`,
-    [data.channel_id, data.author_id, data.content]
+     JOIN users u ON u.id = i.author_id
+     LEFT JOIN channel_messages rp ON rp.id = i.reply_to_id
+     LEFT JOIN users ru ON ru.id = rp.author_id`,
+    [data.channel_id, data.author_id, data.content, data.reply_to_id ?? null]
   )
   return { ...rows[0], reactions: [] }
 }
@@ -144,10 +156,15 @@ export async function getHistory(
        cm.is_deleted,
        cm.created_at,
        CASE WHEN cm.is_deleted THEN NULL ELSE cm.content END AS content,
-       u.username AS author_username,
-       u.avatar   AS author_avatar
+       u.username  AS author_username,
+       u.avatar    AS author_avatar,
+       cm.reply_to_id,
+       ru.username AS reply_to_username,
+       CASE WHEN rp.is_deleted THEN NULL ELSE rp.content END AS reply_to_content
      FROM channel_messages cm
      JOIN users u ON u.id = cm.author_id
+     LEFT JOIN channel_messages rp ON rp.id = cm.reply_to_id
+     LEFT JOIN users ru ON ru.id = rp.author_id
      WHERE cm.channel_id = $1 ${whereExtra}
      ORDER BY cm.created_at DESC
      LIMIT $2`,
@@ -250,17 +267,57 @@ export async function editMessage(
   return rows[0] ?? null
 }
 
+// ── Pinned message ────────────────────────────────────────────────────────────
+
+export async function setPinnedMessage(
+  channelId: string,
+  messageId: string | null
+): Promise<void> {
+  await db.query(
+    `UPDATE channels SET pinned_message_id = $2 WHERE id = $1`,
+    [channelId, messageId]
+  )
+}
+
+export async function getPinnedMessage(
+  channelId: string
+): Promise<ChannelMessage | null> {
+  const { rows } = await db.query<{ message_id: string }>(
+    `SELECT pinned_message_id AS message_id FROM channels WHERE id = $1`,
+    [channelId]
+  )
+  const messageId = rows[0]?.message_id
+  if (!messageId) return null
+
+  const { rows: msgRows } = await db.query<ChannelMessage>(
+    `SELECT
+       cm.id, cm.channel_id, cm.author_id, cm.edited_at, cm.is_deleted, cm.created_at,
+       CASE WHEN cm.is_deleted THEN NULL ELSE cm.content END AS content,
+       u.username AS author_username, u.avatar AS author_avatar
+     FROM channel_messages cm
+     JOIN users u ON u.id = cm.author_id
+     WHERE cm.id = $1`,
+    [messageId]
+  )
+  return msgRows[0] ?? null
+}
+
 export async function deleteMessage(
   messageId: string,
-  userId:    string
+  userId:    string,
+  byAdmin = false
 ): Promise<{ ok: boolean; channelId: string | null }> {
-  const { rows } = await db.query<{ channel_id: string }>(
-    `UPDATE channel_messages
-     SET is_deleted = true, content = ''
-     WHERE id = $1 AND author_id = $2
-     RETURNING channel_id`,
-    [messageId, userId]
-  )
+  const { rows } = byAdmin
+    ? await db.query<{ channel_id: string }>(
+        `UPDATE channel_messages SET is_deleted = true, content = ''
+         WHERE id = $1 AND is_deleted = false RETURNING channel_id`,
+        [messageId]
+      )
+    : await db.query<{ channel_id: string }>(
+        `UPDATE channel_messages SET is_deleted = true, content = ''
+         WHERE id = $1 AND author_id = $2 AND is_deleted = false RETURNING channel_id`,
+        [messageId, userId]
+      )
   if (rows.length === 0) return { ok: false, channelId: null }
   return { ok: true, channelId: rows[0].channel_id }
 }

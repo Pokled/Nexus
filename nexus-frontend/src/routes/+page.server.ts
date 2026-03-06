@@ -9,7 +9,8 @@ export const load: PageServerLoad = async ({ fetch }) => {
 		apiFetch(fetch, '/instance/threads/featured'),
 	]);
 
-	const [infoJson, catJson, threadsJson, featuredJson] = await Promise.all([
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	const [infoJson, catJson, threadsJson, featuredJson]: any[] = await Promise.all([
 		infoRes.ok  ? infoRes.json()     : {},
 		catRes.ok   ? catRes.json()      : {},
 		threadsRes.ok  ? threadsRes.json()  : {},

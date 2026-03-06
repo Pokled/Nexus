@@ -100,6 +100,8 @@ if [[ ${#COMMUNITY_SLUG} -lt 3 ]]; then
   die "Le slug est trop court après sanitisation (min 3 caractères). Choisis un nom plus long."
 fi
 prompt   COMMUNITY_LANG  "Langue principale (fr/en/de/es/it/pt)" "fr"
+prompt   COMMUNITY_DESC    "Description courte (optionnel)" ""
+prompt   COMMUNITY_COUNTRY "Pays (ex: FR, BE, CH) — optionnel" ""
 
 # 2 — Mode réseau
 echo ""
@@ -412,8 +414,9 @@ cat > "${NEXUS_DIR}/nexus-core/.env" <<COREENV
 # Identité de la communauté
 NEXUS_COMMUNITY_NAME=${COMMUNITY_NAME}
 NEXUS_COMMUNITY_SLUG=${COMMUNITY_SLUG}
+NEXUS_COMMUNITY_DESCRIPTION=${COMMUNITY_DESC}
 NEXUS_COMMUNITY_LANGUAGE=${COMMUNITY_LANG}
-NEXUS_COMMUNITY_COUNTRY=
+NEXUS_COMMUNITY_COUNTRY=${COMMUNITY_COUNTRY}
 
 # Serveur
 PORT=3000
@@ -442,6 +445,11 @@ TURN_PUBLIC_IP=${PUBLIC_IP:-}
 TURN_SECRET=${TURN_SECRET:-}
 TURN_PORT=3478
 COREENV
+# En mode Relay, ajouter des STUN publics en fallback (pas de nexus-turn)
+if $RELAY_MODE; then
+  printf "\n# Fallback STUN (relay mode — nexus-turn non installé)\nSTUN_FALLBACK_URLS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302\n" \
+    >> "${NEXUS_DIR}/nexus-core/.env"
+fi
 
 info "Installation des dépendances backend..."
 cd "${NEXUS_DIR}/nexus-core"
@@ -590,7 +598,7 @@ if [[ -n "$USER_ID" ]]; then
     VALUES (
       '${COMMUNITY_NAME}',
       '${COMMUNITY_SLUG}',
-      '',
+      '${COMMUNITY_DESC}',
       '${USER_ID}',
       true
     )
@@ -643,7 +651,7 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
       \"slug\":        \"${COMMUNITY_SLUG}\",
       \"url\":         \"https://${DOMAIN}\",
       \"language\":    \"${COMMUNITY_LANG}\",
-      \"version\":     \"0.4.1\"
+      \"version\":     \"1.0.0\"
     }" 2>/dev/null || true)
 
   REGISTER_TOKEN=$(echo "$REGISTER_RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
