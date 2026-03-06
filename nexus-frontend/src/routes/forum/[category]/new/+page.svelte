@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
+	import { page } from '$app/stores';
 	import type { ActionData, PageData } from './$types';
 	import NexusEditor from '$lib/components/editor/NexusEditor.svelte';
 
@@ -23,7 +24,7 @@
 </svelte:head>
 
 <div class="max-w-3xl">
-	<a href="../" class="text-sm text-gray-500 hover:text-gray-300">← Retour</a>
+	<a href="/forum/{$page.params.category}" class="text-sm text-gray-500 hover:text-gray-300">← Retour</a>
 	<h1 class="mt-2 text-2xl font-bold text-white mb-6">Nouveau sujet</h1>
 
 	{#if form?.error}
@@ -104,7 +105,7 @@
 			>
 				{submitting ? 'Publication...' : 'Publier le sujet'}
 			</button>
-			<a href="../" class="text-sm text-gray-500 hover:text-gray-300">Annuler</a>
+			<a href="/forum/{$page.params.category}" class="text-sm text-gray-500 hover:text-gray-300">Annuler</a>
 		</div>
 	</form>
 </div>
