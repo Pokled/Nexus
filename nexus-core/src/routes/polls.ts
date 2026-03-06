@@ -273,7 +273,7 @@ export default async function pollRoutes(app: FastifyInstance) {
           INSERT INTO channel_messages (channel_id, author_id, content, poll_id)
           VALUES ($1, $2, $3, $4)
           RETURNING id, created_at
-        `, [channel_id, userId, null, poll.id])
+        `, [channel_id, userId, '', poll.id])
 
         // Broadcaster le message chat avec poll via Socket.IO
         const pollMsg = {
