@@ -1,8 +1,16 @@
 <script lang="ts">
+	import { buildNameStyle, buildAnimClass, ensureFontLoaded } from '$lib/nameEffects'
+
 	export interface ProfileCardProps {
 		username: string
 		displayName?: string
 		avatarUrl?: string
+		nameColor?: string | null
+		nameGlow?: string | null
+		nameGlowIntensity?: number | null
+		nameAnimation?: string | null
+		nameFontFamily?: string | null
+		nameFontUrl?: string | null
 		points: number
 		tags: string[]
 		memberSince: string // ISO date string
@@ -16,12 +24,20 @@
 		username,
 		displayName,
 		avatarUrl,
+		nameColor = null,
+		nameGlow = null,
+		nameGlowIntensity = null,
+		nameAnimation = null,
+		nameFontFamily = null,
+		nameFontUrl = null,
 		points,
 		tags,
 		memberSince,
 		grade = null,
 		variant = 'forum',
 	}: ProfileCardProps = $props()
+
+	$effect(() => ensureFontLoaded(nameFontFamily, nameFontUrl))
 
 	// Initials fallback (first letter of displayName or username)
 	const initials = $derived(
@@ -78,7 +94,8 @@
 		<!-- Username -->
 		<a
 			href="/users/{username}"
-			class="text-sm font-semibold text-indigo-300 hover:text-indigo-200 truncate max-w-full"
+			class="text-sm font-semibold truncate max-w-full hover:brightness-125 transition-colors {buildAnimClass({ nameAnimation })}"
+			style={buildNameStyle({ nameColor, nameGlow, nameGlowIntensity, nameFontFamily }, '#a5b4fc')}
 		>
 			{displayName || username}
 		</a>
@@ -135,7 +152,7 @@
 		{/if}
 
 		<div class="flex flex-col gap-1">
-			<span class="text-lg font-bold text-white">{displayName || username}</span>
+			<span class="text-lg font-bold {buildAnimClass({ nameAnimation })}" style={buildNameStyle({ nameColor, nameGlow, nameGlowIntensity, nameFontFamily }, '#ffffff')}>{displayName || username}</span>
 			<span class="text-sm text-gray-400">@{username}</span>
 
 			<!-- Grade badge -->

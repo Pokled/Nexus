@@ -386,6 +386,12 @@
 			<ProfileCard
 				username={post.author_username}
 				avatarUrl={post.author_avatar ?? undefined}
+				nameColor={post.author_name_color ?? null}
+				nameGlow={post.author_name_glow ?? null}
+				nameGlowIntensity={post.author_name_glow_intensity ?? null}
+				nameAnimation={post.author_name_animation ?? null}
+				nameFontFamily={post.author_name_font_family ?? null}
+				nameFontUrl={post.author_name_font_url ?? null}
 				points={post.author_points}
 				tags={post.author_tags ?? []}
 				memberSince={post.author_member_since}

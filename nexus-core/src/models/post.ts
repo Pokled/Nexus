@@ -16,9 +16,15 @@ export interface Post {
 
 // Post with author info — used in thread view
 export interface PostWithAuthor extends Post {
-  author_username:     string
-  author_avatar:       string | null
-  author_points:       number
+  author_username:          string
+  author_avatar:            string | null
+  author_name_color:        string | null
+  author_name_glow:         string | null
+  author_name_glow_intensity: number | null
+  author_name_animation:    string | null
+  author_name_font_family:  string | null
+  author_name_font_url:     string | null
+  author_points:            number
   author_tags:         string[]
   author_member_since: Date
   author_grade_name:   string | null
@@ -36,6 +42,12 @@ export async function findById(id: string): Promise<PostWithAuthor | null> {
     `SELECT p.*,
             u.username   AS author_username,
             u.avatar     AS author_avatar,
+            up.name_color          AS author_name_color,
+            up.name_glow           AS author_name_glow,
+            up.name_glow_intensity AS author_name_glow_intensity,
+            up.name_animation      AS author_name_animation,
+            up.name_font_family    AS author_name_font_family,
+            up.name_font_url       AS author_name_font_url,
             u.points     AS author_points,
             u.created_at AS author_member_since,
             COALESCE(up.tags, '{}') AS author_tags,
@@ -65,6 +77,12 @@ export async function listByThread(threadId: string, opts: {
     `SELECT p.*,
             u.username   AS author_username,
             u.avatar     AS author_avatar,
+            up.name_color          AS author_name_color,
+            up.name_glow           AS author_name_glow,
+            up.name_glow_intensity AS author_name_glow_intensity,
+            up.name_animation      AS author_name_animation,
+            up.name_font_family    AS author_name_font_family,
+            up.name_font_url       AS author_name_font_url,
             u.points     AS author_points,
             u.created_at AS author_member_since,
             COALESCE(up.tags, '{}') AS author_tags,

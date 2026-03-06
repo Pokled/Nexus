@@ -2,12 +2,65 @@
 	import { enhance } from '$app/forms'
 	import type { PageData, ActionData } from './$types'
 	import { PROFILE_PRESETS, resolveTheme, themeToStyle, type ProfileThemeVars } from '$lib/profileThemes'
+	import { FONT_PRESETS, ANIM_PRESETS, ensureFontLoaded, buildNameStyle, buildAnimClass } from '$lib/nameEffects'
 
 	let { data, form }: { data: PageData; form: ActionData } = $props()
 	const profile = $derived(data.profile)
 
 	let submitting = $state(false)
 	let nameColor = $state<string>(profile.name_color ?? '#ffffff')
+	let nameGlowEnabled   = $state<boolean>(!!profile.name_glow)
+	let nameGlow          = $state<string>(profile.name_glow ?? '#6366f1')
+	let nameGlowIntensity = $state<number>(profile.name_glow_intensity ?? 10)
+	let nameAnimation     = $state<string>(profile.name_animation ?? '')
+	let nameFontFamily    = $state<string>(profile.name_font_family ?? '')
+	let nameFontUrl       = $state<string | null>(profile.name_font_url ?? null)
+	let fontUploading     = $state(false)
+	let fontError         = $state('')
+
+	// Preview: computed inline style + anim class for the pseudo preview
+	const previewNameStyle = $derived(buildNameStyle({
+		nameColor,
+		nameGlow:          nameGlowEnabled ? nameGlow : null,
+		nameGlowIntensity: nameGlowIntensity,
+		nameFontFamily:    nameFontFamily || null,
+	}, '#ffffff'))
+	const previewAnimClass = $derived(buildAnimClass({ nameAnimation }))
+
+	$effect(() => {
+		const furl = nameFontUrl; if (furl) ensureFontLoaded(nameFontFamily, furl)
+	})
+
+	async function uploadFont(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0]
+		if (!file) return
+		fontError    = ''
+		fontUploading = true
+		try {
+			const { PUBLIC_API_URL } = await import('$env/static/public')
+			const token = (data as Record<string, unknown>).token as string | null
+			const fd = new FormData()
+			fd.append('file', file)
+			const res = await fetch(`${PUBLIC_API_URL}/api/v1/users/me/upload?type=font`, {
+				method: 'POST',
+				headers: token ? { Authorization: `Bearer ${token}` } : {},
+				body: fd,
+			})
+			if (!res.ok) {
+				const j = await res.json().catch(() => ({}))
+				throw new Error(j.error ?? 'Erreur upload')
+			}
+			const { url, family } = await res.json()
+			nameFontFamily = family
+			const base = PUBLIC_API_URL.replace('/api/v1', '')
+			nameFontUrl = url.startsWith('http') ? url : base + url
+			if (nameFontUrl) ensureFontLoaded(nameFontFamily, nameFontUrl!)
+		} catch (err: unknown) {
+			fontError = err instanceof Error ? err.message : 'Erreur upload'
+		} finally {
+			fontUploading = false
+		}
+	}
 
 	// ── Profile Theme ──────────────────────────────────────────────────────────
 	let theme = $state<ProfileThemeVars>(resolveTheme(profile.metadata?.theme))
@@ -159,6 +212,12 @@
 	<!-- Hidden inputs for upload URLs -->
 	<input type="hidden" name="avatar_url" value={avatarUrl} />
 	<input type="hidden" name="banner_url" value={bannerUrl} />
+	<!-- Hidden inputs for name effects -->
+	<input type="hidden" name="name_glow" value={nameGlowEnabled ? nameGlow : ''} />
+	<input type="hidden" name="name_glow_intensity" value={nameGlowIntensity} />
+	<input type="hidden" name="name_animation" value={nameAnimation} />
+	<input type="hidden" name="name_font_family" value={nameFontFamily} />
+	<input type="hidden" name="name_font_url" value={nameFontUrl ?? ''} />
 
 	<!-- ─── ROW 1: Identité + Visuels ──────────────────────────────────── -->
 	<div class="grid grid-cols-5 gap-4">
@@ -394,6 +453,110 @@
 
 		<!-- Hidden serialised theme -->
 		<input type="hidden" name="metadata_theme" value={themeJson} />
+	</div>
+
+	<!-- ─── ROW 1.7: Effets du pseudo ─────────────────────────────────────── -->
+	<div class="bg-gray-900/80 border border-gray-800 rounded-xl p-5 space-y-6">
+		<h2 class="text-xs uppercase tracking-widest text-gray-500 font-semibold flex items-center gap-2">
+			<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z"/></svg>
+			Effets du pseudo
+		</h2>
+
+		<!-- Live preview -->
+		<div class="flex items-center gap-3 px-4 py-3 bg-gray-800/50 rounded-xl border border-gray-700/60">
+			<span class="text-xs text-gray-500 shrink-0">Aperçu</span>
+			<span class="text-sm font-bold {previewAnimClass}" style={previewNameStyle}>
+				{profile.display_name || profile.username || 'MonPseudo'}
+			</span>
+		</div>
+
+		<div class="grid lg:grid-cols-3 gap-6">
+
+			<!-- Police -->
+			<div class="space-y-3">
+				<p class="text-xs text-gray-400 font-medium">Police du pseudo</p>
+				<div class="grid grid-cols-3 gap-1.5">
+					{#each FONT_PRESETS as preset}
+						<button
+							type="button"
+							onclick={() => { nameFontFamily = preset.family }}
+							class="px-2 py-1.5 rounded-lg text-xs border transition-all text-center
+							       {nameFontFamily === preset.family
+									 ? 'border-indigo-500 bg-indigo-950/50 text-white'
+									 : 'border-gray-700 bg-gray-800/40 text-gray-400 hover:border-gray-500 hover:text-white'}"
+							style={preset.family ? `font-family: '${preset.family}', sans-serif` : ''}
+						>
+							{preset.family ? preset.preview : 'Défaut'}
+						</button>
+					{/each}
+				</div>
+				<!-- Custom font upload -->
+				<div class="pt-1">
+					<label class="flex items-center gap-2 cursor-pointer">
+						<span class="px-3 py-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-xs text-gray-200 transition-colors shrink-0">
+							{fontUploading ? 'Envoi…' : 'Importer une police'}
+						</span>
+						<span class="text-[10px] text-gray-600">.ttf · .otf · .woff · .woff2</span>
+						<input type="file" accept=".ttf,.otf,.woff,.woff2,font/ttf,font/otf,font/woff,font/woff2"
+							class="sr-only" disabled={fontUploading} onchange={uploadFont} />
+					</label>
+					{#if nameFontUrl}
+						<p class="text-[10px] text-green-500 mt-1">Police personnalisée chargée : {nameFontFamily}</p>
+					{/if}
+					{#if fontError}<p class="text-[10px] text-red-400 mt-1">{fontError}</p>{/if}
+				</div>
+			</div>
+
+			<!-- Halo lumineux -->
+			<div class="space-y-3">
+				<p class="text-xs text-gray-400 font-medium">Halo lumineux</p>
+				<label class="flex items-center gap-2 cursor-pointer select-none">
+					<input type="checkbox" bind:checked={nameGlowEnabled}
+						class="w-4 h-4 rounded border-gray-600 bg-gray-800 accent-indigo-500 cursor-pointer" />
+					<span class="text-xs text-gray-300">Activer le halo</span>
+				</label>
+				{#if nameGlowEnabled}
+					<div class="space-y-2">
+						<div class="flex items-center gap-3">
+							<input type="color" bind:value={nameGlow}
+								class="w-9 h-9 rounded-lg border border-gray-700 bg-gray-800 cursor-pointer p-0.5 focus:outline-none focus:border-indigo-500 shrink-0" />
+							<div class="flex-1 space-y-1">
+								<div class="flex justify-between text-[10px] text-gray-500">
+									<span>Intensité</span>
+									<span>{nameGlowIntensity}px</span>
+								</div>
+								<input type="range" min="5" max="40" step="1"
+									bind:value={nameGlowIntensity}
+									class="w-full accent-indigo-500 cursor-pointer" />
+							</div>
+						</div>
+					</div>
+				{/if}
+			</div>
+
+			<!-- Animations -->
+			<div class="space-y-3">
+				<p class="text-xs text-gray-400 font-medium">Animation</p>
+				<div class="grid grid-cols-2 gap-1.5">
+					{#each ANIM_PRESETS as preset}
+						<button
+							type="button"
+							onclick={() => { nameAnimation = preset.key }}
+							class="px-2.5 py-1.5 rounded-lg text-xs border transition-all text-left
+							       {nameAnimation === preset.key
+									 ? 'border-indigo-500 bg-indigo-950/50 text-white'
+									 : 'border-gray-700 bg-gray-800/40 text-gray-400 hover:border-gray-500 hover:text-white'}"
+						>
+							{preset.label}
+							{#if preset.always}
+								<span class="text-[9px] text-indigo-500 ml-1">∞</span>
+							{/if}
+						</button>
+					{/each}
+				</div>
+				<p class="text-[10px] text-gray-600">∞ = animation permanente · autres = au survol</p>
+			</div>
+		</div>
 	</div>
 
 	<!-- ─── ROW 2: Réseaux sociaux ─────────────────────────────────────────── -->

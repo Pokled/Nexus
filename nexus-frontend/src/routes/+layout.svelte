@@ -9,6 +9,7 @@
 	import { tryAutoConnect } from '$lib/socket';
 	import type { UserStatus } from '$lib/socket';
 	import { resolveTheme, themeToVars } from '$lib/profileThemes';
+	import { buildNameStyle, buildAnimClass, ensureFontLoaded, GOOGLE_FONTS_URL } from '$lib/nameEffects';
 
 	let { children, data }: { children: any; data: LayoutData } = $props();
 
@@ -132,6 +133,13 @@
 		{ emoji: '🏃', text: 'De retour plus tard' },
 	]
 
+	// Load custom fonts for online members whenever the list changes
+	$effect(() => {
+		for (const m of onlineMembers) {
+			ensureFontLoaded(m.nameFontFamily ?? null, m.nameFontUrl ?? null)
+		}
+	})
+
 	// Find logged-in user's current status from the store
 	const myStatus = $derived(onlineMembers.find(m => m.userId === (user as any)?.id)?.status ?? null)
 
@@ -162,6 +170,10 @@
 	{#if communityLogo}
 		<link rel="icon" href={communityLogo} />
 	{/if}
+	<!-- Preload all Google Font presets (avatar/username effects) -->
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+	<link rel="stylesheet" href={GOOGLE_FONTS_URL} />
 </svelte:head>
 
 <div class="min-h-screen flex flex-col" style="{appVars}; background: var(--p-bg); color: var(--p-text)">
@@ -419,7 +431,8 @@
 		</aside>
 
 		<!-- ── Contenu principal ───────────────────────────────────────────────── -->
-		<main class="flex-1 min-w-0 lg:pl-[220px] xl:pr-[220px] flex flex-col" style="padding-bottom: var(--bottom-nav-h)">
+		<div class="flex-1 overflow-hidden">
+		<main class="h-full overflow-y-auto min-w-0 lg:pl-[220px] xl:mr-[220px]" style="padding-bottom: var(--bottom-nav-h)">
             {#if communityBanner && ($page.url.pathname === '/' || $page.url.pathname.startsWith('/forum'))}
                 <div class="relative w-full h-32 overflow-hidden">
                     <img src={communityBanner} alt="Bannière" class="w-full h-full object-cover" />
@@ -440,9 +453,10 @@
                 {@render children()}
             </div>
         </main>
+		</div>
 
 		<!-- ── Members Bar (droite, 220px) ────────────────────────────────────── -->
-		<aside class="hidden xl:flex fixed right-0 top-14 bottom-0 w-[220px] flex-col border-l border-gray-800 overflow-y-auto z-30"
+		<aside class="hidden xl:flex fixed right-0 top-14 bottom-0 w-[220px] flex-col border-l border-gray-800 overflow-y-auto overflow-x-hidden z-30"
 		       style="background: var(--p-card-bg); border-color: var(--p-card-border)">
 			{#if user}
 				<div class="px-3 pt-4 pb-2 shrink-0">
@@ -466,8 +480,14 @@
 									<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-gray-900"></span>
 								</div>
 								<div class="min-w-0 flex-1">
-									<div class="text-sm text-indigo-300 group-hover:text-white truncate transition-colors font-medium leading-tight">{member.username}</div>
-									{#if member.status?.text || member.status?.emoji}
+									<div class="text-sm font-medium leading-tight truncate {buildAnimClass(member)}"
+									     style={buildNameStyle(member, '#a5b4fc')}>{member.username}</div>
+									{#if member.grade}
+										<span class="inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold"
+										      style="background-color: {member.grade.color}; color: {gradeTextColor(member.grade.color)}">
+											{member.grade.name}
+										</span>
+									{:else if member.status?.text || member.status?.emoji}
 										<div class="text-[10px] text-gray-500 truncate leading-tight">{member.status.emoji} {member.status.text}</div>
 									{:else}
 										<div class="text-[10px] text-gray-700 truncate leading-tight group-hover:text-gray-500 transition-colors">Définir un statut…</div>
@@ -485,8 +505,14 @@
 									<span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-green-400 border-2 border-gray-900"></span>
 								</div>
 								<div class="min-w-0 flex-1">
-									<div class="text-sm text-gray-400 group-hover:text-white truncate transition-colors leading-tight">{member.username}</div>
-									{#if member.status?.text || member.status?.emoji}
+									<div class="text-sm font-medium leading-tight truncate transition-colors group-hover:brightness-125 {buildAnimClass(member)}"
+									     style={buildNameStyle(member, '#9ca3af')}>{member.username}</div>
+									{#if member.grade}
+										<span class="inline-flex items-center rounded px-1 py-0 text-[9px] font-semibold"
+										      style="background-color: {member.grade.color}; color: {gradeTextColor(member.grade.color)}">
+											{member.grade.name}
+										</span>
+									{:else if member.status?.text || member.status?.emoji}
 										<div class="text-[10px] text-gray-500 truncate leading-tight">{member.status.emoji} {member.status.text}</div>
 									{/if}
 								</div>

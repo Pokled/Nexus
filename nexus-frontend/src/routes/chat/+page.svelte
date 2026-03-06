@@ -15,6 +15,8 @@
 	import type { Socket } from 'socket.io-client';
 	import { voicePanelTarget } from '$lib/voicePanel';
 	import { p2pManager, p2pStatus, p2pPeerCount, p2pFallback } from '$lib/p2p';
+	import MiniProfileCard from '$lib/components/MiniProfileCard.svelte';
+	import { buildNameStyle, buildAnimClass, ensureFontLoaded } from '$lib/nameEffects';
 
 	let { data }: { data: PageData } = $props();
 
@@ -33,27 +35,41 @@
 	type Channel = (typeof localChannels)[number];
 	type ReactionSummary = { emoji: string; count: number; userReactedIds: string[] };
 	type Message = {
-		id:                 string;
-		channel_id:         string;
-		author_id:          string;
-		author_username:    string;
-		author_avatar:      string | null;
-		content:            string | null;
-		created_at:         string;
-		edited_at:          string | null;
-		is_deleted:         boolean;
-		reactions:          ReactionSummary[];
-		reply_to_id?:       string | null;
-		reply_to_username?: string | null;
-		reply_to_content?:  string | null;
-		poll_id?:           string | null;
-		poll?:              any;
+		id:                   string;
+		channel_id:           string;
+		author_id:            string;
+		author_username:      string;
+		author_avatar:        string | null;
+		author_name_color:        string | null;
+		author_name_glow:         string | null;
+		author_name_glow_intensity: number | null;
+		author_name_animation:    string | null;
+		author_name_font_family:  string | null;
+		author_name_font_url:     string | null;
+		content:              string | null;
+		created_at:           string;
+		edited_at:            string | null;
+		is_deleted:           boolean;
+		reactions:            ReactionSummary[];
+		reply_to_id?:         string | null;
+		reply_to_username?:   string | null;
+		reply_to_content?:    string | null;
+		poll_id?:             string | null;
+		poll?:                any;
 	};
 
 	// ── State ─────────────────────────────────────────────────────────────────
 	let selectedChannel = $state<Channel | null>(null);
 	$effect(() => { if (!selectedChannel && localChannels.length > 0) selectedChannel = localChannels[0]; });
 	let messages        = $state<Message[]>([]);
+	// Ensure custom fonts are loaded whenever messages change
+	$effect(() => {
+		for (const m of messages) {
+			if (m.author_name_font_family && m.author_name_font_url) {
+				ensureFontLoaded(m.author_name_font_family, m.author_name_font_url)
+			}
+		}
+	});
 	let inputText       = $state('');
 	let messagesEl      = $state<HTMLDivElement | null>(null);
 	let isLoadingOld    = $state(false);
@@ -110,6 +126,15 @@
 
 	// Poll creator
 	let showPollCreator = $state(false);
+
+	// Mini profile popup
+	let profilePopupUsername = $state<string | null>(null);
+	let profilePopupAnchor   = $state<HTMLElement | null>(null);
+
+	function openProfilePopup(e: MouseEvent, username: string) {
+		profilePopupAnchor   = e.currentTarget as HTMLElement;
+		profilePopupUsername = username;
+	}
 
 	// ── Voice ─────────────────────────────────────────────────────────────────
 	const voiceState    = $derived($voiceStore);
@@ -857,9 +882,14 @@
 						<div class="min-w-0 flex-1">
 							{#if !shouldGroup}
 								<div class="flex items-baseline gap-2 mb-1">
-									<span class="text-sm font-black text-white hover:text-indigo-400 cursor-pointer transition-colors leading-none">
+																	<button
+										type="button"
+										class="text-sm font-black cursor-pointer leading-none hover:brightness-125 transition-all {buildAnimClass({ nameAnimation: msg.author_name_animation })}"
+										style={buildNameStyle({ nameColor: msg.author_name_color, nameGlow: msg.author_name_glow, nameGlowIntensity: msg.author_name_glow_intensity, nameFontFamily: msg.author_name_font_family }, '#ffffff')}
+										onclick={(e) => openProfilePopup(e, msg.author_username)}
+									>
 										{msg.author_username}
-									</span>
+									</button>
 									<span class="text-[10px] text-gray-600 font-bold uppercase tracking-tighter">
 										{formatTime(msg.created_at)}
 									</span>
@@ -1249,7 +1279,16 @@
 		</div>
 	</div>
 
-	
+
+{/if}
+
+<!-- ── Mini profile popup ─────────────────────────────────────────────────── -->
+{#if profilePopupUsername}
+	<MiniProfileCard
+		username={profilePopupUsername}
+		anchorEl={profilePopupAnchor}
+		onclose={() => { profilePopupUsername = null; profilePopupAnchor = null; }}
+	/>
 {/if}
 
 <style>

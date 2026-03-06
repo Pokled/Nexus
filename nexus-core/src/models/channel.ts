@@ -25,12 +25,19 @@ export interface ChannelMessage {
   created_at:          string
   edited_at:           string | null
   is_deleted:          boolean
-  author_username:     string
-  author_avatar:       string | null
+  author_username:          string
+  author_avatar:            string | null
+  author_name_color:        string | null
+  author_name_glow:         string | null
+  author_name_glow_intensity: number | null
+  author_name_animation:    string | null
+  author_name_font_family:  string | null
+  author_name_font_url:     string | null
   reactions?:          ReactionSummary[]
   reply_to_id?:        string | null
   reply_to_username?:  string | null
   reply_to_content?:   string | null
+  poll_id?:            string | null
 }
 
 function slugify(name: string): string {
@@ -121,13 +128,20 @@ export async function addMessage(data: {
      )
      SELECT
        i.*,
-       u.username  AS author_username,
-       u.avatar    AS author_avatar,
-       rp.id       AS reply_to_id,
-       ru.username AS reply_to_username,
+       u.username              AS author_username,
+       u.avatar                AS author_avatar,
+       p.name_color            AS author_name_color,
+       p.name_glow             AS author_name_glow,
+       p.name_glow_intensity   AS author_name_glow_intensity,
+       p.name_animation        AS author_name_animation,
+       p.name_font_family      AS author_name_font_family,
+       p.name_font_url         AS author_name_font_url,
+       rp.id        AS reply_to_id,
+       ru.username  AS reply_to_username,
        CASE WHEN rp.is_deleted THEN NULL ELSE rp.content END AS reply_to_content
      FROM inserted i
      JOIN users u ON u.id = i.author_id
+     LEFT JOIN user_profiles p ON p.user_id = i.author_id
      LEFT JOIN channel_messages rp ON rp.id = i.reply_to_id
      LEFT JOIN users ru ON ru.id = rp.author_id`,
     [data.channel_id, data.author_id, data.content, data.reply_to_id ?? null]
@@ -157,13 +171,20 @@ export async function getHistory(
        cm.created_at,
        cm.poll_id,
        CASE WHEN cm.is_deleted THEN NULL ELSE cm.content END AS content,
-       u.username  AS author_username,
-       u.avatar    AS author_avatar,
+       u.username              AS author_username,
+       u.avatar                AS author_avatar,
+       p.name_color            AS author_name_color,
+       p.name_glow             AS author_name_glow,
+       p.name_glow_intensity   AS author_name_glow_intensity,
+       p.name_animation        AS author_name_animation,
+       p.name_font_family      AS author_name_font_family,
+       p.name_font_url         AS author_name_font_url,
        cm.reply_to_id,
-       ru.username AS reply_to_username,
+       ru.username  AS reply_to_username,
        CASE WHEN rp.is_deleted THEN NULL ELSE rp.content END AS reply_to_content
      FROM channel_messages cm
      JOIN users u ON u.id = cm.author_id
+     LEFT JOIN user_profiles p ON p.user_id = cm.author_id
      LEFT JOIN channel_messages rp ON rp.id = cm.reply_to_id
      LEFT JOIN users ru ON ru.id = rp.author_id
      WHERE cm.channel_id = $1 ${whereExtra}

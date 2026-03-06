@@ -9,10 +9,14 @@ import { requireAuth } from '../middleware/auth'
 import { validate } from '../middleware/validate'
 import * as UserModel from '../models/user'
 import { db, redis } from '../config/database'
+import { io } from '../socket/io'
 
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads')
-const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
-const ALLOWED_TYPES = ['avatar', 'banner']
+const ALLOWED_MIME  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+const ALLOWED_FONTS = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2',
+                       'application/font-woff', 'application/font-woff2',
+                       'application/x-font-ttf', 'application/octet-stream']
+const ALLOWED_TYPES = ['avatar', 'banner', 'font']
 
 const PatchProfileBody = z.object({
   display_name:      z.string().max(100).nullable().optional(),
@@ -33,11 +37,16 @@ const PatchProfileBody = z.object({
   twitter_username:   z.string().max(100).optional().nullable(),
   instagram_username: z.string().max(100).optional().nullable(),
   website_url:        z.string().url().max(500).optional().nullable(),
-  name_color:         z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
-  banner_asset_id:    z.string().uuid().optional().nullable(),
-  frame_asset_id:     z.string().uuid().optional().nullable(),
-  badge_asset_id:     z.string().uuid().optional().nullable(),
-  metadata:           z.record(z.string(), z.unknown()).optional(),
+  name_color:           z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  name_glow:            z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  name_glow_intensity:  z.number().int().min(5).max(40).optional().nullable(),
+  name_animation:       z.enum(['pulse', 'shake', 'float', 'glitch', 'rainbow', 'glow-pulse', 'none']).optional().nullable(),
+  name_font_family:     z.string().max(100).optional().nullable(),
+  name_font_url:        z.string().max(500).optional().nullable(),
+  banner_asset_id:      z.string().uuid().optional().nullable(),
+  frame_asset_id:       z.string().uuid().optional().nullable(),
+  badge_asset_id:       z.string().uuid().optional().nullable(),
+  metadata:             z.record(z.string(), z.unknown()).optional(),
 })
 
 const GITHUB_CACHE_TTL = 3600 // 1 hour
@@ -107,8 +116,13 @@ export default async function userRoutes(app: FastifyInstance) {
     if (data.twitter_username  !== undefined) { fields.push(`twitter_username = $${i++}`);  values.push(data.twitter_username)  }
     if (data.instagram_username !== undefined) { fields.push(`instagram_username = $${i++}`); values.push(data.instagram_username) }
     if (data.website_url       !== undefined) { fields.push(`website_url = $${i++}`);       values.push(data.website_url)       }
-    if (data.name_color        !== undefined) { fields.push(`name_color = $${i++}`);        values.push(data.name_color)        }
-    if (data.banner_asset_id   !== undefined) { fields.push(`banner_asset_id = $${i++}`);   values.push(data.banner_asset_id)   }
+    if (data.name_color          !== undefined) { fields.push(`name_color = $${i++}`);           values.push(data.name_color)          }
+    if (data.name_glow           !== undefined) { fields.push(`name_glow = $${i++}`);            values.push(data.name_glow)           }
+    if (data.name_glow_intensity !== undefined) { fields.push(`name_glow_intensity = $${i++}`);  values.push(data.name_glow_intensity) }
+    if (data.name_animation      !== undefined) { fields.push(`name_animation = $${i++}`);       values.push(data.name_animation === 'none' ? null : data.name_animation) }
+    if (data.name_font_family    !== undefined) { fields.push(`name_font_family = $${i++}`);     values.push(data.name_font_family)    }
+    if (data.name_font_url       !== undefined) { fields.push(`name_font_url = $${i++}`);        values.push(data.name_font_url)       }
+    if (data.banner_asset_id     !== undefined) { fields.push(`banner_asset_id = $${i++}`);      values.push(data.banner_asset_id)     }
     if (data.frame_asset_id    !== undefined) { fields.push(`frame_asset_id = $${i++}`);    values.push(data.frame_asset_id)    }
     if (data.badge_asset_id    !== undefined) { fields.push(`badge_asset_id = $${i++}`);    values.push(data.badge_asset_id)    }
     if (data.metadata          !== undefined) { fields.push(`metadata = metadata || $${i++}::jsonb`); values.push(JSON.stringify(data.metadata)) }
@@ -140,6 +154,35 @@ export default async function userRoutes(app: FastifyInstance) {
       )
     }
 
+    // Re-broadcast updated presence data so the sidebar reflects new name effects immediately
+    const nameEffectFields = ['name_color', 'name_glow', 'name_glow_intensity', 'name_animation', 'name_font_family', 'name_font_url', 'avatar_url']
+    const hasPresenceChange = nameEffectFields.some(f => (data as any)[f] !== undefined)
+    if (hasPresenceChange && io) {
+      const updated = rows[0]
+      const userId  = request.user!.userId
+      ;(await io.in('presence').fetchSockets())
+        .filter(s => s.data.userId === userId)
+        .forEach(s => {
+          if (updated.name_color       !== undefined) s.data.nameColor        = updated.name_color       ?? null
+          if (updated.name_glow        !== undefined) s.data.nameGlow         = updated.name_glow        ?? null
+          if (updated.name_glow_intensity !== undefined) s.data.nameGlowIntensity = updated.name_glow_intensity ?? null
+          if (updated.name_animation   !== undefined) s.data.nameAnimation    = updated.name_animation   ?? null
+          if (updated.name_font_family !== undefined) s.data.nameFontFamily   = updated.name_font_family ?? null
+          if (updated.name_font_url    !== undefined) s.data.nameFontUrl      = updated.name_font_url    ?? null
+          if (data.avatar_url          !== undefined) s.data.avatar           = data.avatar_url          ?? null
+        })
+      io.to('presence').emit('presence:effects_update', {
+        userId,
+        nameColor:         updated.name_color         ?? null,
+        nameGlow:          updated.name_glow          ?? null,
+        nameGlowIntensity: updated.name_glow_intensity ?? null,
+        nameAnimation:     updated.name_animation     ?? null,
+        nameFontFamily:    updated.name_font_family   ?? null,
+        nameFontUrl:       updated.name_font_url      ?? null,
+        avatar:            data.avatar_url !== undefined ? (data.avatar_url ?? null) : undefined,
+      })
+    }
+
     return reply.send({ profile: rows[0] })
   })
 
@@ -156,6 +199,8 @@ export default async function userRoutes(app: FastifyInstance) {
          p.bio, p.status, p.location, p.tags, p.links,
          p.github_username, p.youtube_channel, p.twitter_username,
          p.instagram_username, p.website_url, p.name_color,
+         p.name_glow, p.name_glow_intensity, p.name_animation,
+         p.name_font_family, p.name_font_url,
          p.banner_asset_id, p.frame_asset_id, p.badge_asset_id, p.metadata,
          ab.file_path  AS banner_asset_path,
          af.file_path  AS frame_asset_path,
@@ -275,17 +320,40 @@ export default async function userRoutes(app: FastifyInstance) {
     return reply.send(data)
   })
 
-  // POST /api/v1/users/me/upload?type=avatar|banner — upload image from client PC
+  // POST /api/v1/users/me/upload?type=avatar|banner|font — upload file from client PC
   app.post('/me/upload', {
     preHandler: [requireAuth],
   }, async (request, reply) => {
     const { type } = request.query as { type?: string }
     if (!type || !ALLOWED_TYPES.includes(type)) {
-      return reply.code(400).send({ error: 'type must be "avatar" or "banner"' })
+      return reply.code(400).send({ error: 'type must be "avatar", "banner" or "font"' })
     }
 
     const data = await request.file()
     if (!data) return reply.code(400).send({ error: 'No file provided' })
+
+    if (type === 'font') {
+      // Accept fonts by mimetype OR by file extension (browsers vary)
+      const filename_lc = data.filename?.toLowerCase() ?? ''
+      const isFont = ALLOWED_FONTS.includes(data.mimetype)
+        || filename_lc.endsWith('.ttf') || filename_lc.endsWith('.otf')
+        || filename_lc.endsWith('.woff') || filename_lc.endsWith('.woff2')
+      if (!isFont) {
+        return reply.code(400).send({ error: 'Format non supporté (TTF, OTF, WOFF, WOFF2)' })
+      }
+      const ext = filename_lc.split('.').pop() ?? 'ttf'
+      const dir  = path.join(UPLOADS_DIR, 'fonts')
+      mkdirSync(dir, { recursive: true })
+      const fname = `${randomUUID()}.${ext}`
+      await pipeline(data.file, createWriteStream(path.join(dir, fname)))
+      // Derive a safe CSS font-family name from the original filename
+      const familyName = (data.filename ?? 'CustomFont')
+        .replace(/\.[^.]+$/, '')
+        .replace(/[^a-zA-Z0-9\s\-_]/g, '')
+        .trim()
+        .slice(0, 80)
+      return reply.send({ url: `/uploads/fonts/${fname}`, family: familyName })
+    }
 
     if (!ALLOWED_MIME.includes(data.mimetype)) {
       return reply.code(400).send({ error: 'Format non supporté (JPEG, PNG, WebP, GIF)' })

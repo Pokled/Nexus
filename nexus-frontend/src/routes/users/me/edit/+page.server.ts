@@ -30,6 +30,7 @@ export const actions: Actions = {
 		const fields = [
 			'display_name', 'bio', 'status', 'location',
 			'avatar_url', 'banner_url', 'name_color',
+			'name_glow', 'name_animation', 'name_font_family', 'name_font_url',
 			'github_username', 'youtube_channel', 'twitter_username',
 			'instagram_username', 'website_url',
 		]
@@ -40,6 +41,13 @@ export const actions: Actions = {
 				// Send null to clear the field, string otherwise
 				body[field] = val.trim() === '' ? null : val.trim()
 			}
+		}
+
+		// name_glow_intensity — integer field
+		const glowIntensityRaw = form.get('name_glow_intensity') as string | null
+		if (glowIntensityRaw !== null) {
+			const parsed = parseInt(glowIntensityRaw, 10)
+			body['name_glow_intensity'] = isNaN(parsed) ? null : Math.max(5, Math.min(40, parsed))
 		}
 
 		// Tags: split by comma, trim, filter empty

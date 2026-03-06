@@ -17,9 +17,17 @@ interface JwtPayload {
 // Extend SocketData for typed socket.data
 declare module 'socket.io' {
   interface SocketData {
-    userId:   string
-    username: string
-    avatar?:  string | null
+    userId:            string
+    username:          string
+    avatar?:           string | null
+    nameColor?:        string | null
+    nameGlow?:         string | null
+    nameGlowIntensity?: number | null
+    nameAnimation?:    string | null
+    nameFontFamily?:   string | null
+    nameFontUrl?:      string | null
+    grade?:            { name: string; color: string } | null
+    status?:           { emoji: string; text: string } | null
   }
 }
 
@@ -94,14 +102,48 @@ export function registerSocketIO(server: Server): void {
 
     // ── Presence tracking (async init) ────────────────────────────────────────
     ;(async () => {
-      // Fetch avatar + restore status from Redis
+      // Fetch avatar + name_color + grade + restore status from Redis
       try {
-        const { rows } = await db.query<{ avatar: string | null }>(
-          `SELECT avatar FROM users WHERE id = $1`, [userId]
+        const { rows } = await db.query<{
+          avatar: string | null
+          name_color: string | null
+          name_glow: string | null
+          name_glow_intensity: number | null
+          name_animation: string | null
+          name_font_family: string | null
+          name_font_url: string | null
+          grade_name: string | null
+          grade_color: string | null
+        }>(
+          `SELECT u.avatar, p.name_color, p.name_glow, p.name_glow_intensity,
+                  p.name_animation, p.name_font_family, p.name_font_url,
+                  g.name AS grade_name, g.color AS grade_color
+           FROM users u
+           LEFT JOIN user_profiles p ON p.user_id = u.id
+           LEFT JOIN community_members cm ON cm.user_id = u.id
+           LEFT JOIN community_grades g ON g.id = cm.grade_id
+           WHERE u.id = $1`,
+          [userId]
         )
-        socket.data.avatar = rows[0]?.avatar ?? null
+        socket.data.avatar           = rows[0]?.avatar ?? null
+        socket.data.nameColor        = rows[0]?.name_color ?? null
+        socket.data.nameGlow         = rows[0]?.name_glow ?? null
+        socket.data.nameGlowIntensity = rows[0]?.name_glow_intensity ?? null
+        socket.data.nameAnimation    = rows[0]?.name_animation ?? null
+        socket.data.nameFontFamily   = rows[0]?.name_font_family ?? null
+        socket.data.nameFontUrl      = rows[0]?.name_font_url ?? null
+        socket.data.grade            = rows[0]?.grade_name
+          ? { name: rows[0].grade_name, color: rows[0].grade_color! }
+          : null
       } catch {
-        socket.data.avatar = null
+        socket.data.avatar           = null
+        socket.data.nameColor        = null
+        socket.data.nameGlow         = null
+        socket.data.nameGlowIntensity = null
+        socket.data.nameAnimation    = null
+        socket.data.nameFontFamily   = null
+        socket.data.nameFontUrl      = null
+        socket.data.grade            = null
       }
 
       // Restore status from Redis (persists across reconnects within session)
@@ -117,7 +159,19 @@ export function registerSocketIO(server: Server): void {
       const allSockets = await server.in('presence').fetchSockets()
       const seen = new Set<string>()
       const onlineList = allSockets
-        .map(s => ({ userId: s.data.userId, username: s.data.username, avatar: s.data.avatar ?? null, status: (s.data as any).status ?? null }))
+        .map(s => ({
+          userId:            s.data.userId,
+          username:          s.data.username,
+          avatar:            s.data.avatar ?? null,
+          nameColor:         s.data.nameColor ?? null,
+          nameGlow:          s.data.nameGlow ?? null,
+          nameGlowIntensity: s.data.nameGlowIntensity ?? null,
+          nameAnimation:     s.data.nameAnimation ?? null,
+          nameFontFamily:    s.data.nameFontFamily ?? null,
+          nameFontUrl:       s.data.nameFontUrl ?? null,
+          grade:             s.data.grade ?? null,
+          status:            s.data.status ?? null,
+        }))
         .filter(m => { if (seen.has(m.userId)) return false; seen.add(m.userId); return true })
       socket.emit('presence:init', onlineList)
 
@@ -125,7 +179,17 @@ export function registerSocketIO(server: Server): void {
       const isFirstTab = !allSockets.some(s => s.id !== socket.id && s.data.userId === userId)
       if (isFirstTab) {
         socket.broadcast.to('presence').emit('presence:online', {
-          userId, username, avatar: socket.data.avatar ?? null, status: (socket.data as any).status ?? null,
+          userId,
+          username,
+          avatar:            socket.data.avatar ?? null,
+          nameColor:         socket.data.nameColor ?? null,
+          nameGlow:          socket.data.nameGlow ?? null,
+          nameGlowIntensity: socket.data.nameGlowIntensity ?? null,
+          nameAnimation:     socket.data.nameAnimation ?? null,
+          nameFontFamily:    socket.data.nameFontFamily ?? null,
+          nameFontUrl:       socket.data.nameFontUrl ?? null,
+          grade:             socket.data.grade ?? null,
+          status:            socket.data.status ?? null,
         })
       }
     })().catch(() => {})

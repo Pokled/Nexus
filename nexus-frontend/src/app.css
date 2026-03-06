@@ -15,6 +15,17 @@
 .t-muted    { color: var(--p-text-muted); }
 .t-accent   { color: var(--p-accent); }
 
+/* ── Scrollbars fins et élégants ─────────────────────────────────────────── */
+/* Chrome / Safari / Edge */
+::-webkit-scrollbar               { width: 5px; height: 5px; }
+::-webkit-scrollbar-track         { background: rgb(14 20 34); border-radius: 99px; }
+::-webkit-scrollbar-thumb         { background: rgb(75 85 99 / 0.45); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover   { background: rgb(99 102 241 / 0.6); }
+/* Firefox uniquement (Chrome 121+ ignore ::-webkit si scrollbar-width est aussi défini) */
+@supports not selector(::-webkit-scrollbar) {
+  * { scrollbar-width: thin; scrollbar-color: rgb(75 85 99 / 0.45) transparent; }
+}
+
 /* ── Bottom nav height (source unique de vérité) ─────────────────────────── */
 :root { --bottom-nav-h: 56px; }
 @media (min-width: 1024px) { :root { --bottom-nav-h: 0px; } }
@@ -287,3 +298,82 @@
     height: 0;
 }
 .nexus-content .tiptap { outline: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   USERNAME ANIMATIONS — applied via .name-anim-{key} classes
+   Hover-triggered: pulse, shake, glitch, rainbow
+   Permanent:       float, glow-pulse
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Common: ensure inline-block for transforms */
+[class*="name-anim-"] { display: inline-block; }
+
+/* ── pulse ────────────────────────────────────────────────────────────────── */
+.name-anim-pulse { transition: transform 0.15s; }
+.name-anim-pulse:hover { animation: nameAnimPulse 0.55s ease-in-out; }
+@keyframes nameAnimPulse {
+  0%, 100% { transform: scale(1); }
+  40%      { transform: scale(1.14); }
+  70%      { transform: scale(0.95); }
+}
+
+/* ── shake ────────────────────────────────────────────────────────────────── */
+.name-anim-shake:hover { animation: nameAnimShake 0.4s ease-in-out; }
+@keyframes nameAnimShake {
+  0%, 100% { transform: translateX(0); }
+  15%      { transform: translateX(-5px) rotate(-1deg); }
+  30%      { transform: translateX(5px)  rotate(1deg); }
+  45%      { transform: translateX(-4px); }
+  60%      { transform: translateX(4px); }
+  75%      { transform: translateX(-2px); }
+}
+
+/* ── float (permanent) ───────────────────────────────────────────────────── */
+.name-anim-float {
+  animation: nameAnimFloat 3.2s ease-in-out infinite;
+}
+@keyframes nameAnimFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-4px); }
+}
+
+/* ── glitch ──────────────────────────────────────────────────────────────── */
+.name-anim-glitch:hover { animation: nameAnimGlitch 0.35s steps(3) 2; }
+@keyframes nameAnimGlitch {
+  0%  {
+    text-shadow:  3px 0 #ff0055, -3px 0 #00ffff;
+    transform: translateX(0);
+    clip-path: inset(0 0 90% 0);
+  }
+  33% {
+    text-shadow: -3px 0 #ff0055, 3px 0 #00ffff;
+    transform: translateX(3px) skewX(-3deg);
+    clip-path: inset(33% 0 40% 0);
+  }
+  66% {
+    text-shadow:  3px 3px #ff0055, -3px -3px #00ffff;
+    transform: translateX(-3px) skewX(3deg);
+    clip-path: inset(66% 0 5% 0);
+  }
+  100% {
+    text-shadow: none;
+    transform: none;
+    clip-path: none;
+  }
+}
+
+/* ── rainbow ─────────────────────────────────────────────────────────────── */
+.name-anim-rainbow:hover { animation: nameAnimRainbow 1.2s linear infinite; }
+@keyframes nameAnimRainbow {
+  0%   { filter: hue-rotate(0deg)   brightness(1.1); }
+  100% { filter: hue-rotate(360deg) brightness(1.1); }
+}
+
+/* ── glow-pulse (permanent) ──────────────────────────────────────────────── */
+.name-anim-glow-pulse {
+  animation: nameAnimGlowPulse 2s ease-in-out infinite alternate;
+}
+@keyframes nameAnimGlowPulse {
+  0%   { text-shadow: none; }
+  100% { text-shadow: 0 0 6px currentColor, 0 0 12px currentColor; filter: brightness(1.3); }
+}

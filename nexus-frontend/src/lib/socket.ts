@@ -8,10 +8,17 @@ export interface UserStatus {
 }
 
 export interface OnlineMember {
-  userId:   string
-  username: string
-  avatar:   string | null
-  status:   UserStatus | null
+  userId:            string
+  username:          string
+  avatar:            string | null
+  nameColor:         string | null
+  nameGlow:          string | null
+  nameGlowIntensity: number | null
+  nameAnimation:     string | null
+  nameFontFamily:    string | null
+  nameFontUrl:       string | null
+  grade:             { name: string; color: string } | null
+  status:            UserStatus | null
 }
 
 export const unreadCountStore:   Writable<number>          = writable(0)
@@ -87,6 +94,34 @@ export async function initSocket(token: string, initialCount: number): Promise<v
   _socket.on('presence:status_update', ({ userId, status }: { userId: string; status: UserStatus | null }) => {
     onlineMembersStore.update(list =>
       list.map(m => m.userId === userId ? { ...m, status: status ?? null } : m)
+    )
+  })
+
+  _socket.on('presence:effects_update', (data: {
+    userId:            string
+    nameColor:         string | null
+    nameGlow:          string | null
+    nameGlowIntensity: number | null
+    nameAnimation:     string | null
+    nameFontFamily:    string | null
+    nameFontUrl:       string | null
+    avatar?:           string | null
+  }) => {
+    onlineMembersStore.update(list =>
+      list.map(m => {
+        if (m.userId !== data.userId) return m
+        const updated: OnlineMember = {
+          ...m,
+          nameColor:         data.nameColor,
+          nameGlow:          data.nameGlow,
+          nameGlowIntensity: data.nameGlowIntensity,
+          nameAnimation:     data.nameAnimation,
+          nameFontFamily:    data.nameFontFamily,
+          nameFontUrl:       data.nameFontUrl,
+        }
+        if (data.avatar !== undefined) updated.avatar = data.avatar ?? null
+        return updated
+      })
     )
   })
 
