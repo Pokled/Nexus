@@ -540,7 +540,7 @@ module.exports = {
       script: 'build/index.js',
       cwd: '${NEXUS_DIR}/nexus-frontend',
       watch: false,
-      env: { NODE_ENV: 'production', PORT: '4173', HOST: '127.0.0.1', ORIGIN: 'https://${DOMAIN}' },
+      env: { NODE_ENV: 'production', PORT: '4173', HOST: '127.0.0.1', ORIGIN: 'https://${DOMAIN}', PRIVATE_API_SSR_URL: 'http://127.0.0.1:3000/api/v1' },
     },
   ],
 }
@@ -549,7 +549,7 @@ PM2
 cd "$NEXUS_DIR"
 pm2 delete nexus-core    2>/dev/null || true
 pm2 delete nexus-frontend 2>/dev/null || true
-pm2 start ecosystem.config.js
+pm2 startOrRestart ecosystem.config.js --update-env
 pm2 save
 pm2 startup systemd -u root --hp /root >/dev/null 2>&1 | tail -1 | bash 2>/dev/null || true
 ok "PM2 configuré et lancé"
