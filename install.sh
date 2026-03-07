@@ -1,8 +1,21 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
 #  Nexus — One-click node installer
-#  Supports : Ubuntu 22.04 / 24.04, Debian 11 / 12
-#  Usage    : bash install.sh
+#  Supports : Ubuntu 22.04 / 24.04, Debian 11 / 12 / 13
+#
+#  Prérequis / Prerequisites:
+#    Sur un système minimal, installez d'abord git et curl :
+#    On a minimal system, install git and curl first:
+#      apt-get install -y git curl
+#
+#  Usage — Option A (clone + run) :
+#    git clone https://github.com/Pokled/Nexus.git && cd Nexus && sudo bash install.sh
+#
+#  Usage — Option B (curl, sans git / without git) :
+#    curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+#
+#  Usage — Option C (wget, si curl absent / if curl missing) :
+#    wget -qO- https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 

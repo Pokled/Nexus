@@ -163,12 +163,37 @@ PNG export (browser-native) + text recap posted to chat channel
 
 ## Quick Start
 
+### Prerequisites
+
+The installer handles everything automatically, but your system needs at least **`curl`** or **`wget`** to download and start it, and **`git`** if you clone the repo manually.
+
+On a **fresh Ubuntu / Debian server** these are often missing:
+
+```bash
+# Ubuntu / Debian
+apt-get install -y git curl
+```
+
+> `git` and `curl` are the **only two things** you need to install manually.
+> Everything else (Node.js, PostgreSQL, Redis, Caddy, PM2…) is installed by the script.
+
 ### One-click install (recommended)
 
+**Option A — clone first, then run:**
 ```bash
 git clone https://github.com/Pokled/Nexus.git
 cd Nexus
 sudo bash install.sh
+```
+
+**Option B — single command with `curl` (no `git` needed):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+```
+
+**Option C — single command with `wget` (if `curl` is not installed):**
+```bash
+wget -qO- https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
 ```
 
 The installer offers **three network modes**:
@@ -186,7 +211,7 @@ Installs automatically: Node.js, PostgreSQL, Redis, nexus-turn (Rust STUN/TURN),
 Generates secrets, bootstraps the database, creates your admin account.
 **No manual configuration.**
 
-> Supported: Ubuntu 22.04/24.04, Debian 11/12. Windows → [WSL guide](docs/en/INSTALL.md#windows)
+> Supported: Ubuntu 22.04 / 24.04, Debian 11 / 12 / 13. Windows → [WSL guide](docs/en/INSTALL.md#windows)
 
 → **[Complete installation guide (EN)](docs/en/INSTALL.md)**
 → **[Guide d'installation complet (FR)](docs/fr/INSTALL.md)**
