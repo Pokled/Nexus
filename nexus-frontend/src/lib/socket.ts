@@ -55,13 +55,13 @@ export async function initSocket(token: string, initialCount: number): Promise<v
 
   _socket = ioClient(baseUrl, {
     auth:       { token },
-    // WebSocket first: if it fails (relay strips Upgrade headers → 400 from
-    // Engine.IO), Socket.IO falls back to polling on a FRESH session.
-    // ['polling', 'websocket'] is wrong here: the WebSocket upgrade probe
-    // sent AFTER a polling session is established gets a malformed 400 from
-    // Engine.IO (no Upgrade header through relay), which corrupts the session
-    // and causes all subsequent polls to return 400 too.
-    transports: ['websocket', 'polling'],
+    // Polling first: establishes the session reliably on both direct and
+    // relay-mode instances. Socket.IO then probes for a WebSocket upgrade;
+    // on relay instances the probe fails gracefully and the connection stays
+    // on polling. On direct instances the upgrade succeeds transparently.
+    // NOTE: ['websocket', 'polling'] does NOT fall back — Socket.IO v4 keeps
+    // retrying the first transport on connect_error, so relay users never connect.
+    transports: ['polling', 'websocket'],
   })
 
 
