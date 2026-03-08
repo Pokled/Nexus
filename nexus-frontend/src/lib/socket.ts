@@ -126,6 +126,13 @@ export async function initSocket(token: string, initialCount: number): Promise<v
     )
   })
 
+  // ── Ban ────────────────────────────────────────────────────────────────────
+  // Server disconnects the socket and emits 'banned' when an admin bans the user.
+  // Redirect immediately to /banned so the user can't keep browsing.
+  _socket.on('banned', () => {
+    window.location.href = '/banned'
+  })
+
   // ── DM ─────────────────────────────────────────────────────────────────────
   // Incrémenter le badge DM quand un message arrive d'un autre utilisateur
   _socket.on('dm:message', (msg: { sender_id: string }) => {
