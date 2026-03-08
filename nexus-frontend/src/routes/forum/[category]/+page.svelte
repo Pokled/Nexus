@@ -8,7 +8,8 @@
 
 	// ── Données typées ────────────────────────────────────────────────
 	const threads = $derived(data.threads as Thread[] || []);
-	const categoryId = $derived(data.categoryId as string);
+	// Use slug for URLs if available (SEO), fall back to UUID
+	const categoryId = $derived((data.category?.slug ?? data.categoryId) as string);
 	const user = $derived((data as any).user as any); // Si user est passé
 
 	// Pour le moment, pas de category, on utilise un nom par défaut

@@ -237,7 +237,7 @@
 				<div class="space-y-2">
 					{#each threads as thread}
 						<a
-							href="/forum/{thread.category_id}/{thread.slug ?? thread.id}"
+							href="/forum/{thread.category_slug ?? thread.category_id}/{thread.slug ?? thread.id}"
 							class="flex items-start gap-3 p-3 rounded-lg border border-gray-800/60 bg-gray-900/40
 							       hover:border-indigo-800/60 hover:bg-gray-900/80 transition-all group"
 						>

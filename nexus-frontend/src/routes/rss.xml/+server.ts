@@ -23,8 +23,8 @@ export const GET: RequestHandler = async ({ fetch }) => {
 					items.push(`
     <item>
       <title><![CDATA[${thread.title}]]></title>
-      <link>${BASE_URL}/forum/${category.id}/${thread.id}</link>
-      <guid isPermaLink="true">${BASE_URL}/forum/${category.id}/${thread.id}</guid>
+      <link>${BASE_URL}/forum/${category.slug ?? category.id}/${thread.slug ?? thread.id}</link>
+      <guid isPermaLink="true">${BASE_URL}/forum/${category.slug ?? category.id}/${thread.slug ?? thread.id}</guid>
       <pubDate>${new Date(thread.created_at).toUTCString()}</pubDate>
       <author>${thread.author_username}</author>
       <category><![CDATA[${category.name}]]></category>

@@ -441,12 +441,13 @@ export default async function directoryRoutes(app: FastifyInstance) {
 
         await db.query(
           `INSERT INTO network_index
-             (instance_slug, instance_url, thread_id, thread_slug, category_id, title, excerpt, tags, reply_count, search_vector)
-           VALUES ($1, $2, $3::uuid, $4, $5::uuid, $6, $7, $8::text[], $9,
-             to_tsvector('simple', $6 || ' ' || $7 || ' ' || array_to_string($8::text[], ' ')))
+             (instance_slug, instance_url, thread_id, thread_slug, category_id, category_slug, title, excerpt, tags, reply_count, search_vector)
+           VALUES ($1, $2, $3::uuid, $4, $5::uuid, $6, $7, $8, $9::text[], $10,
+             to_tsvector('simple', $7 || ' ' || $8 || ' ' || array_to_string($9::text[], ' ')))
            ON CONFLICT (instance_slug, thread_id) DO UPDATE SET
              thread_slug   = EXCLUDED.thread_slug,
              category_id   = EXCLUDED.category_id,
+             category_slug = EXCLUDED.category_slug,
              title         = EXCLUDED.title,
              excerpt       = EXCLUDED.excerpt,
              tags          = EXCLUDED.tags,
@@ -454,7 +455,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
              updated_at    = NOW(),
              search_vector = EXCLUDED.search_vector`,
           [instanceSlug, instanceUrl, t.thread_id, t.thread_slug ?? null,
-           t.category_id ?? null, t.title, excerpt, tags, replies]
+           t.category_id ?? null, t.category_slug ?? null, t.title, excerpt, tags, replies]
         );
         indexed++;
       }
@@ -474,7 +475,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
     if (q?.trim()) {
       const { rows: r } = await db.query(
         `SELECT ni.instance_slug, ni.instance_url, ni.thread_id, ni.thread_slug,
-                ni.category_id, ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
+                ni.category_id, ni.category_slug, ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
                 ts_rank(ni.search_vector, websearch_to_tsquery('simple', $1)) AS rank
          FROM network_index ni
          WHERE ni.search_vector @@ websearch_to_tsquery('simple', $1)
@@ -486,7 +487,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
     } else {
       const { rows: r } = await db.query(
         `SELECT ni.instance_slug, ni.instance_url, ni.thread_id, ni.thread_slug,
-                ni.category_id, ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
+                ni.category_id, ni.category_slug, ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
                 1.0 AS rank
          FROM network_index ni
          ORDER BY ni.updated_at DESC

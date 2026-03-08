@@ -73,13 +73,13 @@ const CreateCategoryBody = z.object({
 })
 
 const ThreadsQuery = z.object({
-  category_id: z.string().uuid(),
+  category_id: z.string().min(1), // accepts UUID or slug — resolved server-side
   limit:       z.coerce.number().int().min(1).max(100).optional(),
   offset:      z.coerce.number().int().min(0).optional(),
 })
 
 const CreateThreadBody = z.object({
-  category_id: z.string().uuid(),
+  category_id: z.string().min(1), // accepts UUID or slug — resolved server-side
   title:       z.string().min(3).max(300),
   content:     z.string().min(1), // first post content
   tag_ids:     z.array(z.string().uuid()).max(5).optional(),
@@ -134,13 +134,24 @@ export default async function forumRoutes(app: FastifyInstance) {
 app.get('/threads', {
   preHandler: [rateLimit, validate({ query: ThreadsQuery })],
 }, async (request, reply) => {
-  const { category_id, limit, offset } = request.query as z.infer<typeof ThreadsQuery>
-  
-  // Version modifiée : on fait une jointure pour récupérer les infos de catégorie
+  const { category_id: rawCatId, limit, offset } = request.query as z.infer<typeof ThreadsQuery>
+
+  // Resolve slug → UUID if needed
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawCatId)
+  let category_id = rawCatId
+  if (!isUuid) {
+    const { rows: catRows } = await db.query(
+      `SELECT id FROM categories WHERE slug = $1 LIMIT 1`, [rawCatId]
+    )
+    if (!catRows[0]) return reply.code(404).send({ error: 'Category not found', code: 'NOT_FOUND' })
+    category_id = catRows[0].id
+  }
+
   const { rows } = await db.query(`
-    SELECT 
+    SELECT
       t.*,
       c.name as category_name,
+      c.slug as category_slug,
       c.description as category_description,
       u.username as author_username,
       u.avatar as author_avatar,
@@ -149,7 +160,7 @@ app.get('/threads', {
     LEFT JOIN categories c ON t.category_id = c.id
     LEFT JOIN users u ON t.author_id = u.id
     WHERE t.category_id = $1
-    ORDER BY 
+    ORDER BY
       t.is_pinned DESC,
       COALESCE(
         (SELECT MAX(p.created_at) FROM posts p WHERE p.thread_id = t.id),
@@ -158,30 +169,24 @@ app.get('/threads', {
     LIMIT $2 OFFSET $3
   `, [category_id, limit || 50, offset || 0])
 
-  // Récupérer les tags (comme avant)
   const threadIds = rows.map(t => t.id)
   const tagsMap = await TagModel.getTagsForThreads(threadIds)
-  const enriched = rows.map(t => ({ 
-    ...t, 
-    tags: tagsMap.get(t.id) ?? [] 
+  const enriched = rows.map(t => ({
+    ...t,
+    tags: tagsMap.get(t.id) ?? []
   }))
 
-  // Récupérer les infos de la catégorie pour la réponse
-  const [categoryInfo] = rows.length > 0 ? [{
-    id: category_id,
-    name: rows[0].category_name || 'Discussions',
-    slug: category_id,
-    description: rows[0].category_description || null
-  }] : [{
-    id: category_id,
-    name: 'Discussions',
-    slug: category_id,
-    description: null
-  }]
+  const catSlug = rows[0]?.category_slug ?? null
+  const categoryInfo = {
+    id:          category_id,
+    name:        rows[0]?.category_name || 'Discussions',
+    slug:        catSlug,
+    description: rows[0]?.category_description || null
+  }
 
-  return reply.send({ 
+  return reply.send({
     threads: enriched,
-    category: categoryInfo  // ← On ajoute les infos de catégorie !
+    category: categoryInfo
   })
 })
 
@@ -189,7 +194,18 @@ app.get('/threads', {
   app.post('/threads', {
     preHandler: [rateLimit, requireAuth, validate({ body: CreateThreadBody })],
   }, async (request, reply) => {
-    const { category_id, title, content, tag_ids } = request.body as z.infer<typeof CreateThreadBody>
+    const { category_id: rawCatId, title, content, tag_ids } = request.body as z.infer<typeof CreateThreadBody>
+
+    // Resolve slug → UUID if needed
+    const isCatUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(rawCatId)
+    let category_id = rawCatId
+    if (!isCatUuid) {
+      const { rows: slugRows } = await db.query(
+        `SELECT id FROM categories WHERE slug = $1 LIMIT 1`, [rawCatId]
+      )
+      if (!slugRows[0]) return reply.code(404).send({ error: 'Category not found', code: 'NOT_FOUND' })
+      category_id = slugRows[0].id
+    }
 
     // Check if user is banned from this community
     const { rows: catRows } = await db.query<{ community_id: string }>(

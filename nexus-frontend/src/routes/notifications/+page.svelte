@@ -28,7 +28,9 @@
 
 	function notifLink(n: any): string {
 		if (n.category_id && n.thread_id) {
-			return `/forum/${n.category_id}/${n.thread_id}${n.post_id ? `#${n.post_id}` : ''}`;
+			const cat    = n.category_slug ?? n.category_id;
+			const thread = n.thread_slug   ?? n.thread_id;
+			return `/forum/${cat}/${thread}${n.post_id ? `#${n.post_id}` : ''}`;
 		}
 		return '#';
 	}

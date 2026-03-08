@@ -14,8 +14,11 @@ export const load: PageServerLoad = async ({ fetch, params, cookies }) => {
 
 	// Redirect UUID-based URLs to canonical slug URL (301 for SEO)
 	const thread = json.thread;
-	if (thread.slug && params.thread !== thread.slug) {
-		redirect(301, `/forum/${params.category}/${thread.slug}`);
+	const catParam  = params.category;
+	const catSlug   = thread.category_slug ?? null;
+	const canonical = `/forum/${catSlug ?? catParam}/${thread.slug ?? params.thread}`;
+	if ((thread.slug && params.thread !== thread.slug) || (catSlug && catParam !== catSlug)) {
+		redirect(301, canonical);
 	}
 
 	// Charger le sondage lié à ce thread (s'il existe)

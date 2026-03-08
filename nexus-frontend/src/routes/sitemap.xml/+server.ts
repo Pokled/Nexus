@@ -49,7 +49,7 @@ export const GET: RequestHandler = async ({ fetch, url }) => {
 			for (const threads of threadBatches) {
 				for (const t of threads) {
 					const lastmod = new Date(t.updated_at || t.created_at).toISOString().split('T')[0];
-					entries.push(urlEntry(`${origin}/forum/${t.category_id}/${t.id}`, lastmod, '0.7', 'weekly'));
+					entries.push(urlEntry(`${origin}/forum/${t.category_slug ?? t.category_id}/${t.slug ?? t.id}`, lastmod, '0.7', 'weekly'));
 				}
 			}
 		}

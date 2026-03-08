@@ -11,6 +11,7 @@ import { adminOnly } from '../middleware/adminOnly'
 import { validate } from '../middleware/validate'
 import { rateLimit } from '../middleware/rateLimit'
 import * as ChannelModel from '../models/channel'
+import { generateCategorySlug } from '../models/community'
 import { io } from '../socket/io'
 import { randomUUID, createHash, randomBytes } from 'crypto'
 import { createWriteStream, mkdirSync } from 'fs'
@@ -572,7 +573,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     const values: unknown[] = []
     let i = 1
 
-    if (body.name        !== undefined) { fields.push(`name = $${i++}`);        values.push(body.name)        }
+    if (body.name        !== undefined) { fields.push(`name = $${i++}`);        values.push(body.name);                                fields.push(`slug = $${i++}`); values.push(generateCategorySlug(body.name)) }
     if (body.description !== undefined) { fields.push(`description = $${i++}`); values.push(body.description) }
     if (body.position    !== undefined) { fields.push(`position = $${i++}`);    values.push(body.position)    }
     if (body.parent_id   !== undefined) { fields.push(`parent_id = $${i++}`);   values.push(body.parent_id)   }

@@ -63,12 +63,14 @@ export async function findById(idOrSlug: string): Promise<ThreadSummary | null> 
     `SELECT t.*,
             u.username AS author_username,
             u.avatar   AS author_avatar,
-            COUNT(p.id)::int AS post_count
+            COUNT(p.id)::int AS post_count,
+            c.slug AS category_slug
      FROM threads t
      JOIN users u        ON u.id = t.author_id
      LEFT JOIN posts p   ON p.thread_id = t.id
+     LEFT JOIN categories c ON c.id = t.category_id
      WHERE ${isUuid ? 't.id = $1' : 't.slug = $1'}
-     GROUP BY t.id, u.username, u.avatar`,
+     GROUP BY t.id, u.username, u.avatar, c.slug`,
     [idOrSlug]
   )
   return rows[0] ?? null

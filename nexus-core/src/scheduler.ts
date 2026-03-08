@@ -125,10 +125,10 @@ export async function announceThreadsToDirectory() {
 
   try {
     const { rows } = await db.query<{
-      id: string; slug: string | null; title: string; category_id: string;
+      id: string; slug: string | null; title: string; category_id: string; category_slug: string | null;
       excerpt: string | null; reply_count: number; tags: string[]
     }>(
-      `SELECT t.id, t.slug, t.title, t.category_id,
+      `SELECT t.id, t.slug, t.title, t.category_id, c.slug AS category_slug,
               LEFT(REGEXP_REPLACE(
                 (SELECT p.content FROM posts p WHERE p.thread_id = t.id ORDER BY p.created_at ASC LIMIT 1),
                 '<[^>]*>', '', 'g'
@@ -140,6 +140,7 @@ export async function announceThreadsToDirectory() {
                 WHERE tt.thread_id = t.id
               ) AS tags
        FROM threads t
+       LEFT JOIN categories c ON c.id = t.category_id
        WHERE t.is_indexed = true
          AND (t.last_indexed_at IS NULL OR t.updated_at > t.last_indexed_at)
        LIMIT 100`
@@ -154,6 +155,7 @@ export async function announceThreadsToDirectory() {
       thread_id:     t.id,
       thread_slug:   t.slug,
       category_id:   t.category_id,
+      category_slug: t.category_slug,
       title:         t.title,
       excerpt:       t.excerpt ?? '',
       tags:          t.tags,

@@ -92,7 +92,7 @@
 		<div class="space-y-3">
 			{#each categories as category}
 				<a
-					href="/forum/{category.id}"
+					href="/forum/{category.slug ?? category.id}"
 					class="flex items-center gap-4 rounded-lg border border-gray-800 bg-gray-900 px-5 py-4 hover:border-indigo-700 hover:bg-gray-800/60 transition-colors group"
 				>
 					<div class="flex-1 min-w-0">

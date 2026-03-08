@@ -16,7 +16,7 @@
 
 	function threadUrl(r: any): string {
 		const base     = r.instance_url.replace(/\/$/, '');
-		const category = r.category_id ?? '';
+		const category = r.category_slug ?? r.category_id ?? '';
 		const thread   = r.thread_slug ?? r.thread_id;
 		return category ? `${base}/forum/${category}/${thread}` : `${base}/forum/${thread}`;
 	}

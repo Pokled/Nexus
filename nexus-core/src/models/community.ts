@@ -30,12 +30,27 @@ export interface Category {
   id:           string
   community_id: string
   name:         string
+  slug:         string | null
   description:  string | null
   position:     number
   parent_id:    string | null
   thread_count: number
   created_at:   Date
   updated_at:   Date
+}
+
+export function generateCategorySlug(name: string): string {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')  // strip accent marks
+    .replace(/[^\x00-\x7F]/g, '')     // strip emojis and non-ASCII
+    .replace(/[^a-z0-9\s-]/gi, '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '')
+  return slug || 'categorie'
 }
 
 export interface CategoryNode extends Category {
@@ -234,15 +249,16 @@ export async function createCategory(data: {
   position?:    number
   parent_id?:   string
 }): Promise<Category> {
+  const slug = generateCategorySlug(data.name)
   const { rows } = await db.query<Category>(
-    `INSERT INTO categories (community_id, name, description, position, parent_id)
-     VALUES ($1, $2, $3, COALESCE($4, (
+    `INSERT INTO categories (community_id, name, slug, description, position, parent_id)
+     VALUES ($1, $2, $3, $4, COALESCE($5, (
        SELECT COALESCE(MAX(position), -1) + 1 FROM categories
-       WHERE community_id = $1 AND parent_id IS NOT DISTINCT FROM $5
-     )), $5)
+       WHERE community_id = $1 AND parent_id IS NOT DISTINCT FROM $6
+     )), $6)
      RETURNING *,
        (SELECT COUNT(*)::int FROM threads t WHERE t.category_id = id) AS thread_count`,
-    [data.community_id, data.name, data.description ?? null, data.position ?? null, data.parent_id ?? null]
+    [data.community_id, data.name, slug, data.description ?? null, data.position ?? null, data.parent_id ?? null]
   )
   return rows[0]
 }
