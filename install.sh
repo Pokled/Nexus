@@ -112,7 +112,7 @@ banner
 
 # OS check
 if ! grep -qiE 'ubuntu|debian' /etc/os-release 2>/dev/null; then
-  die "OS non supporté. Utilise Ubuntu 22.04/24.04 ou Debian 11/12."
+  die "OS non supporté. Utilise Ubuntu 22.04/24.04 ou Debian 11/12/13."
 fi
 
 # RAM check — le build SvelteKit nécessite au moins 512 MB libres
