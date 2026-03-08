@@ -128,13 +128,13 @@ describe('GET /api/v1/forums/threads', () => {
     expect(res.statusCode).toBe(400)
   })
 
-  it('returns 400 when category_id is not a valid UUID', async () => {
+  it('returns 404 when category_id is an unknown slug', async () => {
     const res = await app.inject({
       method: 'GET',
-      url:    '/api/v1/forums/threads?category_id=not-a-uuid',
+      url:    '/api/v1/forums/threads?category_id=not-a-known-slug',
     })
 
-    expect(res.statusCode).toBe(400)
+    expect(res.statusCode).toBe(404)
   })
 })
 
