@@ -27,17 +27,22 @@ function sanitize(html: string): string {
 // -- Schemas -------------------------------------------------------------------
 
 const CreateEventSchema = z.object({
-  title:         z.string().min(3).max(200),
-  description:   z.string().max(50000).optional().default(''),
-  location:      z.string().max(500).nullable().optional(),
-  starts_at:     z.string().datetime(),
-  ends_at:       z.string().datetime().nullable().optional(),
-  is_all_day:    z.boolean().optional().default(false),
-  is_public:     z.boolean().optional().default(true),
-  cover_url:     z.string().url().nullable().optional(),
-  tags:          z.array(z.string().max(50)).max(10).optional().default([]),
-  rsvp_enabled:  z.boolean().optional().default(false),
-  max_attendees: z.number().int().positive().nullable().optional(),
+  title:           z.string().min(3).max(200),
+  description:     z.string().max(50000).optional().default(''),
+  location:        z.string().max(500).nullable().optional(),
+  location_lat:    z.number().nullable().optional(),
+  location_lng:    z.number().nullable().optional(),
+  starts_at:       z.string().datetime(),
+  ends_at:         z.string().datetime().nullable().optional(),
+  is_all_day:      z.boolean().optional().default(false),
+  is_public:       z.boolean().optional().default(true),
+  cover_url:       z.string().nullable().optional(),
+  tags:            z.array(z.string().max(50)).max(10).optional().default([]),
+  rsvp_enabled:    z.boolean().optional().default(false),
+  max_attendees:   z.number().int().positive().nullable().optional(),
+  ticket_price:    z.number().nonnegative().nullable().optional(),
+  ticket_currency: z.string().length(3).optional().default('EUR'),
+  ticket_url:      z.string().nullable().optional(),
 })
 
 const UpdateEventSchema = CreateEventSchema.partial().extend({
@@ -95,9 +100,10 @@ export default async function eventsRoutes(app: FastifyInstance) {
     const order = showPast ? 'DESC' : 'ASC'
 
     const { rows: events } = await db.query(
-      `SELECT e.id, e.title, e.description, e.location, e.starts_at, e.ends_at,
-              e.is_all_day, e.is_public, e.cover_url, e.tags, e.is_cancelled,
-              e.rsvp_enabled, e.max_attendees, e.created_at, e.updated_at,
+      `SELECT e.id, e.title, e.description, e.location, e.location_lat, e.location_lng,
+              e.starts_at, e.ends_at, e.is_all_day, e.is_public, e.cover_url, e.tags, e.is_cancelled,
+              e.rsvp_enabled, e.max_attendees, e.ticket_price, e.ticket_currency, e.ticket_url,
+              e.created_at, e.updated_at,
               u.id AS author_id, u.username AS author_name, u.avatar_url AS author_avatar,
               (SELECT COUNT(*)::int FROM event_rsvps er WHERE er.event_id = e.id AND er.status = 'going') AS going_count,
               (SELECT er2.status FROM event_rsvps er2 WHERE er2.event_id = e.id AND er2.user_id = $3 LIMIT 1) AS my_rsvp
@@ -116,9 +122,10 @@ export default async function eventsRoutes(app: FastifyInstance) {
   app.get<{ Params: { id: string } }>('/events/:id', { preHandler: [optionalAuth] }, async (req, reply) => {
     const userId = (req as any).user?.id ?? null
     const { rows } = await db.query(
-      `SELECT e.id, e.title, e.description, e.location, e.starts_at, e.ends_at,
-              e.is_all_day, e.is_public, e.cover_url, e.tags, e.is_cancelled,
-              e.rsvp_enabled, e.max_attendees, e.created_at, e.updated_at,
+      `SELECT e.id, e.title, e.description, e.location, e.location_lat, e.location_lng,
+              e.starts_at, e.ends_at, e.is_all_day, e.is_public, e.cover_url, e.tags, e.is_cancelled,
+              e.rsvp_enabled, e.max_attendees, e.ticket_price, e.ticket_currency, e.ticket_url,
+              e.created_at, e.updated_at,
               u.id AS author_id, u.username AS author_name, u.avatar_url AS author_avatar,
               (SELECT COUNT(*)::int FROM event_rsvps er WHERE er.event_id = e.id AND er.status = 'going')    AS going_count,
               (SELECT COUNT(*)::int FROM event_rsvps er WHERE er.event_id = e.id AND er.status = 'maybe')   AS maybe_count,
@@ -162,19 +169,24 @@ export default async function eventsRoutes(app: FastifyInstance) {
 
       const { rows } = await db.query(
         `INSERT INTO events
-           (community_id, author_id, title, description, location, starts_at, ends_at,
-            is_all_day, is_public, cover_url, tags, rsvp_enabled, max_attendees)
-         VALUES ($1,$2,$3,$4,$5,$6::timestamptz,$7::timestamptz,$8,$9,$10,$11::text[],$12,$13)
+           (community_id, author_id, title, description, location, location_lat, location_lng,
+            starts_at, ends_at, is_all_day, is_public, cover_url, tags,
+            rsvp_enabled, max_attendees, ticket_price, ticket_currency, ticket_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8::timestamptz,$9::timestamptz,$10,$11,$12,$13::text[],$14,$15,$16,$17,$18)
          RETURNING *`,
         [
           comm[0].community_id, userId,
           body.title.trim(), description,
           body.location ?? null,
+          body.location_lat ?? null, body.location_lng ?? null,
           body.starts_at, body.ends_at ?? null,
           body.is_all_day, body.is_public,
           body.cover_url ?? null,
           body.tags ?? [],
           body.rsvp_enabled, body.max_attendees ?? null,
+          body.ticket_price ?? null,
+          body.ticket_currency ?? 'EUR',
+          body.ticket_url ?? null,
         ]
       )
 
@@ -202,18 +214,23 @@ export default async function eventsRoutes(app: FastifyInstance) {
         sets.push(`${col} = $${vals.length}`)
       }
 
-      if (body.title       !== undefined) addField('title',         body.title?.trim())
-      if (body.description !== undefined) addField('description',   sanitize(body.description ?? ''))
-      if (body.location    !== undefined) addField('location',      body.location)
-      if (body.starts_at   !== undefined) addField('starts_at',     body.starts_at)
-      if (body.ends_at     !== undefined) addField('ends_at',       body.ends_at)
-      if (body.is_all_day  !== undefined) addField('is_all_day',    body.is_all_day)
-      if (body.is_public   !== undefined) addField('is_public',     body.is_public)
-      if (body.cover_url   !== undefined) addField('cover_url',     body.cover_url)
-      if (body.tags        !== undefined) addField('tags',          body.tags)
-      if (body.is_cancelled  !== undefined) addField('is_cancelled',  body.is_cancelled)
-      if (body.rsvp_enabled  !== undefined) addField('rsvp_enabled',  body.rsvp_enabled)
-      if (body.max_attendees !== undefined) addField('max_attendees', body.max_attendees)
+      if (body.title           !== undefined) addField('title',           body.title?.trim())
+      if (body.description     !== undefined) addField('description',     sanitize(body.description ?? ''))
+      if (body.location        !== undefined) addField('location',        body.location)
+      if (body.location_lat    !== undefined) addField('location_lat',    body.location_lat)
+      if (body.location_lng    !== undefined) addField('location_lng',    body.location_lng)
+      if (body.starts_at       !== undefined) addField('starts_at',       body.starts_at)
+      if (body.ends_at         !== undefined) addField('ends_at',         body.ends_at)
+      if (body.is_all_day      !== undefined) addField('is_all_day',      body.is_all_day)
+      if (body.is_public       !== undefined) addField('is_public',       body.is_public)
+      if (body.cover_url       !== undefined) addField('cover_url',       body.cover_url)
+      if (body.tags            !== undefined) addField('tags',            body.tags)
+      if (body.is_cancelled    !== undefined) addField('is_cancelled',    body.is_cancelled)
+      if (body.rsvp_enabled    !== undefined) addField('rsvp_enabled',    body.rsvp_enabled)
+      if (body.max_attendees   !== undefined) addField('max_attendees',   body.max_attendees)
+      if (body.ticket_price    !== undefined) addField('ticket_price',    body.ticket_price)
+      if (body.ticket_currency !== undefined) addField('ticket_currency', body.ticket_currency)
+      if (body.ticket_url      !== undefined) addField('ticket_url',      body.ticket_url)
 
       if (sets.length === 0) return reply.status(400).send({ error: 'Aucun champ a modifier' })
 
