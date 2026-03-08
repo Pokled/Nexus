@@ -113,10 +113,11 @@ export async function create(data: {
   )
   const thread = inserted[0]
 
-  // Generate and persist the slug
+  // Generate and persist the slug, return with category_slug
   const slug = generateSlug(data.title, thread.id)
   const { rows } = await db.query<Thread>(
-    `UPDATE threads SET slug = $1 WHERE id = $2 RETURNING *`,
+    `UPDATE threads SET slug = $1 WHERE id = $2
+     RETURNING *, (SELECT c.slug FROM categories c WHERE c.id = category_id) AS category_slug`,
     [slug, thread.id]
   )
   return rows[0] ?? thread

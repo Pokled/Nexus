@@ -72,6 +72,8 @@ export const actions: Actions = {
 			}
 		}
 
-		redirect(303, `/forum/${categoryId}/${json.thread.id}`);
+		const catSlug    = json.thread.category_slug ?? categoryId;
+		const threadSlug = json.thread.slug          ?? json.thread.id;
+		redirect(303, `/forum/${catSlug}/${threadSlug}`);
 	}
 };

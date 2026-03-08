@@ -9,6 +9,33 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [1.5.0] — 2026-03-08
+
+### Added
+- **Slug URLs pour les catégories** — URLs lisibles pour toutes les catégories et sous-catégories
+  - Format : `/forum/nouvelles-fonctionnalites` (NFD + strip emojis + tirets)
+  - Redirect 301 automatique UUID → slug sur les pages catégorie et thread
+  - `generateCategorySlug()` dans `community.ts` (même algo que threads)
+  - Régénération automatique du slug quand un admin renomme une catégorie
+  - `scripts/regen-category-slugs.ts` — script one-shot pour les instances existantes
+  - Migrations 039 (`categories.slug`) + 040 (`network_index.category_slug`)
+- **Sous-catégories visibles** — les catégories parentes (ex: Développement) affichent maintenant leurs sous-catégories en grille avant la liste de threads
+- **Global Search cross-instances** (`/discover`) — SPEC 010
+  - Table `network_index` avec indexation FTS PostgreSQL (GIN)
+  - Scheduler `announceThreadsToDirectory()` : pousse les threads publics toutes les 10 min
+  - Directory : `POST /announce` + `GET /search` avec `ts_rank` et fallback `updated_at`
+  - Page `/discover` avec barre de recherche, cards instances, tags, pagination
+  - Opt-in via `NEXUS_GLOBAL_INDEXING=true` dans `.env`
+  - Lien « Découvrir » dans la navigation principale
+- **URLs cross-instances correctes** — les liens depuis `/discover` pointent vers `/forum/{category_slug}/{thread_slug}` de l'instance distante
+
+### Fixed
+- Redirect post-création de thread vers l'URL canonique (slug catégorie + slug thread)
+- `category_slug` retourné par `ThreadModel.create` via sous-requête inline
+- Tous les liens forum utilisent `category.slug ?? category.id` (home, search, notifications, admin, sitemap, RSS)
+
+---
+
 ## [1.4.0] — 2026-03-08
 
 ### Added
