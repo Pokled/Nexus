@@ -10,6 +10,7 @@
 	const threads = $derived(data.threads as Thread[] || []);
 	// Use slug for URLs if available (SEO), fall back to UUID
 	const categoryId = $derived((data.category?.slug ?? data.categoryId) as string);
+	const subcategories = $derived((data.category?.children ?? []) as any[]);
 	const user = $derived((data as any).user as any); // Si user est passé
 
 	// Pour le moment, pas de category, on utilise un nom par défaut
@@ -308,6 +309,45 @@
 		</div>
 	</div>
 </div>
+
+<!-- SOUS-CATÉGORIES -->
+{#if subcategories.length > 0}
+	<div class="mb-6">
+		<h2 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Sous-catégories</h2>
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+			{#each subcategories as sub}
+				<a
+					href="/forum/{sub.slug ?? sub.id}"
+					class="flex items-start gap-3 rounded-xl border border-gray-800 bg-gray-900/60
+					       px-4 py-3.5 hover:border-indigo-700/60 hover:bg-gray-900
+					       transition-all group"
+				>
+					<div class="mt-0.5 w-8 h-8 rounded-lg bg-indigo-600/15 border border-indigo-600/20
+					            flex items-center justify-center flex-shrink-0 text-indigo-400
+					            group-hover:bg-indigo-600/25 transition-colors">
+						<svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+							<path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+						</svg>
+					</div>
+					<div class="flex-1 min-w-0">
+						<p class="text-sm font-semibold text-white group-hover:text-indigo-300 transition-colors truncate">
+							{sub.name}
+						</p>
+						{#if sub.description}
+							<p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{sub.description}</p>
+						{/if}
+						{#if sub.thread_count > 0}
+							<p class="text-xs text-gray-600 mt-1">{sub.thread_count} sujet{sub.thread_count > 1 ? 's' : ''}</p>
+						{/if}
+					</div>
+					<svg class="w-4 h-4 text-gray-700 group-hover:text-indigo-500 transition-colors flex-shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+					</svg>
+				</a>
+			{/each}
+		</div>
+	</div>
+{/if}
 
 <!-- BARRE D'OUTILS (identique) -->
 <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
