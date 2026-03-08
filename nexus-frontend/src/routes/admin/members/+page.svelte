@@ -378,7 +378,12 @@
 			<p class="text-sm text-gray-400 mb-4">
 				L'utilisateur sera exclu de la communauté et ne pourra plus la rejoindre.
 			</p>
-			<form method="POST" action="?/ban" use:enhance onsubmit={() => banTarget = null}>
+			<form method="POST" action="?/ban" use:enhance={({ cancel }) => {
+					return async ({ result, update }) => {
+						await update()
+						if (result.type !== 'failure') banTarget = null
+					}
+				}}>
 				<input type="hidden" name="user_id" value={banTarget.userId} />
 				<input type="hidden" name="ban_ip" value={banIp ? 'true' : 'false'} />
 				<input type="hidden" name="ban_email" value={banEmail ? 'true' : 'false'} />
