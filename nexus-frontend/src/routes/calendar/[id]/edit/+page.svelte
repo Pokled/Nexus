@@ -60,7 +60,11 @@
 			fd.append('is_public',   'true');
 			fd.append('file',        file);
 
-			const res = await fetch(`${PUBLIC_API_URL}/api/v1/assets`, { method: 'POST', body: fd });
+			const res = await fetch(`${PUBLIC_API_URL}/api/v1/assets`, {
+				method:  'POST',
+				headers: data.token ? { Authorization: `Bearer ${data.token}` } : {},
+				body:    fd,
+			});
 			if (res.ok) {
 				const json = await res.json();
 				const base = PUBLIC_API_URL.replace('/api/v1', '');

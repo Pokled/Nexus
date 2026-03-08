@@ -2,9 +2,9 @@
 	import { enhance } from '$app/forms';
 	import { PUBLIC_API_URL } from '$env/static/public';
 	import NexusEditor from '$lib/components/editor/NexusEditor.svelte';
-	import type { ActionData } from './$types';
+	import type { PageData, ActionData } from './$types';
 
-	let { form }: { form: ActionData } = $props();
+	let { data, form }: { data: PageData; form: ActionData } = $props();
 
 	let submitting    = $state(false);
 	let coverPreview  = $state<string | null>(null);
@@ -60,8 +60,9 @@
 			fd.append('file',        file);
 
 			const res = await fetch(`${PUBLIC_API_URL}/api/v1/assets`, {
-				method: 'POST',
-				body:   fd,
+				method:  'POST',
+				headers: data.token ? { Authorization: `Bearer ${data.token}` } : {},
+				body:    fd,
 			});
 			if (res.ok) {
 				const json = await res.json();
