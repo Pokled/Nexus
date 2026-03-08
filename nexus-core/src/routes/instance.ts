@@ -106,6 +106,10 @@ export default async function instanceRoutes(app: FastifyInstance) {
        FROM community_members cm
        JOIN users u ON u.id = cm.user_id
        WHERE cm.community_id = $1
+         AND NOT EXISTS (
+           SELECT 1 FROM community_bans cb
+           WHERE cb.community_id = $1 AND cb.user_id = cm.user_id
+         )
        ORDER BY u.username ASC
        LIMIT 500`,
       [communityId]

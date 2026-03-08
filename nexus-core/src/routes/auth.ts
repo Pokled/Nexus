@@ -224,15 +224,18 @@ export default async function authRoutes(app: FastifyInstance) {
     // Ensure user is in community_members — only if not banned
     const communityId = await getDefaultCommunityId()
     if (communityId) {
-      await db.query(
-        `INSERT INTO community_members (community_id, user_id, role)
-         SELECT $1, $2, 'member'
-         WHERE NOT EXISTS (
-           SELECT 1 FROM community_bans WHERE community_id = $1 AND user_id = $2
-         )
-         ON CONFLICT DO NOTHING`,
+      const { rows: stillBanned } = await db.query(
+        `SELECT 1 FROM community_bans WHERE community_id = $1 AND user_id = $2 LIMIT 1`,
         [communityId, user.id]
       )
+      if (stillBanned.length === 0) {
+        await db.query(
+          `INSERT INTO community_members (community_id, user_id, role)
+           VALUES ($1, $2, 'member')
+           ON CONFLICT DO NOTHING`,
+          [communityId, user.id]
+        )
+      }
     }
 
     const { password: _, ...publicUser } = user
