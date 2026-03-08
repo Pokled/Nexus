@@ -2,6 +2,7 @@
  * Scheduler — tâches périodiques de nexus-core
  * - Ping directory toutes les 5 minutes (membres + online)
  * - Push assets publics locaux → directory toutes les heures (v0.7 fédération)
+ * - Announce threads au Global Search toutes les 10 min (SPEC 010, opt-in)
  */
 import { db } from './config/database'
 import { Server } from 'socket.io'
@@ -9,6 +10,7 @@ import { Server } from 'socket.io'
 const PING_INTERVAL_MS        = 5  * 60 * 1000  // 5 minutes
 const ASSET_PUSH_INTERVAL_MS  = 60 * 60 * 1000  // 1 heure
 const WHISPER_CLEANUP_MS      = 10 * 60 * 1000  // 10 minutes
+const GLOBAL_INDEX_INTERVAL_MS = 10 * 60 * 1000  // 10 minutes
 
 // ── Ping directory ────────────────────────────────────────────────────────────
 
@@ -112,6 +114,71 @@ async function pushAssetsToDirectory() {
   }
 }
 
+// ── Global Search announce (SPEC 010) ─────────────────────────────────────────
+
+export async function announceThreadsToDirectory() {
+  if (!process.env.NEXUS_GLOBAL_INDEXING || process.env.NEXUS_GLOBAL_INDEXING !== 'true') return
+
+  const token        = process.env.DIRECTORY_TOKEN
+  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nexusnode.app').replace(/\/$/, '')
+  if (!token) return
+
+  try {
+    const { rows } = await db.query<{
+      id: string; slug: string | null; title: string;
+      excerpt: string | null; reply_count: number; tags: string[]
+    }>(
+      `SELECT t.id, t.slug, t.title,
+              LEFT(REGEXP_REPLACE(
+                (SELECT p.content FROM posts p WHERE p.thread_id = t.id ORDER BY p.created_at ASC LIMIT 1),
+                '<[^>]*>', '', 'g'
+              ), 250) AS excerpt,
+              (SELECT COUNT(*)::int FROM posts p WHERE p.thread_id = t.id) AS reply_count,
+              ARRAY(
+                SELECT tg.name FROM tags tg
+                JOIN thread_tags tt ON tt.tag_id = tg.id
+                WHERE tt.thread_id = t.id
+              ) AS tags
+       FROM threads t
+       WHERE t.is_indexed = true
+         AND (t.last_indexed_at IS NULL OR t.updated_at > t.last_indexed_at)
+       LIMIT 100`
+    )
+
+    if (rows.length === 0) return
+
+    const selfUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+    const slug    = process.env.NEXUS_COMMUNITY_SLUG ?? 'unknown'
+
+    const threads = rows.map(t => ({
+      thread_id:   t.id,
+      thread_slug: t.slug,
+      title:       t.title,
+      excerpt:     t.excerpt ?? '',
+      tags:        t.tags,
+      reply_count: t.reply_count,
+      instance_url:  selfUrl,
+      instance_slug: slug,
+    }))
+
+    const res = await fetch(`${directoryUrl}/api/directory/search/announce`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ token, threads }),
+    })
+
+    if (res.ok) {
+      const ids = rows.map(r => r.id)
+      await db.query(`UPDATE threads SET last_indexed_at = NOW() WHERE id = ANY($1)`, [ids])
+      console.log(`[Scheduler] Global Search — ${ids.length} thread(s) annoncés`)
+    } else {
+      console.warn(`[Scheduler] Global Search announce failed: HTTP ${res.status}`)
+    }
+  } catch (err) {
+    console.error('[Scheduler] Global Search announce error:', err)
+  }
+}
+
 // ── Whisper cleanup ───────────────────────────────────────────────────────────
 
 async function cleanupWhisperRooms() {
@@ -141,5 +208,11 @@ export function startScheduler(io: Server) {
   // Nettoyage des whisper rooms expirées (toutes les 10 min)
   setInterval(() => cleanupWhisperRooms(), WHISPER_CLEANUP_MS)
 
-  console.log('[Scheduler] Démarré — ping directory 5min, assets push 1h, whisper cleanup 10min')
+  // Global Search — announce threads (60s au démarrage, puis toutes les 10 min)
+  if (process.env.NEXUS_GLOBAL_INDEXING === 'true') {
+    setTimeout(() => announceThreadsToDirectory(), 60_000)
+    setInterval(() => announceThreadsToDirectory(), GLOBAL_INDEX_INTERVAL_MS)
+  }
+
+  console.log('[Scheduler] Démarré — ping directory 5min, assets push 1h, whisper cleanup 10min, global search 10min')
 }

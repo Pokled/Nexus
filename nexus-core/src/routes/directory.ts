@@ -410,4 +410,91 @@ export default async function directoryRoutes(app: FastifyInstance) {
       offset,
     });
   });
+
+  // ── Global Search (SPEC 010) ──────────────────────────────────────────────
+
+  // POST /api/directory/search/announce — instances push their public threads
+  app.post<{ Body: { token: string; threads: any[] } }>(
+    '/directory/search/announce',
+    async (req, reply) => {
+      const { token, threads } = req.body;
+      if (!token) return reply.status(400).send({ error: 'token required' });
+
+      const instance = await db.query(
+        `SELECT slug, url FROM directory_instances WHERE token = $1 AND status = 'active' LIMIT 1`,
+        [token]
+      );
+      if (!instance.rows[0]) return reply.status(403).send({ error: 'invalid token' });
+
+      const { slug: instanceSlug, url: instanceUrl } = instance.rows[0];
+
+      if (!Array.isArray(threads) || threads.length === 0) {
+        return reply.send({ ok: true, indexed: 0 });
+      }
+
+      let indexed = 0;
+      for (const t of threads) {
+        if (!t.thread_id || !t.title) continue;
+        const excerpt  = String(t.excerpt  ?? '').slice(0, 300);
+        const tags     = Array.isArray(t.tags) ? t.tags.map(String) : [];
+        const replies  = parseInt(t.reply_count ?? '0', 10) || 0;
+
+        await db.query(
+          `INSERT INTO network_index
+             (instance_slug, instance_url, thread_id, thread_slug, title, excerpt, tags, reply_count, search_vector)
+           VALUES ($1, $2, $3::uuid, $4, $5, $6, $7::text[], $8,
+             to_tsvector('simple', $5 || ' ' || $6 || ' ' || array_to_string($7::text[], ' ')))
+           ON CONFLICT (instance_slug, thread_id) DO UPDATE SET
+             thread_slug   = EXCLUDED.thread_slug,
+             title         = EXCLUDED.title,
+             excerpt       = EXCLUDED.excerpt,
+             tags          = EXCLUDED.tags,
+             reply_count   = EXCLUDED.reply_count,
+             updated_at    = NOW(),
+             search_vector = EXCLUDED.search_vector`,
+          [instanceSlug, instanceUrl, t.thread_id, t.thread_slug ?? null,
+           t.title, excerpt, tags, replies]
+        );
+        indexed++;
+      }
+
+      return reply.send({ ok: true, indexed });
+    }
+  );
+
+  // GET /api/directory/search?q=&tags=&page=&limit= — cross-instance search
+  app.get('/directory/search', async (req, reply) => {
+    const { q, page = '1', limit: rawLimit = '20' } = req.query as Record<string, string>;
+    const limit  = Math.min(parseInt(rawLimit, 10) || 20, 50);
+    const offset = (Math.max(parseInt(page, 10) || 1, 1) - 1) * limit;
+
+    let rows: any[];
+
+    if (q?.trim()) {
+      const { rows: r } = await db.query(
+        `SELECT ni.instance_slug, ni.instance_url, ni.thread_id, ni.thread_slug,
+                ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
+                ts_rank(ni.search_vector, websearch_to_tsquery('simple', $1)) AS rank
+         FROM network_index ni
+         WHERE ni.search_vector @@ websearch_to_tsquery('simple', $1)
+         ORDER BY rank DESC, ni.reply_count DESC, ni.updated_at DESC
+         LIMIT $2 OFFSET $3`,
+        [q.trim(), limit, offset]
+      );
+      rows = r;
+    } else {
+      const { rows: r } = await db.query(
+        `SELECT ni.instance_slug, ni.instance_url, ni.thread_id, ni.thread_slug,
+                ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
+                1.0 AS rank
+         FROM network_index ni
+         ORDER BY ni.updated_at DESC
+         LIMIT $1 OFFSET $2`,
+        [limit, offset]
+      );
+      rows = r;
+    }
+
+    return reply.send({ results: rows, query: q ?? null });
+  });
 }
