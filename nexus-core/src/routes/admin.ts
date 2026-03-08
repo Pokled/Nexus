@@ -339,6 +339,15 @@ export default async function adminRoutes(app: FastifyInstance) {
       ).catch(() => {})
     }
 
+    // Kick active socket connections for this user immediately
+    if (io) {
+      const sockets = await io.in(`user:${userId}`).fetchSockets()
+      for (const s of sockets) {
+        s.emit('banned', { message: 'You have been banned from this community.' })
+        s.disconnect(true)
+      }
+    }
+
     return reply.send({ ok: true, registration_ip: registration_ip ?? null })
   })
 
