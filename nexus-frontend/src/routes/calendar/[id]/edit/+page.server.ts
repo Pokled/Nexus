@@ -27,8 +27,14 @@ export const actions: Actions = {
 		const title        = (form.get('title')       as string).trim();
 		const description  = (form.get('description') as string | null) ?? '';
 		const location     = (form.get('location')    as string | null)?.trim() || null;
-		const starts_at    = form.get('starts_at')    as string;
-		const ends_at      = (form.get('ends_at')     as string | null) || null;
+		const toISO = (v: string | null) => {
+			if (!v) return null;
+			if (v.includes('T') && !v.endsWith('Z')) return new Date(v).toISOString();
+			if (!v.includes('T')) return new Date(v + 'T00:00:00').toISOString();
+			return v;
+		};
+		const starts_at = toISO(form.get('starts_at') as string) as string;
+		const ends_at   = toISO(form.get('ends_at')   as string | null);
 		const is_all_day   = form.get('is_all_day')   === 'true';
 		const is_public    = form.get('is_public')    !== 'false';
 		const rsvp_enabled = form.get('rsvp_enabled') === 'true';
