@@ -51,11 +51,25 @@ export const actions: Actions = {
 		const token = cookies.get('token');
 		if (!token) return fail(401, { error: 'Non connecté' });
 
-		await apiFetch(fetch, `/events/${params.id}`, {
+		const res = await apiFetch(fetch, `/events/${params.id}`, {
 			method:  'PATCH',
 			headers: { Authorization: `Bearer ${token}` },
 			body:    JSON.stringify({ is_cancelled: true }),
 		});
+		if (!res.ok) { const j = await res.json(); return fail(res.status, { error: j.error }); }
+	},
+
+	// ── Rétablir l'événement ──────────────────────────────────────────────────
+	uncancelEvent: async ({ fetch, params, cookies }) => {
+		const token = cookies.get('token');
+		if (!token) return fail(401, { error: 'Non connecté' });
+
+		const res = await apiFetch(fetch, `/events/${params.id}`, {
+			method:  'PATCH',
+			headers: { Authorization: `Bearer ${token}` },
+			body:    JSON.stringify({ is_cancelled: false }),
+		});
+		if (!res.ok) { const j = await res.json(); return fail(res.status, { error: j.error }); }
 	},
 
 	// ── Supprimer l'événement ─────────────────────────────────────────────────

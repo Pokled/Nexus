@@ -1,0 +1,75 @@
+import { redirect, fail, error } from '@sveltejs/kit';
+import type { PageServerLoad, Actions } from './$types';
+import { apiFetch } from '$lib/api';
+
+export const load: PageServerLoad = async ({ fetch, params, cookies }) => {
+	const token = cookies.get('token');
+	if (!token) redirect(303, `/auth/login?redirectTo=/calendar/${params.id}/edit`);
+
+	const res  = await apiFetch(fetch, `/events/${params.id}`, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
+	const json = await res.json();
+
+	if (!res.ok) error(res.status, json.error ?? 'Événement introuvable');
+	if (!json.event.can_manage) error(403, "Vous n'êtes pas autorisé à modifier cet événement");
+
+	return { event: json.event, token };
+};
+
+export const actions: Actions = {
+	default: async ({ fetch, request, params, cookies }) => {
+		const token = cookies.get('token');
+		if (!token) return fail(401, { error: 'Non connecté' });
+
+		const form = await request.formData();
+
+		const title        = (form.get('title')       as string).trim();
+		const description  = (form.get('description') as string | null) ?? '';
+		const location     = (form.get('location')    as string | null)?.trim() || null;
+		const starts_at    = form.get('starts_at')    as string;
+		const ends_at      = (form.get('ends_at')     as string | null) || null;
+		const is_all_day   = form.get('is_all_day')   === 'true';
+		const is_public    = form.get('is_public')    !== 'false';
+		const rsvp_enabled = form.get('rsvp_enabled') === 'true';
+		const cover_url    = (form.get('cover_url')   as string | null)?.trim() || null;
+
+		const tagsRaw = (form.get('tags') as string | null) ?? '';
+		const tags    = tagsRaw.split(',').map(t => t.trim()).filter(Boolean).slice(0, 10);
+
+		const latRaw = form.get('location_lat') as string | null;
+		const lngRaw = form.get('location_lng') as string | null;
+		const location_lat = latRaw && latRaw.trim() ? parseFloat(latRaw) : null;
+		const location_lng = lngRaw && lngRaw.trim() ? parseFloat(lngRaw) : null;
+
+		const priceRaw     = form.get('ticket_price')    as string | null;
+		const ticket_price    = priceRaw && priceRaw.trim() ? parseFloat(priceRaw) : null;
+		const ticket_currency = (form.get('ticket_currency') as string | null) || 'EUR';
+		const ticket_url      = (form.get('ticket_url')    as string | null)?.trim() || null;
+
+		const maxAtt        = form.get('max_attendees') as string | null;
+		const max_attendees = maxAtt && maxAtt.trim() ? parseInt(maxAtt, 10) : null;
+
+		if (!title || !starts_at) {
+			return fail(400, { error: 'Le titre et la date de début sont obligatoires.' });
+		}
+
+		const res = await apiFetch(fetch, `/events/${params.id}`, {
+			method:  'PATCH',
+			headers: { Authorization: `Bearer ${token}` },
+			body: JSON.stringify({
+				title, description, location,
+				location_lat, location_lng,
+				starts_at, ends_at,
+				is_all_day, is_public, rsvp_enabled,
+				max_attendees, tags, cover_url,
+				ticket_price, ticket_currency, ticket_url,
+			}),
+		});
+
+		const json = await res.json();
+		if (!res.ok) return fail(res.status, { error: json.error });
+
+		redirect(303, `/calendar/${params.id}`);
+	},
+};

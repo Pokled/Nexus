@@ -352,10 +352,19 @@
 			</div>
 		{/if}
 
-		<!-- Actions admin -->
-		{#if data.token && ev.author_id}
+		<!-- Actions admin (auteur + admin/modo) -->
+		{#if ev.can_manage}
 			<div class="rounded-2xl border border-gray-800 bg-gray-900/50 px-5 py-4 space-y-2">
-				<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Administration</h3>
+				<h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Modération</h3>
+
+				<a href="/calendar/{ev.id}/edit"
+				   class="flex items-center justify-center gap-2 w-full py-2 rounded-xl border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 text-xs transition-colors">
+					<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+					</svg>
+					Modifier l'événement
+				</a>
+
 				{#if !ev.is_cancelled}
 					<form method="POST" action="?/cancelEvent" use:enhance class="w-full">
 						<button type="submit"
@@ -363,7 +372,15 @@
 							Annuler l'événement
 						</button>
 					</form>
+				{:else}
+					<form method="POST" action="?/uncancelEvent" use:enhance class="w-full">
+						<button type="submit"
+						        class="w-full py-2 rounded-xl border border-emerald-800/40 text-emerald-400 hover:bg-emerald-950/30 text-xs transition-colors">
+							Rétablir l'événement
+						</button>
+					</form>
 				{/if}
+
 				<form method="POST" action="?/deleteEvent" use:enhance={() => {
 					deleting = true;
 					return async () => { await goto('/calendar'); };

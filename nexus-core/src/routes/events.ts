@@ -148,7 +148,8 @@ export default async function eventsRoutes(app: FastifyInstance) {
       attendees = rsvps
     }
 
-    return reply.send({ event: rows[0], attendees })
+    const canManage = userId ? await canManageEvent(userId, req.params.id) : false
+    return reply.send({ event: { ...rows[0], can_manage: canManage }, attendees })
   })
 
   // POST /events
