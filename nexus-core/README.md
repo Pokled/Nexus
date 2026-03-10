@@ -1,258 +1,183 @@
-# NEXUS
+# nexus-core
 
-> *"Le réseau, ce sont les gens."*
+The Fastify v5 backend API for [Nexus](../README.md) — the self-hosted community platform.
 
-**Nexus** est une plateforme de communication communautaire, décentralisée, open source et libre.
-
-C'est l'internet des années 2000 reconstruit avec les outils de 2026.
+Handles all data persistence, authentication, real-time events (Socket.IO), WebRTC signaling, federation, and scheduled tasks.
 
 ---
 
-## Pourquoi Nexus existe
+## Stack
 
-Discord, Facebook et les GAFA ont enfermé des millions de communautés dans des silos privés.
-Des discussions, des tutoriels, du savoir collectif — invisibles pour Google, inaccessibles sans compte, condamnés à disparaître le jour où la plateforme ferme.
-
-**Nexus répare ça.**
-
-- Forums publics **indexables par Google**
-- Réactions, merci, tags, recherche full-text
-- **Chat temps réel** communautaire (Socket.IO)
-- **Voix P2P + partage d'écran** (WebRTC mesh)
-- **Self-hostable** sur n'importe quel serveur
-- **Réseau P2P** — les utilisateurs sont le réseau
-- **Open source** — AGPL-3.0
-
----
-
-## Une instance = une communauté
-
-Nexus ne se déploie pas comme une plateforme multi-communautés.
-**Chaque installation Nexus est une communauté souveraine**, configurée via `.env` :
-
-```env
-NEXUS_COMMUNITY_NAME=Linux & Open Source
-NEXUS_COMMUNITY_DESCRIPTION=La communauté francophone du logiciel libre.
-NEXUS_COMMUNITY_LANGUAGE=fr
-NEXUS_COMMUNITY_COUNTRY=FR
-NEXUS_COMMUNITY_SLUG=linux
-```
-
-Les instances se découvrent via le **nexus-directory** — l'annuaire global *(Phase 2)*.
+| | |
+|---|---|
+| Runtime | Node.js 20+ |
+| Framework | Fastify v5 |
+| Language | TypeScript |
+| Database | PostgreSQL 16 (pg Pool) |
+| Cache / Sessions | Redis 7 (ioredis) |
+| Full-text search | PostgreSQL tsvector + GIN indexes |
+| Real-time | Socket.IO 4 (attached after `server.listen()`) |
+| Auth | JWT Bearer + Redis session (7-day TTL) |
+| Migrations | Auto-applied at startup from `src/migrations/` |
 
 ---
 
-## État du projet
-
-**v0.3.2 — État actuel**
+## Architecture
 
 ```
-Infrastructure              ✓  Fastify + PostgreSQL + Redis
-Forum backend               ✓  25+ routes (auth, forum, grades, admin)
-Instance = Communauté       ✓  NEXUS_COMMUNITY_NAME via .env
-Catégories infinies         ✓  parent_id récursif + CTE PostgreSQL
-Éditeur WYSIWYG             ✓  Tiptap (gras, code, tableaux, images, iframes)
-Réactions & Merci           ✓  6 emojis + bouton Merci (+5 karma)
-Tags sur les threads        ✓  prédéfinis par l'admin, pills colorées
-Recherche full-text         ✓  PostgreSQL tsvector/GIN, extraits surlignés
-Notifications               ✓  réponse, merci reçu, @mention + cloche
-Panneau admin               ✓  Dashboard, membres, grades, modération, tags
-SEO                         ✓  Sitemap, RSS, robots.txt, JSON-LD, llms.txt
-Frontend SvelteKit          ✓  SSR + SEO, 20+ pages
-Docker self-hosting         ✓  docker-compose.yml
-Chat temps réel             ✓  Socket.IO — WebSocket + REST
-Salons vocaux               ✓  WebRTC P2P mesh + TURN relay self-hosted
-Partage d'écran             ✓  WebRTC screen sharing
-Réseau P2P WireGuard        ○  Phase 3
+src/
+├── index.ts            ← Entry point — registers routes, attaches Socket.IO after listen()
+├── config/
+│   └── database.ts     ← exports db (pg Pool) + redis (ioredis)
+├── middleware/
+│   ├── auth.ts         ← requireAuth, optionalAuth, adminOnly
+│   ├── permissions.ts  ← community permission checks
+│   ├── rateLimit.ts    ← Redis-backed rate limiting
+│   └── validate.ts     ← request body validation
+├── models/             ← DB query functions per domain
+├── routes/             ← One file per domain, all prefixed /api/v1/
+│   ├── auth.ts         ← Register, login, reset password
+│   ├── authenticator.ts← Nexus Signet — devices, challenges, enrollment
+│   ├── users.ts        ← Profiles, linked instances, presence
+│   ├── forums.ts       ← Categories, threads, posts, reactions, thanks
+│   ├── chat.ts         ← Channels, messages, pins, unfurl
+│   ├── notifications.ts← Notification CRUD + purge
+│   ├── dm.ts           ← Direct messages 1:1
+│   ├── polls.ts        ← Polls (choice / schedule / ranking)
+│   ├── events.ts       ← Event calendar, RSVP
+│   ├── garden.ts       ← Community feature voting
+│   ├── communities.ts  ← Instance config, members
+│   ├── admin.ts        ← Admin panel, bans, grades
+│   ├── search.ts       ← Local full-text search
+│   ├── directory.ts    ← Federation — instance registry, global search
+│   ├── assets.ts       ← Asset library (frames, banners, badges, sounds…)
+│   ├── whispers.ts     ← Ephemeral 1h chat rooms
+│   └── instance.ts     ← Instance metadata (public info)
+├── socket/
+│   ├── index.ts        ← Chat events (send, react, typing, DMs…)
+│   ├── voice.ts        ← WebRTC signaling (offer/answer/ICE)
+│   └── io.ts           ← Shared Socket.IO instance
+├── scheduler.ts        ← Periodic tasks (ping directory, purge, index)
+└── migrations/         ← 40+ numbered SQL files, auto-applied at boot
 ```
+
+> **Important:** Socket.IO is attached **after** `server.listen()` — this is a Fastify v5 constraint. Do not move it before `listen()`.
 
 ---
 
-## Installation
+## Routes prefix
 
-### Option A — Docker (recommandé)
+All REST routes are under `/api/v1/` **except** authenticator routes which are under `/api/auth/` (no `v1`).
 
-La méthode la plus simple. Nécessite Docker Desktop ou Docker Engine.
+| Prefix | Routes |
+|---|---|
+| `/api/v1/` | All standard routes |
+| `/api/auth/` | Nexus Signet (devices, challenges, enrollment tokens) |
+
+---
+
+## Development
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git
-cd nexus-core
-cp .env.example .env
-# Éditez .env avec les informations de votre communauté
-docker-compose up -d
-```
-
-L'API démarre sur `http://localhost:3000`
-
----
-
-### Option B — Windows Server sans Docker (PowerShell Easy-Install)
-
-Un script PowerShell automatise l'installation complète en moins de 15 minutes :
-Node.js, PostgreSQL, Redis, configuration de la base, migrations, et enregistrement comme service Windows.
-
-```powershell
-# Exécutez PowerShell en tant qu'Administrateur, puis :
-.\scripts\Install-Nexus.ps1
-
-# Ou avec un chemin d'installation personnalisé :
-.\scripts\Install-Nexus.ps1 -NexusPath "D:\Apps\Nexus"
-```
-
-Le script installe et configure automatiquement :
-- **Chocolatey** (gestionnaire de paquets Windows)
-- **Node.js LTS** + **PostgreSQL 16** + **Redis**
-- **NSSM** pour enregistrer Nexus comme service Windows (démarrage automatique)
-- Règle de pare-feu pour le port de l'API
-
----
-
-### Option C — Installation manuelle (Linux/Mac/Windows)
-
-**Prérequis :** Node.js 20+, PostgreSQL 16+, Redis 7+
-
-```bash
-git clone https://github.com/Pokled/Nexus.git
 cd nexus-core
 npm install
-cp .env.example .env
-```
-
-Éditez `.env` avec vos valeurs, puis créez la base de données :
-
-```sql
--- En tant que superuser PostgreSQL
-CREATE ROLE nexus_user LOGIN PASSWORD 'votre_mot_de_passe';
-CREATE DATABASE nexus OWNER nexus_user;
-GRANT ALL PRIVILEGES ON DATABASE nexus TO nexus_user;
-```
-
-Appliquez les migrations :
-
-```bash
-# Linux/Mac (peer auth ou mot de passe)
-PGPASSWORD=votre_mdp psql -U nexus_user -d nexus -f src/migrations/001_initial.sql
-# ... répétez pour 002 à 010
-
-# Windows
-$env:PGPASSWORD="votre_mdp"
-& "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U nexus_user -d nexus -f src\migrations\001_initial.sql
-# ... répétez pour 002 à 010
-```
-
-Démarrez :
-
-```bash
-npm run dev       # développement (ts-node, port 3000)
-npm run build     # compilation TypeScript
-npm start         # production (node dist/)
+npm run dev         # ts-node src/index.ts, port 3000
+npm run build       # tsc → dist/
+npm run test        # vitest run (63 tests, 6 files)
+npm run test:watch  # vitest interactive
+npm run seed        # seed DB with test data
+npm run seed:reset  # drop + reseed
 ```
 
 ---
 
-## Reverse proxy HTTPS — Caddy (recommandé)
-
-[Caddy](https://caddyserver.com) est un reverse proxy qui gère automatiquement les certificats SSL via Let's Encrypt. Aucune configuration SSL manuelle.
+## Production
 
 ```bash
-# Installer Caddy
-choco install caddy       # Windows
-apt install caddy         # Debian/Ubuntu
-brew install caddy        # macOS
-
-# Lancer avec la configuration d'exemple
-caddy run --config scripts/Caddyfile.example
+npm run build
+pm2 restart nexus-core   # after build
 ```
-
-Un exemple commenté est disponible dans [`scripts/Caddyfile.example`](./scripts/Caddyfile.example).
 
 ---
 
-## Variables d'environnement
+## Environment variables
 
-Voir [`.env.example`](./.env.example) pour la liste complète commentée.
+See [`.env.example`](./.env.example) for the full annotated list.
 
-| Variable | Obligatoire | Description |
+| Variable | Required | Description |
 |---|---|---|
-| `NEXUS_COMMUNITY_NAME` | Oui | Nom affiché de la communauté |
-| `NEXUS_COMMUNITY_SLUG` | Oui | Slug URL (lettres minuscules, tirets) |
-| `NEXUS_COMMUNITY_LANGUAGE` | Non | Langue (défaut : `fr`) |
-| `JWT_SECRET` | Oui | Secret JWT — **32+ caractères aléatoires en production** |
-| `DB_HOST` / `DB_PORT` / `DB_NAME` | Oui | Connexion PostgreSQL |
-| `DB_USER` / `DB_PASSWORD` | Oui | Identifiants PostgreSQL |
-| `REDIS_HOST` / `REDIS_PORT` | Non | Redis (défaut : `localhost:6379`) |
-| `PORT` | Non | Port API (défaut : `3000`) |
-| `NODE_ENV` | Non | `development` ou `production` |
+| `JWT_SECRET` | Yes | JWT secret — 32+ random chars in production |
+| `DB_HOST/PORT/NAME/USER/PASSWORD` | Yes | PostgreSQL connection |
+| `REDIS_HOST/PORT` | No | Redis (default: localhost:6379) |
+| `FRONTEND_URL` | Yes | Frontend origin for CORS |
+| `SIGNET_URL` | No | Nexus Signet PWA origin for CORS (e.g. `https://signet.nexusnode.app`) |
+| `NEXUS_COMMUNITY_NAME/SLUG/LANGUAGE` | Yes | Community identity |
+| `NEXUS_MAX_MEMBERS` | No | Member cap (excluded banned users) |
+| `NEXUS_GLOBAL_INDEXING` | No | `true` to opt into cross-instance search |
+| `DIRECTORY_API_URL` | No | Federation directory URL |
+| `STUN_FALLBACK_URLS` | No | Fallback STUN for relay-mode voice |
+| `NODE_ENV` | No | `development` or `production` |
 
 ---
 
-## Stack technique
+## Migrations
 
-| Couche | Technologie |
-|---|---|
-| API | TypeScript + Fastify |
-| Base de données | PostgreSQL 16 |
-| Cache / Rate limiting | Redis 7 |
-| Recherche full-text | PostgreSQL tsvector + GIN |
-| Frontend | SvelteKit + Tailwind v4 |
-| Éditeur | Tiptap (WYSIWYG) |
-| Desktop | Tauri *(Phase 5)* |
-| Mobile | Capacitor *(Phase 5)* |
-| Réseau P2P | WireGuard + DHT *(Phase 3)* |
-| IA locale | Ollama *(Phase 4)* |
+Migrations are numbered SQL files in `src/migrations/` and applied **automatically at startup**:
+
+```
+001_initial.sql          ← Core schema
+002–010                  ← Forum, auth, SEO, chat, voice
+011–020                  ← Notifications, assets, P2P, garden
+021–030                  ← DMs, polls, ban system, profiles
+031–043                  ← Slugs, calendar, global search, Signet
+```
+
+To add a new migration: create `044_description.sql` (increment the number).
 
 ---
 
-## Comptes de démonstration
+## Auth model
 
-Après `npm run seed` :
+- **JWT Bearer** token sent in `Authorization: Bearer <token>` header
+- **Redis session** `session:<token>` with 7-day TTL
+- **Online presence** tracked via `heartbeat:<userId>` (15-min TTL)
+- **Nexus Signet** (passwordless): ECDSA P-256 challenge/response, devices stored in `signet_devices`
 
-| Email | Mot de passe | Rôle |
+---
+
+## Demo accounts
+
+After `npm run seed`:
+
+| Email | Password | Role |
 |---|---|---|
-| `alice@nexus.demo` | `demo1234` | owner (linux) |
-| `bob@nexus.demo` | `demo1234` | membre |
-| `charlie@nexus.demo` | `demo1234` | owner (gaming) |
+| `alice@nexus.demo` | `demo1234` | owner |
+| `bob@nexus.demo` | `demo1234` | member |
 
 ---
 
-## Documentation
+## Tests
 
-- [ROADMAP.MD](./ROADMAP.MD) — Le chemin vers la vision complète
-- [ARCHITECTURE.MD](./ARCHITECTURE.MD) — Comment Nexus est construit
-- [CONTRIBUTING.MD](./CONTRIBUTING.MD) — Comment contribuer
-- [NEXUS_CONTEXT.md](./NEXUS_CONTEXT.md) — Vision complète et décisions techniques
-
----
-
-## Contribuer
-
-Nexus appartient à sa communauté. Toutes les contributions sont les bienvenues.
-
-Lis [CONTRIBUTING.MD](./CONTRIBUTING.MD) avant de commencer.
-
-```
-nexus-plugins/    →  Crée des plugins
-nexus-themes/     →  Crée des thèmes
-i18n/             →  Traduis dans ta langue
-nexus-docs/       →  Améliore la documentation
+```bash
+npm run test
 ```
 
----
-
-## Licence
-
-AGPL-3.0 — Le code appartient à sa communauté.
-
-Si Nexus trahit ses principes, le Manifeste autorise explicitement
-n'importe qui à forker le projet et continuer.
+63 tests, 6 files. Pattern notes:
+- Use `vi.resetAllMocks()` (not `clearAllMocks`) in `beforeEach` when using `mockResolvedValueOnce`
+- `rowCount` is `null` for SELECT queries in node-postgres — use `rows.length` instead
 
 ---
 
-## Superviseure officielle
+## Part of the Nexus monorepo
 
-**Iris** — Approuve chaque commit depuis le 18 février 2026. 🐱
+```
+Nexus/
+├── nexus-core/           ← Fastify API (this folder)
+├── nexus-frontend/       ← SvelteKit community app
+├── nexus-authenticator/  ← Nexus Signet PWA (passwordless login)
+├── nexus-relay/          ← Rust P2P TCP tunnel
+├── nexus-turn/           ← Rust STUN/TURN server
+└── docs/
+```
 
----
-
-*Né le 18 février 2026 à 23h37.*
-*"Fork us if we betray you."*
+→ See the [main README](../README.md) for full architecture and setup.

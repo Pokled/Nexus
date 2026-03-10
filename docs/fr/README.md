@@ -5,7 +5,7 @@
 
   <p><strong>La plateforme communautaire que personne ne peut te prendre.<br/>Forum + Chat + Voix + Canvas P2P — sur ton serveur, sous ton contrôle, pour toujours.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v1.3.0-7c3aed)](../../CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v1.7.2-7c3aed)](../../CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](ARCHITECTURE.md)
@@ -66,9 +66,12 @@ Fonctionne sur un Raspberry Pi derrière une box FAI. Sans domaine. Sans ouvrir 
 | **Annuaire fédéré de communautés** | ✅ | ❌ | ⚠️ | ❌ | ✅ |
 | **Bibliothèque d'assets (cadres, badges, bannières)** | ✅ | ❌ | ❌ | ❌ | ❌ |
 | **Salles whisper éphémères** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Connexion sans mot de passe (ECDSA P-256 PWA)** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Jukebox P2P collaboratif (file YouTube)** | ✅ | ❌ | ❌ | ❌ | ❌ |
+| **Calendrier d'événements (OSM, RSVP, SEO)** | ✅ | ❌ | ❌ | ⚠️ | ❌ |
+| **Recherche globale cross-instance** | ✅ | ❌ | ❌ | ❌ | ✅ |
 | **Thèmes de profil personnalisés (app globale)** | ✅ | ❌ | ❌ | ❌ | ❌ |
-| **Tuner radio internet intégré** | 📻 Bientôt | ❌ | ❌ | ❌ | ❌ |
-| **Régie publicitaire coopérative radio** | 📻 Bientôt | ❌ | ❌ | ❌ | ❌ |
+
 | Open source | ✅ AGPL | ❌ | ✅ | ✅ | ✅ |
 
 > Nexus est la seule plateforme auto-hébergée combinant un **forum indexé**, **chat temps réel**, **voix P2P**, **canvas collaboratif** et un **annuaire fédéré** en une seule installation.
@@ -321,14 +324,25 @@ Les migrations de base de données sont appliquées automatiquement au démarrag
 | **Voix — Relay failover** — bascule automatique vers TURN relay sur perte de paquets élevée | **v1.3** |
 | **Voix — Opus optimisé** — 32 kbps par défaut, DTX désactivé, mono pour liens dégradés | **v1.3** |
 
+### v1.4 → v1.7
+
+| Fonctionnalité | Version |
+|---|---|
+| **URLs de threads en slug + SEO complet** (canonical, OG, JSON-LD, sitemap) | v1.4 |
+| **Slugs de catégories** + affichage des sous-catégories sur la page parente | v1.5 |
+| **Recherche globale** — index FTS cross-instance, UI `/discover` | v1.5 |
+| **Calendrier d'événements** — CRUD, RSVP, cartes OSM, image de couverture, rich snippets | v1.6 |
+| **Protocole Gossip** — fédération des événements entre instances | v1.6 |
+| **Nexus Signet** — auth sans mot de passe ECDSA P-256 PWA sur `signet.nexusnode.app` | v1.7 |
+| **Enrollment QR** — scanner depuis les paramètres pour éviter la saisie manuelle du token | v1.7 |
+| **UI optimiste** — toutes les mutations mettent à jour l'état local sans re-fetch de page | v1.7 |
+| **Centre de notifications** — purge automatique 30j + bouton effacer les lues | v1.7 |
+
 ### À venir
 
-| Fonctionnalité | SPEC |
+| Fonctionnalité | Notes |
 |---|---|
-| **Calendrier d'événements** — grade organisateur, cartes OSM, Rich Snippets Google | [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md) |
-| **Recherche globale** — index mesh inter-instances, Meilisearch, fallback P2P | [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md) |
 | **Nodes** — connaissance structurée durable, validée via le Jardin | [SPEC 013](../en/specs/013-node/SPEC.md) |
-| **Galaxy Bar** — switcher multi-instances, SSO décentralisé | [SPEC 012](../en/specs/012-nexus-galaxy-bar/SPEC.md) |
 | Mobile (Capacitor) / Desktop (Tauri) | — |
 
 ---

@@ -17,8 +17,8 @@ Discussions, tutorials, collective knowledge — invisible to Google, inaccessib
 
 - Public forums **indexed by all search engines** (Google, Bing, Brave, Qwant...)
 - Reactions, thanks, tags, full-text search
-- Real-time community chat *(Phase 2)*
-- Voice / screen sharing *(Phase 3)*
+- Real-time community **chat** (Socket.IO)
+- **Voice** + screen sharing (WebRTC P2P)
 - **Self-hostable** on any server
 - **P2P network** — users are the network
 - **Open source** — AGPL-3.0
@@ -44,25 +44,32 @@ Instances discover each other through the **nexus-directory** — the global reg
 
 ## Project status
 
-**Phase 1 MVP — Complete**
+**v1.7.2 — Production**
 
 ```
-Infrastructure              ✓  Fastify + PostgreSQL + Redis
-Forum backend               ✓  25+ routes (auth, forum, grades, admin)
-Instance = Community        ✓  NEXUS_COMMUNITY_NAME via .env
-Infinite categories         ✓  parent_id recursive + PostgreSQL CTE
-WYSIWYG editor              ✓  Tiptap (bold, code, tables, images, iframes)
-Reactions & Thanks          ✓  6 emojis + Thanks button (+5 karma)
-Thread tags                 ✓  admin-defined, colored pills
+Forum                       ✓  Categories, threads, posts, reactions, thanks, tags, slugs
 Full-text search            ✓  PostgreSQL tsvector/GIN, highlighted excerpts
-Notifications               ✓  reply, thanks received, @mention + bell
-Admin panel                 ✓  Dashboard, members, grades, moderation, tags
-SEO                         ✓  Sitemap, RSS, robots.txt, JSON-LD, llms.txt
-SvelteKit frontend          ✓  SSR + SEO, 20+ pages
-Docker self-hosting         ✓  docker-compose.yml
-Real-time chat              ○  Phase 2 (Socket.io)
-Voice channels              ○  Phase 3 (WebRTC)
-P2P network                 ○  Phase 3 (WireGuard mesh)
+Admin panel                 ✓  Dashboard, members, grades, bans, moderation
+SEO                         ✓  Sitemap, RSS, robots.txt, JSON-LD, canonical URLs
+Real-time chat              ✓  Socket.IO — channels, replies, pins, link previews, @mentions
+Voice channels              ✓  WebRTC P2P mesh — mute, deafen, PTT, noise filter
+Screen sharing              ✓  WebRTC screen share + clip recording
+P2P DataChannels            ✓  Instant typing, optimistic reactions, file transfer
+NexusCanvas                 ✓  Collaborative P2P whiteboard in voice channels
+Notifications               ✓  reply, thanks, @mention — badge, center, auto-purge 30d
+Direct messages             ✓  1:1 DMs with unread badge
+Polls                       ✓  Choice / schedule / ranking — in chat and forum
+Ban system                  ✓  User ban, IP ban, email ban
+Asset library               ✓  Frames, banners, badges, stickers, sounds, themes, fonts
+Profile themes              ✓  6 presets, per-user app-wide CSS, live editor
+Mobile UI                   ✓  Bottom nav, chat drawer, voice on mobile
+Calendar / Events           ✓  CRUD, RSVP, OSM maps, cover image, rich snippets
+Global Search               ✓  Cross-instance FTS index, /discover UI
+Federation                  ✓  Instance directory, Galaxy Bar (multi-instance switcher)
+Gossip Protocol             ✓  Cross-instance event/thread indexing
+Nexus Signet                ✓  Passwordless ECDSA P-256 auth PWA
+nexus-relay                 ✓  Rust TCP tunnel — home server, no open ports
+nexus-turn                  ✓  Rust STUN/TURN — replaces coturn, voice through VPNs
 ```
 
 ---
@@ -131,12 +138,12 @@ Apply migrations:
 ```bash
 # Linux/Mac (peer auth or password)
 PGPASSWORD=your_password psql -U nexus_user -d nexus -f src/migrations/001_initial.sql
-# ... repeat for 002 to 013
+# Migrations are applied automatically at startup — no manual SQL needed
 
 # Windows
 $env:PGPASSWORD="your_password"
 & "C:\Program Files\PostgreSQL\16\bin\psql.exe" -U nexus_user -d nexus -f src\migrations\001_initial.sql
-# ... repeat for 002 to 013
+# Migrations are applied automatically at startup — no manual SQL needed
 ```
 
 Start:
@@ -195,10 +202,10 @@ See [`nexus-core/.env.example`](../../nexus-core/.env.example) for the full anno
 | Full-text search | PostgreSQL tsvector + GIN |
 | Frontend | SvelteKit + Tailwind v4 |
 | Editor | Tiptap (WYSIWYG) |
-| Desktop | Tauri *(Phase 5)* |
-| Mobile | Capacitor *(Phase 5)* |
-| P2P network | WireGuard + DHT *(Phase 3)* |
-| Local AI | Ollama *(Phase 4)* |
+
+
+| P2P | WebRTC DataChannels + nexus-relay (Rust) |
+
 
 ---
 
