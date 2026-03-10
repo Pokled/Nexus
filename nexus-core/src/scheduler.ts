@@ -20,9 +20,13 @@ async function pingDirectory(io: Server) {
   if (!token) return
 
   try {
-    const membersResult = await db.query('SELECT COUNT(*) AS count FROM users')
+    const membersResult = await db.query('SELECT COUNT(*) AS count FROM users WHERE id NOT IN (SELECT user_id FROM community_bans)')
     const members = parseInt(membersResult.rows[0]?.count ?? '0', 10)
-    const online  = io.sockets.sockets.size
+    // Deduplicate by userId — same approach as instance.ts online_count
+    const presenceSockets = await io.in('presence').fetchSockets()
+    const seen = new Set<string>()
+    for (const s of presenceSockets) { if (s.data.userId) seen.add(s.data.userId) }
+    const online = seen.size
     // SELF_URL = URL interne de CETTE instance (ex: http://127.0.0.1:3001)
     // DIRECTORY_API_URL = URL interne du directory principal (ex: http://127.0.0.1:3000)
     //   → pour l'instance principale les deux sont identiques

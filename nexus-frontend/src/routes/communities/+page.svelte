@@ -96,7 +96,8 @@
 
 	function isOnline(i: NexusInstance): boolean {
 		if (!i.last_seen) return false
-		return Date.now() - new Date(i.last_seen).getTime() < 5 * 60 * 1000
+		// Ping interval is 5 min — allow 10 min buffer before marking offline
+		return Date.now() - new Date(i.last_seen).getTime() < 10 * 60 * 1000
 	}
 </script>
 
