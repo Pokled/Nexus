@@ -9,6 +9,35 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [1.7.0] — 2026-03-10
+
+### Added
+- **Landing page refonte** — hero dynamique avec stats live (membres/canaux/threads), feature highlights illustrés, footer institutionnel avec lien GitHub/AGPL
+- **Admin — Dashboard enrichi** — statistiques étendues (événements, sondages, assets, messages chat, DMs), graphique d'activité duale (posts + nouveaux membres sur 7 jours), top 5 contributeurs du mois, derniers inscrits
+- **Annonces système** — bannières colorées (6 variantes : indigo/amber/green/red/sky/rose) créées par les admins, dismissibles par l'utilisateur, expiration optionnelle par date/heure, prévisualisation live dans le panneau admin (`/admin/announcements`)
+- **Journal de modération** — audit trail complet des actions admin (`/admin/audit-log`), 11 types d'actions (ban/unban/kick/rôle/pin/unpin/lock/unlock/supprimer fil/créer annonce/supprimer annonce), filtres par action et par admin, pagination 50 entrées, helper `logAction()` fire-and-forget
+  - Migrations 045 (`system_announcements`) + 046 (`admin_audit_log`)
+
+### Fixed
+- **Stabilité admin** — pool PG `max` 10 → 20 pour absorber les requêtes SSR parallèles lors des rechargements de pages admin ; `connectionTimeoutMillis: 5000` ; `.catch()` ajouté sur toutes les queries stats vulnérables (`activityRes`, `membersActivityRes`, `topContribRes`, `recentMembersRes`) — corrige les déconnexions socket intermittentes lors des actions admin (changement de rôle, ban, etc.)
+- **Directory** — `online_count` dédupliqué via `io.in('presence').fetchSockets()`, fenêtre `isOnline` élargie à 20 minutes
+- **Tests** — `admin.test.ts` : mock fallback `mockResolvedValue` pour les queries supplémentaires du dashboard enrichi ; pattern SQL `community_members` mis à jour pour matcher le JOIN users
+
+---
+
+## [1.6.0] — 2026-03-08
+
+### Added
+- **Calendrier d'événements** (SPEC 011) — CRUD complet, RSVP (going/maybe/not_going), cover upload (`asset_type: banner`), sanitize-html étendu (img/iframe/table/div/span)
+  - Pages `/calendar`, `/calendar/new`, `/calendar/[id]`, `/calendar/[id]/edit`
+  - `can_manage` retourné par `GET /events/:id` (auteur OU mod/admin de la communauté)
+  - `canManageEvent()` helper dans `events.ts`
+- **Gossip Protocol** — synchronisation légère des événements cross-instances
+  - Scheduler `announceEventsToDirectory()` — pousse les événements à venir toutes les 10 min
+  - `/discover` multi-type : cards communautés + threads + événements avec types dédiés
+
+---
+
 ## [1.5.0] — 2026-03-08
 
 ### Added

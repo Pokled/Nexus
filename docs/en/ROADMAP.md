@@ -17,7 +17,7 @@
 | **Phase 2** | Real-time Chat + Directory + Network Identity | ✅ Complete |
 | **Phase 2.5** | Community customization + Light federation | ✅ Complete |
 | **Phase 3** | P2P Infrastructure + Rust Foundation | 🔨 In Progress |
-| **Phase 4** | Platform enrichment | 🔨 In Progress (v1.3 partial) |
+| **Phase 4** | Platform enrichment | 🔨 In Progress (v1.7) |
 | Phase 5 | Mobile and reputation | ⏳ Planned |
 | **Phase Horizon** | NEXUS-ETHER — Physical layer sovereignty | 🌌 Vision |
 | **Phase Radio** | NEXUS-RADIO — Internet radio tuner + cooperative ad network | 📻 Vision |
@@ -396,10 +396,14 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] **nexus-turn — MESSAGE-INTEGRITY fix** (v1.3) — RFC 5389 §10.3, relay now works in Firefox, Chrome, all WebRTC clients
 - [x] **Voice — Relay failover** (v1.3) — auto-restart ICE with `iceTransportPolicy: relay` after 3 consecutive high-loss polls
 - [x] **Voice — Opus optimized** (v1.3) — 32 kbps default, DTX off, mono, FEC on
+- [x] **Event Calendar** (v1.6) — full CRUD, RSVP, cover upload, `/calendar` + `/calendar/[id]` + edit pages, `can_manage` (author OR mod/admin), extended sanitize-html — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)
+- [x] **Gossip Protocol** (v1.6) — `announceEventsToDirectory()` every 10 min, `/discover` multi-type (communities + threads + events)
+- [x] **Global Search Gossip-based** (v1.5) — `network_index` FTS GIN PostgreSQL, `announceThreadsToDirectory()`, `/discover` with search bar and cross-instance cards, opt-in `NEXUS_GLOBAL_INDEXING=true` — [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md)
+- [x] **Admin — Enriched Dashboard** (v1.7) — extended stats (events/polls/assets/chat/DMs), dual 7-day activity chart (posts + new members), top 5 contributors, recent registrations
+- [x] **System Announcements** (v1.7) — color-coded banners (6 variants) admin-created, user-dismissible, optional expiry, live preview — `/admin/announcements`
+- [x] **Moderation Log** (v1.7) — audit trail for 11 admin action types, action/actor filters, pagination — `/admin/audit-log`, migrations 045-046
 
 **Knowledge & Discovery:**
-- [ ] **Event Calendar** — organizer-grade, OSM maps, JSON-LD Google Rich Snippets, Socket.IO 15min alerts — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)
-- [ ] **Global Search (Mesh Index)** — inter-instance Meilisearch, push crawling, P2P gossip fallback — [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md)
 - [ ] **Nodes** — durable structured knowledge, Anchors, community-validated via Garden — [SPEC 013](../en/specs/013-node/SPEC.md)
 - [ ] **Galaxy Bar** — multi-instance switcher, decentralized SSO, bio-luminescent notifications — [SPEC 012](../en/specs/012-nexus-galaxy-bar/SPEC.md)
 
