@@ -19,6 +19,16 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
+# ── Auto-relaunch si stdin est un pipe (curl|bash) ────────────────────────────
+# Les prompts interactifs (read) nécessitent un vrai terminal.
+# Si stdin n'est pas un TTY (ex: curl|bash), on se télécharge dans /tmp et on relance.
+if [[ ! -t 0 ]]; then
+  _SELF=$(mktemp /tmp/nexus_install_XXXXXX.sh)
+  curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh -o "$_SELF" 2>/dev/null \
+    || wget -qO "$_SELF" https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh
+  exec bash "$_SELF" "$@"
+fi
+
 # ── Colours ───────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
