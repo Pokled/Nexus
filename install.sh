@@ -594,9 +594,11 @@ if [[ "$(uname -m)" == "aarch64" ]]; then
   fi
 fi
 
+export NODE_OPTIONS="--max-old-space-size=1024"
 run_bg "Build SvelteKit (peut durer 2-5 min sur ARM)..." \
-  NODE_OPTIONS="--max-old-space-size=1024" npm run build \
+  npm run build \
   || die "Build frontend échoué. Vérifie les logs ci-dessus."
+unset NODE_OPTIONS
 [[ -f "${NEXUS_DIR}/nexus-frontend/build/index.js" ]] \
   || die "build/index.js absent — le build SvelteKit n'a pas produit de sortie."
 ok "Frontend compilé"
