@@ -23,7 +23,7 @@ export const load: LayoutServerLoad = async ({ fetch, cookies, request, url }) =
 		token
 			? apiFetch(fetch, '/users/me', { headers: { Authorization: `Bearer ${token}` } })
 			: Promise.resolve(null),
-		fetch(DIRECTORY_URL).catch(() => null),
+		globalThis.fetch(DIRECTORY_URL).catch(() => null),
 		apiFetch(fetch, '/instance/announcement').catch(() => null),
 	]);
 

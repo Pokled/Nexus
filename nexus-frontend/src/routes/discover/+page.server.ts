@@ -17,7 +17,7 @@ export const load: PageServerLoad = async ({ fetch, url }) => {
 		if (q)        params.set('q', q);
 		if (upcoming) params.set('upcoming', upcoming);
 
-		const res = await fetch(`${DIRECTORY_URL}/api/directory/search?${params}`);
+		const res = await globalThis.fetch(`${DIRECTORY_URL}/api/directory/search?${params}`);
 		if (res.ok) {
 			const json = await res.json();
 			results = json.results ?? [];
