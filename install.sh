@@ -584,6 +584,8 @@ cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
 # Généré par install.sh — ne pas modifier manuellement
 
 PUBLIC_API_URL=https://${DOMAIN}
+# Nexus Signet (authentificateur optionnel) — laisser vide si non utilisé
+PUBLIC_SIGNET_URL=
 # Les credentials TURN sont désormais générés dynamiquement par nexus-core (nexus-turn).
 # Ces variables sont conservées pour compatibilité avec d'éventuelles instances existantes.
 PUBLIC_TURN_URL=
