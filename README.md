@@ -23,7 +23,23 @@
 
 ---
 
+<div align="center">
+  <img src="docs/img/Index_Api-Nexus.png" alt="Nexus — community home" width="860"/>
+</div>
+
+---
+
 > **[→ Live demo: nexusnode.app](https://nexusnode.app)** — official instance, production VPS
+
+---
+
+## Why Nexus
+
+- **Discord** locks communities inside a private platform — your 10 years of history vanish if they close or ban you
+- **Forums** are slow and fragmented — no voice, no real-time, invisible to your members' daily workflow
+- **Self-hosted tools** rarely combine chat + voice + searchable knowledge in a single install
+
+Nexus brings them together. One command. Your server. Forever.
 
 ---
 
