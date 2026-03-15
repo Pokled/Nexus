@@ -17,7 +17,7 @@
 
 <div align="center">
 
-[🇬🇧 English](README.md) · [🇫🇷 Français](docs/fr/README.md)
+<a href="README.md"><img src="https://flagcdn.com/16x12/gb.png" alt="EN"> English</a> · <a href="docs/fr/README.md"><img src="https://flagcdn.com/16x12/fr.png" alt="FR"> Français</a>
 
 </div>
 
@@ -385,11 +385,11 @@ We are not building a product. We are rebuilding infrastructure for human commun
 
 | Language | Docs |
 |---|---|
-| 🇬🇧 English | [docs/en/](docs/en/) |
-| 🇫🇷 Français | [docs/fr/](docs/fr/) |
-| 🇪🇸 Español | *coming soon* |
-| 🇮🇹 Italiano | *coming soon* |
-| 🇩🇪 Deutsch | *coming soon* |
+| <img src="https://flagcdn.com/16x12/gb.png" alt="EN"> English | [docs/en/](docs/en/) |
+| <img src="https://flagcdn.com/16x12/fr.png" alt="FR"> Français | [docs/fr/](docs/fr/) |
+| <img src="https://flagcdn.com/16x12/es.png" alt="ES"> Español | *coming soon* |
+| <img src="https://flagcdn.com/16x12/it.png" alt="IT"> Italiano | *coming soon* |
+| <img src="https://flagcdn.com/16x12/de.png" alt="DE"> Deutsch | *coming soon* |
 
 - [Manifesto](docs/en/MANIFESTO.md) — Why Nexus exists
 - [Architecture](docs/en/ARCHITECTURE.md) — How it's built
