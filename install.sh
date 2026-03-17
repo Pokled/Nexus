@@ -256,9 +256,9 @@ case "$NET_MODE" in
     ;;
   2)
     RELAY_MODE=true
-    DOMAIN="${COMMUNITY_SLUG}.nexusnode.app"
+    DOMAIN="${COMMUNITY_SLUG}.nodyx.org"
     ok "Mode Nodyx Relay — URL : ${BOLD}https://${DOMAIN}${RESET}"
-    info "Aucun port à ouvrir. Le tunnel sera établi vers relay.nexusnode.app."
+    info "Aucun port à ouvrir. Le tunnel sera établi vers relay.nodyx.org."
     ;;
   3|*)
     DOMAIN="${PUBLIC_IP//./-}.sslip.io"
@@ -709,7 +709,7 @@ step "Configuration de Caddy (proxy HTTPS)"
 
 if $RELAY_MODE; then
   # En mode Relay : Caddy écoute sur HTTP port 80 (local seulement).
-  # TLS est géré en amont par le serveur nexus-relay sur nexusnode.app.
+  # TLS est géré en amont par le serveur nexus-relay sur nodyx.org.
   cat > /etc/caddy/Caddyfile <<CADDY
 :80 {
     reverse_proxy /api/*       localhost:3000
@@ -736,7 +736,7 @@ fi
 systemctl enable caddy --quiet
 systemctl restart caddy
 if $RELAY_MODE; then
-  ok "Caddy configuré (HTTP local port 80 — TLS géré par relay.nexusnode.app)"
+  ok "Caddy configuré (HTTP local port 80 — TLS géré par relay.nodyx.org)"
 else
   ok "Caddy configuré (Let's Encrypt automatique pour $DOMAIN)"
 fi
@@ -880,32 +880,32 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  OPTIONAL — FREE nexusnode.app SUBDOMAIN
+#  OPTIONAL — FREE nodyx.org SUBDOMAIN
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Sous-domaine gratuit nexusnode.app"
+step "Sous-domaine gratuit nodyx.org"
 
 NODYX_SUBDOMAIN=""
 NODYX_DIRECTORY_TOKEN=""
 NODYX_DIRECTORY_URL="https://nodyx.org/api/directory"
 
 echo ""
-# En mode Relay ou auto-domaine, le sous-domaine nexusnode.app est obligatoire/automatique.
+# En mode Relay ou auto-domaine, le sous-domaine nodyx.org est obligatoire/automatique.
 if $RELAY_MODE; then
-  echo -e "  Mode Relay : enregistrement de ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} obligatoire — automatique."
+  echo -e "  Mode Relay : enregistrement de ${BOLD}${COMMUNITY_SLUG}.nodyx.org${RESET} obligatoire — automatique."
   want_subdomain="o"
 elif $DOMAIN_IS_AUTO; then
-  echo -e "  Tu n'as pas de domaine propre : ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} va être activé"
+  echo -e "  Tu n'as pas de domaine propre : ${BOLD}${COMMUNITY_SLUG}.nodyx.org${RESET} va être activé"
   echo -e "  automatiquement comme alias mémorable pour ton instance."
   want_subdomain="o"
 else
-  echo -e "  Alias optionnel : ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET}"
+  echo -e "  Alias optionnel : ${BOLD}${COMMUNITY_SLUG}.nodyx.org${RESET}"
   echo -e "  Redirige vers ton instance — utile comme raccourci mémorable."
   echo ""
-  read -rp "$(echo -e "  Activer ${BOLD}${COMMUNITY_SLUG}.nexusnode.app${RESET} ? [O/n] ")" want_subdomain
+  read -rp "$(echo -e "  Activer ${BOLD}${COMMUNITY_SLUG}.nodyx.org${RESET} ? [O/n] ")" want_subdomain
 fi
 
 if [[ "${want_subdomain,,}" != "n" ]]; then
-  info "Enregistrement auprès du directory nexusnode.app..."
+  info "Enregistrement auprès du directory nodyx.org..."
 
   REGISTER_RESPONSE=$(curl -s -X POST "${NODYX_DIRECTORY_URL}/register" \
     -H "Content-Type: application/json" \
@@ -922,7 +922,7 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
 
   if [[ -n "$REGISTER_TOKEN" ]]; then
     NODYX_DIRECTORY_TOKEN="$REGISTER_TOKEN"
-    NODYX_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nexusnode.app}"
+    NODYX_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nodyx.org}"
     ok "Enregistré ! Sous-domaine : ${BOLD}https://${NODYX_SUBDOMAIN}${RESET}"
     if ! $RELAY_MODE; then
       info "Le DNS sera actif dans ~30 secondes."
@@ -930,7 +930,7 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
     fi
     # Injecter le token dans .env + redémarrer nodyx-core pour activer les heartbeats
     {
-      printf "\n# Annuaire nexusnode.app\n"
+      printf "\n# Annuaire nodyx.org\n"
       printf "DIRECTORY_TOKEN=%s\n" "${NODYX_DIRECTORY_TOKEN}"
       printf "DIRECTORY_API_URL=https://nodyx.org\n"
       printf "SELF_URL=http://127.0.0.1:3000\n"
@@ -943,11 +943,11 @@ if [[ "${want_subdomain,,}" != "n" ]]; then
     if echo "$REGISTER_RESPONSE" | grep -q 'Slug already taken'; then
       warn "Le slug '${COMMUNITY_SLUG}' est déjà enregistré dans le directory."
       warn "Si c'est une réinstallation, l'ancienne entrée doit être supprimée d'abord."
-      warn "Contacte le support nexusnode.app ou utilise un slug différent."
+      warn "Contacte le support nodyx.org ou utilise un slug différent."
     else
       warn "Enregistrement échoué."
       warn "Réponse : $(echo "$REGISTER_RESPONSE" | head -c 200)"
-      warn "Tu peux réessayer manuellement plus tard sur https://nexusnode.app"
+      warn "Tu peux réessayer manuellement plus tard sur https://nodyx.org"
     fi
     # En mode Relay, l'enregistrement est indispensable — le tunnel ne peut pas démarrer sans token.
     if $RELAY_MODE; then
@@ -964,12 +964,12 @@ if $RELAY_MODE && [[ -n "$NODYX_DIRECTORY_TOKEN" ]]; then
 
   cat > /etc/systemd/system/nexus-relay-client.service <<SVC
 [Unit]
-Description=Nodyx Relay Client — tunnel vers relay.nexusnode.app
+Description=Nodyx Relay Client — tunnel vers relay.nodyx.org
 After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/nexus-relay client \
-  --server relay.nexusnode.app:7443 \
+  --server relay.nodyx.org:7443 \
   --slug ${COMMUNITY_SLUG} \
   --token ${NODYX_DIRECTORY_TOKEN} \
   --local-port 80
@@ -986,7 +986,7 @@ SVC
   systemctl daemon-reload
   systemctl enable nexus-relay-client --quiet
   systemctl start nexus-relay-client
-  ok "Nodyx Relay Client démarré — tunnel vers relay.nexusnode.app:7443 actif"
+  ok "Nodyx Relay Client démarré — tunnel vers relay.nodyx.org:7443 actif"
   info "Ton instance sera accessible sur https://${DOMAIN} dans quelques secondes."
 fi
 
@@ -1232,7 +1232,7 @@ if ! $RELAY_MODE; then
   echo -e "     ${BOLD}Vocal      ${RESET}stun/turn:${PUBLIC_IP}:3478 (nexus-turn)"
 fi
 if $RELAY_MODE; then
-  echo -e "     ${BOLD}Relay      ${RESET}tunnel → relay.nexusnode.app:7443"
+  echo -e "     ${BOLD}Relay      ${RESET}tunnel → relay.nodyx.org:7443"
 fi
 echo -e "     ${BOLD}Version    ${RESET}1.9.0"
 echo -e "     ${BOLD}Dossier    ${RESET}${NODYX_DIR}"
