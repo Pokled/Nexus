@@ -498,7 +498,13 @@ if ! $RELAY_MODE; then
   _TURN_VERSION="v0.1.2-p2p"
   _TURN_URL="https://github.com/Pokled/Nodyx/releases/download/${_TURN_VERSION}/nexus-turn-linux-${_TURN_ARCH}"
   info "Téléchargement nexus-turn ${_TURN_VERSION} (${_TURN_ARCH})..."
-  curl -sL "$_TURN_URL" -o /usr/local/bin/nexus-turn
+  if ! curl -fsSL --max-time 60 "$_TURN_URL" -o /usr/local/bin/nexus-turn; then
+    die "Impossible de télécharger nexus-turn.\nURL : ${_TURN_URL}\nVérifie ta connexion et que la release ${_TURN_VERSION} existe sur GitHub."
+  fi
+  if ! file /usr/local/bin/nexus-turn 2>/dev/null | grep -q ELF; then
+    rm -f /usr/local/bin/nexus-turn
+    die "Le fichier téléchargé n'est pas un binaire valide.\nURL : ${_TURN_URL}"
+  fi
   chmod +x /usr/local/bin/nexus-turn
 
   # Fichier de configuration (secret partagé avec nodyx-core)
@@ -577,7 +583,14 @@ if $RELAY_MODE; then
   _RELAY_URL="https://github.com/Pokled/Nodyx/releases/download/${_RELAY_VERSION}/nexus-relay-linux-${_RELAY_ARCH}"
 
   info "Téléchargement nexus-relay ${_RELAY_VERSION} (${_RELAY_ARCH})..."
-  curl -sL "$_RELAY_URL" -o /usr/local/bin/nexus-relay
+  if ! curl -fsSL --max-time 60 "$_RELAY_URL" -o /usr/local/bin/nexus-relay; then
+    die "Impossible de télécharger nexus-relay.\nURL : ${_RELAY_URL}\nVérifie ta connexion et que la release ${_RELAY_VERSION} existe sur GitHub."
+  fi
+  # Vérifier que c'est bien un binaire ELF (pas une page HTML d'erreur)
+  if ! file /usr/local/bin/nexus-relay 2>/dev/null | grep -q ELF; then
+    rm -f /usr/local/bin/nexus-relay
+    die "Le fichier téléchargé n'est pas un binaire valide (release introuvable ?).\nURL : ${_RELAY_URL}"
+  fi
   chmod +x /usr/local/bin/nexus-relay
   ok "nexus-relay $(/usr/local/bin/nexus-relay --version 2>&1 || echo '?') installé"
 fi
