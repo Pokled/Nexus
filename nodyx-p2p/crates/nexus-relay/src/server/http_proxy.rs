@@ -54,7 +54,7 @@ async fn handle_request(
     pg: Arc<DbPool>,
     main_slug: String,
 ) -> Result<Response<Full<Bytes>>, hyper::Error> {
-    // Extract slug from Host header (slug.nexusnode.app → slug).
+    // Extract slug from Host header (slug.nodyx.org → slug).
     let host = req
         .headers()
         .get("host")
@@ -156,15 +156,15 @@ async fn proxy_through_tunnel(
 
 async fn proxy_to_nodyx_core(_req: Request<Incoming>) -> Response<Full<Bytes>> {
     // For now redirect to the main domain — nexus-core handles it.
-    redirect("https://nexusnode.app".to_string())
+    redirect("https://nodyx.org".to_string())
 }
 
 // ── Helper responses ──────────────────────────────────────────────────────────
 
 fn extract_slug(host: &str) -> Option<String> {
-    // Match "slug.nexusnode.app" (with optional port).
+    // Match "slug.nodyx.org" (with optional port).
     let host = host.split(':').next().unwrap_or(host);
-    let suffix = ".nexusnode.app";
+    let suffix = ".nodyx.org";
     if host.ends_with(suffix) {
         let slug = &host[..host.len() - suffix.len()];
         if !slug.is_empty() && !slug.contains('.') {

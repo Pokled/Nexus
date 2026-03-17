@@ -61,7 +61,7 @@ async function createCloudflareSubdomain(slug: string, ip: string): Promise<stri
   try {
     const data = await cfRequest('POST', '/dns_records', {
       type: 'A',
-      name: `${slug}.nexusnode.app`,
+      name: `${slug}.nodyx.org`,
       content: ip,
       ttl: 1,
       proxied: true,
@@ -86,13 +86,13 @@ async function deleteCloudflareRecord(recordId: string): Promise<void> {
 export default async function directoryRoutes(app: FastifyInstance) {
 
   // ── Subdomain redirect ────────────────────────────────────────────────────
-  // When a browser hits {slug}.nexusnode.app, Caddy proxies the request here.
+  // When a browser hits {slug}.nodyx.org, Caddy proxies the request here.
   // We look up the slug in directory_instances and redirect to the real URL.
-  // This makes {slug}.nexusnode.app a free vanity alias for any registered node.
+  // This makes {slug}.nodyx.org a free vanity alias for any registered node.
   app.addHook('onRequest', async (req, reply) => {
     const host = req.headers.host ?? ''
-    // Match any subdomain of nexusnode.app that isn't the root instance
-    const match = host.match(/^([a-z0-9][a-z0-9-]{1,61}[a-z0-9])\.nodyxnode\.app(:\d+)?$/i)
+    // Match any subdomain of nodyx.org that isn't the root instance
+    const match = host.match(/^([a-z0-9][a-z0-9-]{1,61}[a-z0-9])\.nodyx\.org(:\d+)?$/i)
     if (!match) return  // not a subdomain — let the route handle it normally
 
     const slug = match[1].toLowerCase()
@@ -106,7 +106,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
         [slug]
       )
       if (rows[0]?.url) {
-        // Preserve path + query so deep links work (e.g. community.nexusnode.app/forum/thread/42)
+        // Preserve path + query so deep links work (e.g. community.nodyx.org/forum/thread/42)
         const target = rows[0].url.replace(/\/$/, '') + (req.url === '/' ? '' : req.url)
         return reply.redirect(target, 302)
       }
@@ -164,7 +164,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
     }
 
     const token = randomBytes(32).toString('hex');
-    const subdomain = `${slug}.nexusnode.app`;
+    const subdomain = `${slug}.nodyx.org`;
 
     const result = await db.query(
       `INSERT INTO directory_instances
@@ -226,16 +226,26 @@ export default async function directoryRoutes(app: FastifyInstance) {
       const { token, members, online, logo_url, banner_url } = req.body;
       if (!token) return reply.status(400).send({ error: 'token required' });
 
+      // Capture real IP — prefer CF-Connecting-IP for Cloudflare-proxied instances
+      const rawIp = (req.headers['cf-connecting-ip'] as string)
+        || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
+        || req.ip;
+      const isPrivate = !rawIp || rawIp === '127.0.0.1' || rawIp === '::1'
+        || rawIp.startsWith('192.168.') || rawIp.startsWith('10.')
+        || rawIp.startsWith('172.16.') || rawIp.startsWith('::ffff:127.');
+      const pingIp = isPrivate ? null : rawIp;
+
       const result = await db.query(
         `UPDATE directory_instances
          SET last_seen  = NOW(),
              members    = COALESCE($2, members),
              online     = COALESCE($3, online),
              logo_url   = COALESCE($4, logo_url),
-             banner_url = COALESCE($5, banner_url)
+             banner_url = COALESCE($5, banner_url),
+             ip         = COALESCE($6, ip)
          WHERE token = $1
          RETURNING slug, status`,
-        [token, members ?? null, online ?? null, logo_url ?? null, banner_url ?? null]
+        [token, members ?? null, online ?? null, logo_url ?? null, banner_url ?? null, pingIp]
       );
 
       if (result.rows.length === 0) {

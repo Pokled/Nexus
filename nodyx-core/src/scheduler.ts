@@ -31,7 +31,7 @@ async function pingDirectory(io: Server) {
     // DIRECTORY_API_URL = URL interne du directory principal (ex: http://127.0.0.1:3000)
     //   → pour l'instance principale les deux sont identiques
     //   → pour une instance secondaire sur le même VPS, DIRECTORY_API_URL pointe vers 3000
-    //   → pour une instance distante, DIRECTORY_API_URL = https://nexusnode.app
+    //   → pour une instance distante, DIRECTORY_API_URL = https://nodyx.org
     const selfUrl      = (process.env.FRONTEND_URL ?? process.env.SELF_URL ?? 'http://localhost:3000').replace(/\/$/, '')
     const directoryUrl = (process.env.DIRECTORY_API_URL ?? process.env.SELF_URL ?? 'http://localhost:3000').replace(/\/$/, '')
 
@@ -125,7 +125,7 @@ export async function announceThreadsToDirectory() {
   if (!process.env.NODYX_GLOBAL_INDEXING || process.env.NODYX_GLOBAL_INDEXING !== 'true') return
 
   const token        = process.env.DIRECTORY_TOKEN
-  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nexusnode.app').replace(/\/$/, '')
+  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nodyx.org').replace(/\/$/, '')
   if (!token) return
 
   try {
@@ -196,7 +196,7 @@ export async function announceEventsToDirectory() {
   if (!process.env.NODYX_GLOBAL_INDEXING || process.env.NODYX_GLOBAL_INDEXING !== 'true') return
 
   const token        = process.env.DIRECTORY_TOKEN
-  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nexusnode.app').replace(/\/$/, '')
+  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nodyx.org').replace(/\/$/, '')
   if (!token) return
 
   try {

@@ -9,7 +9,7 @@ use tracing_subscriber::{EnvFilter, fmt};
 
 #[derive(Parser)]
 #[command(
-    name = "nexus-relay",
+    name = "nodyx-relay",
     version,
     about = "Nodyx P2P relay — tunnel Nodyx instances without open ports or a domain",
     long_about = None,
@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Run the relay server (on nexusnode.app VPS).
+    /// Run the relay server (on nodyx.org VPS).
     Server {
         /// TCP port for relay client connections.
         #[arg(long, default_value = "7443")]
@@ -45,14 +45,14 @@ enum Commands {
     /// Run the relay client (on a user's Nodyx instance).
     Client {
         /// Address of the relay server.
-        #[arg(long, default_value = "relay.nexusnode.app:7443")]
+        #[arg(long, default_value = "relay.nodyx.org:7443")]
         server: String,
 
         /// The slug to register (e.g. "moncommunaute").
         #[arg(long)]
         slug: String,
 
-        /// Authentication token from nexusnode.app directory registration.
+        /// Authentication token from nodyx.org directory registration.
         #[arg(long, env = "NODYX_RELAY_TOKEN")]
         token: String,
 

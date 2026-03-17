@@ -579,20 +579,20 @@ if $RELAY_MODE; then
     *) die "Architecture non supportée pour Nodyx Relay : $_ARCH (supporté: x86_64, aarch64)" ;;
   esac
 
-  _RELAY_VERSION="v0.1.2-p2p"
-  _RELAY_URL="https://github.com/Pokled/Nodyx/releases/download/${_RELAY_VERSION}/nexus-relay-linux-${_RELAY_ARCH}"
+  _RELAY_VERSION="v0.1.3-p2p"
+  _RELAY_URL="https://github.com/Pokled/Nodyx/releases/download/${_RELAY_VERSION}/nodyx-relay-linux-${_RELAY_ARCH}"
 
-  info "Téléchargement nexus-relay ${_RELAY_VERSION} (${_RELAY_ARCH})..."
-  if ! curl -fsSL --max-time 60 "$_RELAY_URL" -o /usr/local/bin/nexus-relay; then
-    die "Impossible de télécharger nexus-relay.\nURL : ${_RELAY_URL}\nVérifie ta connexion et que la release ${_RELAY_VERSION} existe sur GitHub."
+  info "Téléchargement nodyx-relay ${_RELAY_VERSION} (${_RELAY_ARCH})..."
+  if ! curl -fsSL --max-time 60 "$_RELAY_URL" -o /usr/local/bin/nodyx-relay; then
+    die "Impossible de télécharger nodyx-relay.\nURL : ${_RELAY_URL}\nVérifie ta connexion et que la release ${_RELAY_VERSION} existe sur GitHub."
   fi
   # Vérifier que c'est bien un binaire ELF (pas une page HTML d'erreur)
-  if ! file /usr/local/bin/nexus-relay 2>/dev/null | grep -q ELF; then
-    rm -f /usr/local/bin/nexus-relay
+  if ! file /usr/local/bin/nodyx-relay 2>/dev/null | grep -q ELF; then
+    rm -f /usr/local/bin/nodyx-relay
     die "Le fichier téléchargé n'est pas un binaire valide (release introuvable ?).\nURL : ${_RELAY_URL}"
   fi
-  chmod +x /usr/local/bin/nexus-relay
-  ok "nexus-relay $(/usr/local/bin/nexus-relay --version 2>&1 || echo '?') installé"
+  chmod +x /usr/local/bin/nodyx-relay
+  ok "nodyx-relay $(/usr/local/bin/nodyx-relay --version 2>&1 || echo '?') installé"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -722,7 +722,7 @@ step "Configuration de Caddy (proxy HTTPS)"
 
 if $RELAY_MODE; then
   # En mode Relay : Caddy écoute sur HTTP port 80 (local seulement).
-  # TLS est géré en amont par le serveur nexus-relay sur nodyx.org.
+  # TLS est géré en amont par le serveur nodyx-relay sur nodyx.org.
   cat > /etc/caddy/Caddyfile <<CADDY
 :80 {
     reverse_proxy /api/*       localhost:3000
@@ -975,13 +975,13 @@ fi
 if $RELAY_MODE && [[ -n "$NODYX_DIRECTORY_TOKEN" ]]; then
   step "Configuration du service Nodyx Relay Client"
 
-  cat > /etc/systemd/system/nexus-relay-client.service <<SVC
+  cat > /etc/systemd/system/nodyx-relay-client.service <<SVC
 [Unit]
 Description=Nodyx Relay Client — tunnel vers relay.nodyx.org
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/nexus-relay client \
+ExecStart=/usr/local/bin/nodyx-relay client \
   --server relay.nodyx.org:7443 \
   --slug ${COMMUNITY_SLUG} \
   --token ${NODYX_DIRECTORY_TOKEN} \
@@ -997,8 +997,8 @@ WantedBy=multi-user.target
 SVC
 
   systemctl daemon-reload
-  systemctl enable nexus-relay-client --quiet
-  systemctl start nexus-relay-client
+  systemctl enable nodyx-relay-client --quiet
+  systemctl start nodyx-relay-client
   ok "Nodyx Relay Client démarré — tunnel vers relay.nodyx.org:7443 actif"
   info "Ton instance sera accessible sur https://${DOMAIN} dans quelques secondes."
 fi
@@ -1017,7 +1017,7 @@ fi
 _CREDS_RELAY=""
 if $RELAY_MODE; then
   _CREDS_RELAY="Mode réseau      : Nodyx Relay (tunnel TCP sortant)
-Relay service    : sudo systemctl status nexus-relay-client"
+Relay service    : sudo systemctl status nodyx-relay-client"
 fi
 
 cat > "$CREDS_FILE" <<CREDS
@@ -1133,7 +1133,7 @@ _wait_https() {
 _hc_sect "Services système"
 _HC_SVCS="postgresql redis-server caddy"
 if ! $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nexus-turn"; fi
-if $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nexus-relay-client"; fi
+if $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nodyx-relay-client"; fi
 for _svc in $_HC_SVCS; do
   if systemctl is-active --quiet "$_svc" 2>/dev/null; then
     _hc_pass "$_svc"
@@ -1270,8 +1270,8 @@ echo -e "       curl -s http://localhost:3000/api/v1/instance/info | python3 -m 
 if $RELAY_MODE; then
   echo ""
   echo -e "     ${BOLD}${CYAN}▸ Tunnel Relay${RESET}"
-  echo -e "       systemctl status nexus-relay-client"
-  echo -e "       journalctl -u nexus-relay-client -f"
+  echo -e "       systemctl status nodyx-relay-client"
+  echo -e "       journalctl -u nodyx-relay-client -f"
 fi
 echo ""
 echo -e "${GREEN}${BOLD}  ╠══════════════════════════════════════════════════════════════╣${RESET}"

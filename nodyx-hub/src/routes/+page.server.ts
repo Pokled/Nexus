@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { getAllInstances, getStats } from '$lib/server/pg.js';
 import { getSystemMetrics } from '$lib/server/metrics.js';
-import { lookupIp } from '$lib/server/geo.js';
+import { lookupIp, countryCenter } from '$lib/server/geo.js';
 import { getPool } from '$lib/server/pg.js';
 
 export const load: PageServerLoad = async () => {
@@ -19,12 +19,16 @@ export const load: PageServerLoad = async () => {
       const geo = lookupIp(inst.ip);
       if (geo) {
         lat = geo.lat; lng = geo.lng; geo_city = geo.city;
-        // Cache async (fire and forget)
         pool.query(
           `UPDATE directory_instances SET lat=$1, lng=$2, geo_city=$3 WHERE id=$4`,
           [geo.lat, geo.lng, geo.city, inst.id]
         ).catch(() => {});
       }
+    }
+    // Fallback: use country centroid if still no coordinates
+    if (!lat && inst.country) {
+      const center = countryCenter(inst.country);
+      if (center) { lat = center.lat; lng = center.lng; }
     }
     return { ...inst, lat, lng, geo_city };
   });

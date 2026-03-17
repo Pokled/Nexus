@@ -35,7 +35,7 @@ const server = Fastify({ logger: true, trustProxy: true })
 const corsOrigin = process.env.FRONTEND_URL
   || (process.env.NODE_ENV === 'production' ? false : true)
 
-// Signet PWA origin (signet.nexusnode.app ou équivalent auto-hébergé)
+// Signet PWA origin (signet.nodyx.org ou équivalent auto-hébergé)
 const signetOrigin = process.env.SIGNET_URL || null
 
 server.register(fastifyCors, {

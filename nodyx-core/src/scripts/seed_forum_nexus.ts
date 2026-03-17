@@ -125,7 +125,7 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
 <h2>La solution : nexus-relay</h2>
 <p>Un tunnel TCP écrit en Rust, deux composants :</p>
 <ul>
-  <li><strong>relay server</strong> (sur nos VPS nexusnode.app) — écoute sur TCP 7443</li>
+  <li><strong>relay server</strong> (sur nos VPS nodyx.org) — écoute sur TCP 7443</li>
   <li><strong>relay client</strong> (votre machine) — se connecte avec un token, expose votre port 80</li>
 </ul>
 
@@ -137,7 +137,7 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
                                Nodyx local (port 80)</code></pre>
 
 <h3>Résultat concret</h3>
-<p>Un <strong>Raspberry Pi 4</strong> chez soi, aucun port ouvert, aucun domaine → accessible via <code>https://votre-slug.nexusnode.app</code> avec TLS Cloudflare.</p>
+<p>Un <strong>Raspberry Pi 4</strong> chez soi, aucun port ouvert, aucun domaine → accessible via <code>https://votre-slug.nodyx.org</code> avec TLS Cloudflare.</p>
 
 <h3>Fonctionnalités</h3>
 <ul>
@@ -185,7 +185,7 @@ socket.emit('voice:init', { iceServers: [
 <h3>Configuration</h3>
 <pre><code class="language-bash"># /etc/nexus-turn.env
 TURN_PUBLIC_IP=46.225.20.193
-TURN_REALM=nexusnode.app
+TURN_REALM=nodyx.org
 TURN_SECRET=your_secret_here
 TURN_PORT=3478
 TURN_TTL=86400</code></pre>
@@ -551,7 +551,7 @@ const online_count = userIds.size</code></pre>
 </ol>
 
 <h3>La prochaine frontière : le réseau</h3>
-<p>Les instances Nodyx ne sont pas encore interconnectées. Le directory <strong>nexusnode.app</strong> recense toutes les instances actives. La phase 4 sera la fédération : un compte sur une instance, membre de plusieurs communautés.</p>
+<p>Les instances Nodyx ne sont pas encore interconnectées. Le directory <strong>nodyx.org</strong> recense toutes les instances actives. La phase 4 sera la fédération : un compte sur une instance, membre de plusieurs communautés.</p>
 <p><em>Ce n'est pas Discord. Ce n'est pas Mastodon. C'est autre chose.</em></p>`,
 
       `<p>La contrainte "une instance = une communauté" est contre-intuitive au début. Mais en y réfléchissant c'est ce qui garantit la <strong>souveraineté</strong>.</p>
@@ -671,7 +671,7 @@ const online_count = userIds.size</code></pre>
 <h3>Le modèle économique coopératif</h3>
 <ul>
   <li><strong>80%</strong> des revenus publicitaires → la station</li>
-  <li><strong>20%</strong> → nexusnode.app (maintenance de l'infrastructure)</li>
+  <li><strong>20%</strong> → nodyx.org (maintenance de l'infrastructure)</li>
   <li>Ciblage <em>géographique uniquement</em> — zéro tracking, zéro profil</li>
   <li>Le boulanger local finance la radio locale</li>
 </ul>
@@ -816,12 +816,12 @@ bash &lt;(curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install
 <pre><code class="language-bash">bash &lt;(curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install_tunnel.sh)</code></pre>
 <p>Ou sur une instance déjà installée :</p>
 <pre><code class="language-bash">nexus-relay client \\
-  --server relay.nexusnode.app:7443 \\
+  --server relay.nodyx.org:7443 \\
   --slug votre-slug \\
   --token votre-token \\
   --local-port 80</code></pre>
 
-<p><strong>Résultat :</strong> votre instance accessible sur <code>https://votre-slug.nexusnode.app</code></p>
+<p><strong>Résultat :</strong> votre instance accessible sur <code>https://votre-slug.nodyx.org</code></p>
 
 <h3>Points techniques importants</h3>
 <ul>

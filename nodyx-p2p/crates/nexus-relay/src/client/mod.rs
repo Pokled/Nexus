@@ -18,7 +18,7 @@ pub async fn run(
     let mut backoff = Duration::from_secs(1);
     let max_backoff = Duration::from_secs(30);
 
-    info!("nexus-relay client starting");
+    info!("nodyx-relay client starting");
     info!("  Server    : {server_addr}");
     info!("  Slug      : {slug}");
     info!("  Local     : localhost:{local_port}");
@@ -65,7 +65,7 @@ async fn handle_session(
     // 2. Wait for Registered confirmation.
     match read_msg::<_, ServerMessage>(&mut stream).await? {
         Some(ServerMessage::Registered { ok: true, .. }) => {
-            info!("Relay registered — '{slug}.nexusnode.app' is live");
+            info!("Relay registered — '{slug}.nodyx.org' is live");
         }
         Some(ServerMessage::Registered { ok: false, error }) => {
             return Err(anyhow::anyhow!(
