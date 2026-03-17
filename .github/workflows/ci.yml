@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: Tests (nexus-core)
+    name: Tests (nodyx-core)
     runs-on: ubuntu-latest
 
     steps:
@@ -20,14 +20,14 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          cache-dependency-path: nexus-core/package-lock.json
+          cache-dependency-path: nodyx-core/package-lock.json
 
       - name: Install dependencies
-        working-directory: nexus-core
+        working-directory: nodyx-core
         run: npm ci
 
       - name: Run tests
-        working-directory: nexus-core
+        working-directory: nodyx-core
         env:
           JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-at-least-32-chars-long' }}
           NODE_ENV: test
