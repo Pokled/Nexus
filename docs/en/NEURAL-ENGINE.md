@@ -1,15 +1,15 @@
-# Neural Engine — Nexus Guard Protocol
+# Neural Engine — Nodyx Guard Protocol
 
-Nexus includes a Neural Engine powered by a local [Ollama](https://ollama.com) instance. Your AI runs on your own hardware. No data leaves your server.
+Nodyx includes a Neural Engine powered by a local [Ollama](https://ollama.com) instance. Your AI runs on your own hardware. No data leaves your server.
 
 ---
 
-## Nexus Guard Protocol
+## Nodyx Guard Protocol
 
 The Guard Protocol is the chat moderation system driven by the Neural Engine. When a message is sent, it is analyzed by the local LLM which returns a **toxicity score from 0 to 10**. If the score exceeds the threshold (**8 by default**), the message is automatically deleted and replaced in the UI by:
 
 ```
-🤖 Nexus Guard Protocol
+🤖 Nodyx Guard Protocol
    Transmission neutralisée : Contenu toxique détecté
 ```
 
@@ -39,7 +39,7 @@ The threshold is configurable. A lower threshold = more aggressive moderation.
 
 ## Active model
 
-The current active model is configured in `nexus-core/neural-config.json`:
+The current active model is configured in `nodyx-core/neural-config.json`:
 
 ```json
 {
@@ -53,7 +53,7 @@ The current active model is configured in `nexus-core/neural-config.json`:
 
 ## Requirements
 
-- Ollama installed and running on the same machine as Nexus
+- Ollama installed and running on the same machine as Nodyx
 - At least one model pulled (see recommended models below)
 - Caddy configured to proxy `/ollama/` → `localhost:11434` *(for the admin panel scanner)*
 
@@ -104,7 +104,7 @@ handle /ollama/* {
 2. Click **Scanner Ollama**
 3. Click **Activer** next to the model you want to use
 
-The selection is saved in `nexus-core/neural-config.json` and takes effect immediately.
+The selection is saved in `nodyx-core/neural-config.json` and takes effect immediately.
 
 ---
 

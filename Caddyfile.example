@@ -1,27 +1,26 @@
+# ══════════════════════════════════════════════════════════════════════════════
+#  NODYX — Exemple de configuration Caddy
+#  Remplacez "yourdomain.example.com" par votre domaine.
+#  Caddy gère automatiquement les certificats SSL via Let's Encrypt.
+# ══════════════════════════════════════════════════════════════════════════════
+
 yourdomain.example.com {
-    # WebSocket Socket.IO (Signalement TURN/Appels)
-    @socketio path /socket.io/*
-    reverse_proxy @socketio localhost:3000
-
-    # IA Ollama (Sécurisée)
-    handle_path /ollama/* {
-        reverse_proxy localhost:11434 {
-            header_up Host {host}
-            header_up Origin ""
-        }
-    }
-
-    # API & Uploads
-    reverse_proxy /api/* localhost:3000
-    reverse_proxy /uploads/* localhost:3000
-
-    # Frontend SvelteKit + WebSocket Vite HMR
-    reverse_proxy * localhost:5173 {
-        header_up Host {host}
-        header_up X-Real-IP {remote_host}
-        header_up Upgrade {>Upgrade}
-        header_up Connection {>Connection}
-    }
-
     encode gzip
+
+    # Headers de sécurité
+    header {
+        X-Content-Type-Options    "nosniff"
+        X-Frame-Options           "SAMEORIGIN"
+        Referrer-Policy           "strict-origin-when-cross-origin"
+        Permissions-Policy        "camera=(self), microphone=(self), geolocation=(self)"
+        -Server
+    }
+
+    # API + uploads + Socket.IO → backend Fastify (port 3000)
+    reverse_proxy /api/*       localhost:3000
+    reverse_proxy /uploads/*   localhost:3000
+    reverse_proxy /socket.io/* localhost:3000
+
+    # Frontend SvelteKit (port 5173)
+    reverse_proxy * localhost:5173
 }

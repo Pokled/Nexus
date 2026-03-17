@@ -1,15 +1,15 @@
-# NEXUS — AUDIO VISION & IMMERSION
+# NODYX — AUDIO VISION & IMMERSION
 ### "Sound is not optional — it is the emotion of the network."
 
 ---
 
 ## 🎧 1. THE PROCESSING CHAIN (STUDIO QUALITY)
-For "Go Nexus" to become the standard, the sound must be perfect, even with a mediocre microphone.
+For "Go Nodyx" to become the standard, the sound must be perfect, even with a mediocre microphone.
 
 * **Opus Full-Band codec:** 48kHz sampling rate (CD quality) by default.
 * **DeepFilterNet (Local AI):** Replacement for Krisp. Uses an ultra-lightweight deep learning model (WASM) to reconstruct the voice and suppress 100% of background noise (keyboard, construction, wind).
 * **Native Ducking:** Automatically lowers the volume of music/ambient sound as soon as a voice is detected.
-* **Auto-Gain & Limiter:** Nobody saturates, nobody is inaudible. Nexus intelligently levels volumes.
+* **Auto-Gain & Limiter:** Nobody saturates, nobody is inaudible. Nodyx intelligently levels volumes.
 
 ---
 
@@ -30,7 +30,7 @@ Music is no longer a bot — it's a member of the room.
 
 ### B. The "Universal Translator" (Ollama AI)
 * **The idea:** Use Whisper (via local Ollama) to transcribe and translate in real time as floating subtitles above the avatar.
-* **The effect:** A French speaker and a Japanese speaker can talk in the same Nexus voice channel. The language barrier shatters.
+* **The effect:** A French speaker and a Japanese speaker can talk in the same Nodyx voice channel. The language barrier shatters.
 
 ### C. "Shadow Zones" (Whispering)
 * **The idea:** In a large channel (Cinema), you can drag your avatar against another member's to create a "private bubble."
@@ -41,7 +41,7 @@ Music is no longer a bot — it's a member of the room.
 * **The effect:** No need to ask for repeats — full control over the temporal flow of the discussion.
 
 ### E. Presence Text-to-Speech
-* **The idea:** If you're in "read-only" mode (at work, for example), you type text and Nexus converts it to speech (TTS) with a unique timbre for your avatar.
+* **The idea:** If you're in "read-only" mode (at work, for example), you type text and Nodyx converts it to speech (TTS) with a unique timbre for your avatar.
 * **The effect:** You participate in the voice channel without speaking, with a "voice" that represents you.
 
 ---
@@ -54,4 +54,4 @@ Music is no longer a bot — it's a member of the room.
 
 ---
 
-> "In Nexus, silence is pure, music is shared, and every voice has its place in space."
+> "In Nodyx, silence is pure, music is shared, and every voice has its place in space."

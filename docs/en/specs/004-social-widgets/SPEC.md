@@ -6,7 +6,7 @@
 ## Context
 
 If a user enters links to their social networks in their profile,
-Nexus automatically displays a rich widget for that network.
+Nodyx automatically displays a rich widget for that network.
 
 **Absolute rule: nothing is displayed if the field is empty.**
 No empty widget, no placeholder, no invitation to connect.
@@ -17,7 +17,7 @@ No empty widget, no placeholder, no invitation to connect.
 
 GitHub is the priority because:
 - Free public API (no key required for public data)
-- Perfectly suited to Nexus's early adopter target audience
+- Perfectly suited to Nodyx's early adopter target audience
 - Rich and relevant data
 
 Other networks (YouTube, X, Instagram) are in Phase 2.
@@ -26,7 +26,7 @@ Other networks (YouTube, X, Instagram) are in Phase 2.
 
 ## Step 1 — Database update
 
-File: `nexus-core/src/migrations/004_social_links.sql`
+File: `nodyx-core/src/migrations/004_social_links.sql`
 
 ```sql
 -- Replace the generic links (JSONB) field with dedicated fields
@@ -50,7 +50,7 @@ WHERE github_username IS NOT NULL;
 ```
 → Accessible without authentication
 → Calls the public GitHub API
-→ Caches in Redis for 1 hour (key: nexus:github:{github_username})
+→ Caches in Redis for 1 hour (key: nodyx:github:{github_username})
 → Returns data formatted for the widget
 ```
 
@@ -108,7 +108,7 @@ Zod validation:
 
 ## Step 4 — GitHubWidget.svelte component
 
-File: `nexus-frontend/src/lib/components/widgets/GitHubWidget.svelte`
+File: `nodyx-frontend/src/lib/components/widgets/GitHubWidget.svelte`
 
 ```
 ┌─────────────────────────────────────┐
@@ -141,7 +141,7 @@ Rules:
 
 ## Step 5 — Integration in the profile page
 
-File: `nexus-frontend/src/routes/users/[username]/+page.svelte`
+File: `nodyx-frontend/src/routes/users/[username]/+page.svelte`
 
 Add after bio:
 
@@ -162,7 +162,7 @@ The widget is displayed only if `profile.github_username` is set.
 
 ## Step 6 — Profile edit form
 
-File: `nexus-frontend/src/routes/users/me/edit/+page.svelte`
+File: `nodyx-frontend/src/routes/users/me/edit/+page.svelte`
 
 "Social networks" section in the form:
 ```
@@ -218,7 +218,7 @@ YouTube     → Google API key required
 LinkedIn    → Accessible API, professional profile
 DeviantArt  → Public API, perfect for artists
 Reddit      → Public API, display profile
-Mastodon    → Perfect for the Nexus spirit
+Mastodon    → Perfect for the Nodyx spirit
 ```
 
 ### Out of scope — No usable public profile API
@@ -242,7 +242,7 @@ Pinterest   → Limited API
 ## Important note — Privacy
 
 The user chooses what they expose.
-Nexus NEVER automatically imports external data.
+Nodyx NEVER automatically imports external data.
 Each social network field is optional and voluntarily filled in.
 
 ---

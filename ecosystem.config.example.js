@@ -4,17 +4,17 @@
 module.exports = {
   apps: [
     {
-      name: 'nexus-core',
+      name: 'nodyx-core',
       script: 'dist/index.js',
-      cwd: './nexus-core',
+      cwd: './nodyx-core',
       watch: false,
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'nexus-frontend',
+      name: 'nodyx-frontend',
       script: 'node_modules/vite/bin/vite.js',
       args: 'preview --host',
-      cwd: './nexus-frontend',
+      cwd: './nodyx-frontend',
       watch: false,
       interpreter: 'node',
       env: { NODE_ENV: 'production' },

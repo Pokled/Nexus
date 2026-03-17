@@ -1,15 +1,15 @@
-# Moteur Neural — Nexus Guard Protocol
+# Moteur Neural — Nodyx Guard Protocol
 
-Nexus intègre un Moteur Neural alimenté par une instance [Ollama](https://ollama.com) locale. Votre IA tourne sur votre propre matériel. Aucune donnée ne quitte votre serveur.
+Nodyx intègre un Moteur Neural alimenté par une instance [Ollama](https://ollama.com) locale. Votre IA tourne sur votre propre matériel. Aucune donnée ne quitte votre serveur.
 
 ---
 
-## Nexus Guard Protocol
+## Nodyx Guard Protocol
 
 Le Guard Protocol est le système de modération du chat piloté par le Moteur Neural. Lorsqu'un message est envoyé, il est analysé par le LLM local qui retourne un **score de toxicité de 0 à 10**. Si le score dépasse le seuil (**8 par défaut**), le message est automatiquement supprimé et remplacé dans l'interface par :
 
 ```
-🤖 Nexus Guard Protocol
+🤖 Nodyx Guard Protocol
    Transmission neutralisée : Contenu toxique détecté
 ```
 
@@ -39,7 +39,7 @@ Le seuil est configurable. Un seuil plus bas = modération plus agressive.
 
 ## Modèle actif
 
-Le modèle actif est configuré dans `nexus-core/neural-config.json` :
+Le modèle actif est configuré dans `nodyx-core/neural-config.json` :
 
 ```json
 {
@@ -53,7 +53,7 @@ Le modèle actif est configuré dans `nexus-core/neural-config.json` :
 
 ## Prérequis
 
-- Ollama installé et en cours d'exécution sur la même machine que Nexus
+- Ollama installé et en cours d'exécution sur la même machine que Nodyx
 - Au moins un modèle téléchargé (voir les modèles recommandés ci-dessous)
 - Caddy configuré pour proxy `/ollama/` → `localhost:11434` *(pour le scanner du panneau admin)*
 
@@ -104,7 +104,7 @@ handle /ollama/* {
 2. Cliquer sur **Scanner Ollama**
 3. Cliquer sur **Activer** à côté du modèle souhaité
 
-La sélection est sauvegardée dans `nexus-core/neural-config.json` et prend effet immédiatement.
+La sélection est sauvegardée dans `nodyx-core/neural-config.json` et prend effet immédiatement.
 
 ---
 

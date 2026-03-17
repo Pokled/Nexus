@@ -136,7 +136,7 @@ Not because it has 500 comments.
 Because the community has **collectively validated it as reliable**.
 
 ```
-Nexus Global Search ranking for Nodes:
+Nodyx Global Search ranking for Nodes:
   1. Stability (state: stabilized > slow > active)
   2. Garden validation (water count)
   3. Cross-references (how many other Nodes link to it)

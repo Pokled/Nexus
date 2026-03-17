@@ -1,6 +1,6 @@
-# Nexus — Moteur Audio
+# Nodyx — Moteur Audio
 
-Nexus intègre une chaîne de traitement audio côté client conçue pour délivrer une qualité vocale professionnelle dans n'importe quel salon vocal — sans matériel dédié, sans service externe, et sans envoyer votre audio ailleurs qu'à vos pairs directement.
+Nodyx intègre une chaîne de traitement audio côté client conçue pour délivrer une qualité vocale professionnelle dans n'importe quel salon vocal — sans matériel dédié, sans service externe, et sans envoyer votre audio ailleurs qu'à vos pairs directement.
 
 ---
 
@@ -75,7 +75,7 @@ Il est efficace contre :
 - La musique d'ambiance
 - Le bruit de foule
 
-> **Note :** RNNoise nécessite le package `@jitsi/rnnoise-wasm`. S'il n'est pas installé, le bouton est désactivé dans l'interface. Pour l'activer en production, exécutez `npm install @jitsi/rnnoise-wasm` dans `nexus-frontend/`.
+> **Note :** RNNoise nécessite le package `@jitsi/rnnoise-wasm`. S'il n'est pas installé, le bouton est désactivé dans l'interface. Pour l'activer en production, exécutez `npm install @jitsi/rnnoise-wasm` dans `nodyx-frontend/`.
 
 ---
 
@@ -83,7 +83,7 @@ Il est efficace contre :
 
 **Défaut : désactivé — Intensité : 60%**
 
-C'est la fonctionnalité audio qui distingue Nexus. Le Mode Broadcast applique un égaliseur à trois bandes réglé pour la voix humaine, reproduisant la chaîne de traitement utilisée dans le podcasting professionnel et la radio.
+C'est la fonctionnalité audio qui distingue Nodyx. Le Mode Broadcast applique un égaliseur à trois bandes réglé pour la voix humaine, reproduisant la chaîne de traitement utilisée dans le podcasting professionnel et la radio.
 
 #### Les trois bandes
 

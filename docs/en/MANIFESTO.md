@@ -1,4 +1,4 @@
-# NEXUS — Manifesto
+# NODYX — Manifesto
 ### Version 1.0 — The immutable foundation
 
 ---
@@ -8,7 +8,7 @@
 
 ---
 
-## Why Nexus exists
+## Why Nodyx exists
 
 There was a time when the internet belonged to its inhabitants.
 
@@ -20,35 +20,35 @@ The price? Invisible at first. Then heavier and heavier.
 
 Today millions of communities are locked inside private silos. Their discussions, their tutorials, their collective knowledge — invisible to Google, inaccessible without an account, condemned to vanish the day the platform changes its terms or shuts its doors. Discord accidentally killed a part of the internet. Not out of malice. Out of centralization.
 
-**Nexus was born to fix that.**
+**Nodyx was born to fix that.**
 
 ---
 
-## What Nexus is
+## What Nodyx is
 
-Nexus is a decentralized, open source, free community communication platform.
+Nodyx is a decentralized, open source, free community communication platform.
 
 It is the forum of the 2000s that hasn't aged, but has matured. It is Ventrilo with encryption. It is phpBB with a 2026 interface. It is TeamSpeak without a proprietary server. It is a place where a community can live, create, share, and grow — on its own terms, on its own machines.
 
-Nexus is made of modular building blocks. Anyone can add, modify, and share them. Just as Joomla did for websites, Nexus does for digital communities.
+Nodyx is made of modular building blocks. Anyone can add, modify, and share them. Just as Joomla did for websites, Nodyx does for digital communities.
 
-The Nexus network is the people themselves. Not datacenters. Not shareholders. People.
+The Nodyx network is the people themselves. Not datacenters. Not shareholders. People.
 
 ---
 
-## What Nexus is not
+## What Nodyx is not
 
-Nexus is not a company.
-Nexus is not a cryptocurrency.
-Nexus is not surveillance disguised as a free service.
-Nexus is not a tool for violent extremists, terrorists, or predators.
-Nexus is not for sale.
+Nodyx is not a company.
+Nodyx is not a cryptocurrency.
+Nodyx is not surveillance disguised as a free service.
+Nodyx is not a tool for violent extremists, terrorists, or predators.
+Nodyx is not for sale.
 
 ---
 
 ## The founding principles
 
-These principles are not guidelines. They are the contract between Nexus and its users. Every technical decision, every feature, every plugin must align with them. Without exception.
+These principles are not guidelines. They are the contract between Nodyx and its users. Every technical decision, every feature, every plugin must align with them. Without exception.
 
 ### 1. Privacy by architecture, not by promise
 
@@ -56,51 +56,51 @@ Encryption is not optional. It is built into the heart of the network. No person
 
 ### 2. Indexable content as a right, not a privilege
 
-Nexus public forums are visible to Google, Perplexity, and all search engines. Community knowledge belongs to the internet. A useful answer should not die behind a login wall.
+Nodyx public forums are visible to Google, Perplexity, and all search engines. Community knowledge belongs to the internet. A useful answer should not die behind a login wall.
 
 ### 3. Self-hosting as fundamental freedom
 
-Anyone can host a Nexus instance on any server. A Raspberry Pi in a living room. A €3/month VPS. An enterprise server. Nexus does not ask permission from anyone.
+Anyone can host a Nodyx instance on any server. A Raspberry Pi in a living room. A €3/month VPS. An enterprise server. Nodyx does not ask permission from anyone.
 
 ### 4. Total open source transparency
 
 The code is public. Auditable. Forkable. If tomorrow an authority, a company, or any entity demands the addition of a backdoor in the official code, the community has the right and the duty to fork the project and continue without it. This manifesto is the explicit permission to do so.
 
-**Nexus will never contain a backdoor. Ever.**
+**Nodyx will never contain a backdoor. Ever.**
 
 ### 5. Modularity as respect for contributors
 
-Nexus is a core surrounded by plugins. The core is stable, documented, protected. Plugins are the community's playground. A solo developer, a student, an enthusiast — all can contribute without having to understand the entire project. That is real open source.
+Nodyx is a core surrounded by plugins. The core is stable, documented, protected. Plugins are the community's playground. A solo developer, a student, an enthusiast — all can contribute without having to understand the entire project. That is real open source.
 
 ### ⚠️ Absolute rule — Core untouchability
 
-**The Nexus core can be modified by no one, for any reason, without explicit validation from the project's founding circle.**
+**The Nodyx core can be modified by no one, for any reason, without explicit validation from the project's founding circle.**
 
 The core contains the soul of the project: the network protocol, the encryption system, the plugin architecture, identity management. These are the foundations on which everything rests.
 
 Community contributors work **around** the core, never inside it.
-Plugins extend Nexus. They do not modify Nexus.
-Themes dress Nexus. They do not transform it.
+Plugins extend Nodyx. They do not modify Nodyx.
+Themes dress Nodyx. They do not transform it.
 
 Any Pull Request touching the core will be refused without discussion if it has not been initiated or validated by the founding maintainers. This is not authoritarianism. It is responsibility.
 
 ### 6. Humans before technology
 
-Nexus does not exist to be technically impressive. It exists so that people can meet, create together, and help each other. If a complex technology can be replaced by something simpler that does the same thing, we choose the simple. Always.
+Nodyx does not exist to be technically impressive. It exists so that people can meet, create together, and help each other. If a complex technology can be replaced by something simpler that does the same thing, we choose the simple. Always.
 
 ### 7. Moderation as community responsibility
 
-Each Nexus instance is responsible for its community. Instance administrators have the tools to moderate. The integrated AI (optional) can help. But responsibility cannot be delegated to an algorithm. Humans decide.
+Each Nodyx instance is responsible for its community. Instance administrators have the tools to moderate. The integrated AI (optional) can help. But responsibility cannot be delegated to an algorithm. Humans decide.
 
-Nexus unequivocally condemns any use of the platform for terrorist purposes, child exploitation, organized harassment, or any illegal activity. Decentralization is not a shield for criminals. It is protection for honest people.
+Nodyx unequivocally condemns any use of the platform for terrorist purposes, child exploitation, organized harassment, or any illegal activity. Decentralization is not a shield for criminals. It is protection for honest people.
 
 ---
 
 ## Long-term vision
 
-In 10 years, we want a 15-year-old to be able to install Nexus on an old PC and launch their gaming community in 15 minutes. Without paying. Without giving their identity. Without depending on anyone.
+In 10 years, we want a 15-year-old to be able to install Nodyx on an old PC and launch their gaming community in 15 minutes. Without paying. Without giving their identity. Without depending on anyone.
 
-We want that community's knowledge to be visible on Google. That in 5 years, someone searching "how to do X in Godot" lands on a Nexus thread and finds the answer.
+We want that community's knowledge to be visible on Google. That in 5 years, someone searching "how to do X in Godot" lands on a Nodyx thread and finds the answer.
 
 We want sports clubs, artists, developers, associations, and companies to all have their digital home. Lean, functional, private, and truly theirs.
 
@@ -110,13 +110,13 @@ We want to give the internet back its soul.
 
 ## Survival clause
 
-If one day Nexus, under any pressure — legal, commercial, political — betrays one of these founding principles, this manifesto explicitly authorizes any community member to:
+If one day Nodyx, under any pressure — legal, commercial, political — betrays one of these founding principles, this manifesto explicitly authorizes any community member to:
 
 - Fork the project under a different name
 - Take the entirety of the code under the AGPL-3.0 license
-- Continue Nexus in the spirit of this manifesto
+- Continue Nodyx in the spirit of this manifesto
 
-**Nexus belongs to its community. Not its creators.**
+**Nodyx belongs to its community. Not its creators.**
 
 ---
 
@@ -134,7 +134,7 @@ And if you think we're wrong about something, say so. That's what open source is
 
 ---
 
-*This manifesto is the BIBLE of the Nexus project.*
+*This manifesto is the BIBLE of the Nodyx project.*
 *Every decision must align with it.*
 *It can evolve, but never be betrayed.*
 

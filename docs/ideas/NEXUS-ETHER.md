@@ -1,4 +1,4 @@
-# NEXUS-ETHER — The Physical Layer
+# NODYX-ETHER — The Physical Layer
 ### "When the fiber is cut, the community survives."
 
 > This document is a horizon specification.
@@ -9,7 +9,7 @@
 
 ## The Problem We Haven't Solved Yet
 
-Nexus decentralizes the **application layer**.
+Nodyx decentralizes the **application layer**.
 Your data lives on your server. Your voice travels peer-to-peer.
 No Big Tech silo. No centralized relay.
 
@@ -18,7 +18,7 @@ But we still depend on one thing: **the physical internet infrastructure.**
 Fiber cables controlled by ISPs. Submarine cables controlled by corporations.
 Satellites controlled by a single person.
 
-If a government cuts the fiber — Nexus goes silent.
+If a government cuts the fiber — Nodyx goes silent.
 If a natural disaster destroys infrastructure — the community loses contact.
 If an ISP decides to throttle or block — the sovereign node becomes unreachable.
 
@@ -29,7 +29,7 @@ We haven't finished yet.
 
 ## The Insight: CRDTs Are the Bridge
 
-Nexus already implements CRDT Last-Write-Wins in NexusCanvas.
+Nodyx already implements CRDT Last-Write-Wins in NodyxCanvas.
 Every canvas element has a UUID and a timestamp. State converges eventually, regardless of latency.
 
 This is not a canvas feature. **This is the right data structure for any low-bandwidth, high-latency, sporadic link.**
@@ -56,20 +56,20 @@ The same CRDT engine that synchronizes a whiteboard stroke can synchronize a for
 **Bandwidth:** 250 bps – 250 kbps
 **Use case:** Village, campus, neighborhood, event without connectivity
 
-A new binary: **`nexus-relay-mesh`**
+A new binary: **`nodyx-relay-mesh`**
 
 ```
-nexus-relay-mesh --medium lora --freq 868mhz --range local
-nexus-relay-mesh --medium wifi-adhoc --ssid nexus-mesh-quartier
+nodyx-relay-mesh --medium lora --freq 868mhz --range local
+nodyx-relay-mesh --medium wifi-adhoc --ssid nodyx-mesh-quartier
 ```
 
 Instances within range discover each other automatically.
-nexus-relay becomes a hop-by-hop packet router on the physical network.
+nodyx-relay becomes a hop-by-hop packet router on the physical network.
 Forum posts, chat messages, event announcements propagate node-to-node.
 No internet required. No ISP. No infrastructure at all.
 
 **Real precedent:** Meshtastic does exactly this for simple text messages.
-Nexus-ether does it for structured community data with CRDTs.
+Nodyx-ether does it for structured community data with CRDTs.
 
 ---
 
@@ -80,15 +80,15 @@ Nexus-ether does it for structured community data with CRDTs.
 **Bandwidth:** ~50–300 bps (FT8/JS8Call-style encoding)
 **Use case:** Rural areas, disaster zones, regions without infrastructure
 
-A software modem written in Rust: **`nexus-modem`**
+A software modem written in Rust: **`nodyx-modem`**
 
 ```rust
-// nexus-modem: encode CRDT ops into robust low-bandwidth packets
-// Similar to FT8 (amateur radio digital mode) but for Nexus data
+// nodyx-modem: encode CRDT ops into robust low-bandwidth packets
+// Similar to FT8 (amateur radio digital mode) but for Nodyx data
 // 15-second transmission window, error-correcting codes, automatic retry
 ```
 
-nexus-core adds an **"HF queue"** — a priority list of critical operations:
+nodyx-core adds an **"HF queue"** — a priority list of critical operations:
 - New forum announcements
 - Emergency community messages
 - CRDT sync deltas for offline nodes
@@ -99,7 +99,7 @@ A node 2000 km away receives, applies the CRDT delta, and is back in sync.
 **The delay is hours, not milliseconds. The data arrives.**
 
 **Real precedent:** JS8Call operators already do this. Winlink carries email over HF globally.
-Nexus-ether carries community knowledge.
+Nodyx-ether carries community knowledge.
 
 ---
 
@@ -118,22 +118,22 @@ At this layer, only metadata travels:
 This is not a replacement for fiber. It is a **heartbeat** that keeps the network topology alive when everything else fails.
 
 **What this means in practice:**
-A community in a disaster zone can announce its existence to the global Nexus network using a €50 radio and a Pi. When connectivity is restored — even temporarily — the CRDT sync completes the full state.
+A community in a disaster zone can announce its existence to the global Nodyx network using a €50 radio and a Pi. When connectivity is restored — even temporarily — the CRDT sync completes the full state.
 
 ---
 
-## nexus-relay as Multi-Path Orchestrator
+## nodyx-relay as Multi-Path Orchestrator
 
-The existing nexus-relay architecture is already transport-agnostic.
+The existing nodyx-relay architecture is already transport-agnostic.
 It pushes bytes over a TCP socket. Replace the socket with a serial port connected to a LoRa module — the Rust code doesn't know the difference.
 
-The vision: **nexus-relay with pluggable transport backends.**
+The vision: **nodyx-relay with pluggable transport backends.**
 
 ```toml
-# nexus-relay transport configuration
+# nodyx-relay transport configuration
 [transports]
 ethernet  = { enabled = true, priority = 1 }
-wifi-mesh = { enabled = true, priority = 2, ssid = "nexus-mesh" }
+wifi-mesh = { enabled = true, priority = 2, ssid = "nodyx-mesh" }
 lora      = { enabled = true, priority = 3, freq = "868mhz" }
 hf-radio  = { enabled = true, priority = 4, port = "/dev/ttyUSB0" }
 powerline = { enabled = false }
@@ -159,7 +159,7 @@ The CRDT handles the rest — packets may arrive out of order, duplicated, or ho
 | HF digital text over radio | [JS8Call](http://js8call.com) | Active amateur radio community |
 | Email over HF radio | [Winlink](https://winlink.org) | Decades of use, global coverage |
 | Software-defined radio (SDR) | RTL-SDR, HackRF | €25–300, widely available |
-| CRDT for offline-first sync | NexusCanvas (this repo) | Shipped in v0.9.0 |
+| CRDT for offline-first sync | NodyxCanvas (this repo) | Shipped in v0.9.0 |
 
 We are not inventing new physics. We are connecting existing pieces with the right data structure.
 
@@ -169,13 +169,13 @@ We are not inventing new physics. We are connecting existing pieces with the rig
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  nexus-core (Fastify)               │
+│                  nodyx-core (Fastify)               │
 │              CRDT store — eventually consistent      │
 └───────────────────────┬─────────────────────────────┘
                         │ CRDT delta ops
                         ▼
 ┌─────────────────────────────────────────────────────┐
-│              nexus-relay (multi-path)               │
+│              nodyx-relay (multi-path)               │
 ├─────────────┬──────────────┬────────────┬───────────┤
 │  ethernet   │  wifi-mesh   │   lora     │ hf-radio  │
 │  (fiber)    │  (ad-hoc)    │  (LoRa32)  │ (20MHz)   │
@@ -185,7 +185,7 @@ We are not inventing new physics. We are connecting existing pieces with the rig
   (normal)       (no infra)    (rural)     (ionosphere)
 ```
 
-One Nexus. Four physical layers. The community survives all of them failing except the last.
+One Nodyx. Four physical layers. The community survives all of them failing except the last.
 
 ---
 
@@ -214,15 +214,15 @@ We wrote: *"The internet was decentralized by design. Big Tech centralized it in
 
 But "the internet" became synonymous with "fiber cables and satellites controlled by corporations."
 
-Nexus-ether decentralizes the **physical layer itself.**
+Nodyx-ether decentralizes the **physical layer itself.**
 
-Cutting Nexus would require simultaneously:
+Cutting Nodyx would require simultaneously:
 - Cutting all fiber (ISPs)
 - Jamming all LoRa frequencies (regulators)
 - Shutting down all HF radio (impossible globally)
 - Cutting all power (chaos)
 
-At that point, Nexus is the least of anyone's problems.
+At that point, Nodyx is the least of anyone's problems.
 
 **The network is the people. And people have always found ways to communicate.**
 
@@ -233,13 +233,13 @@ Radio waves don't need permission.
 ## Suggested Repository Structure
 
 ```
-nexus-p2p/
-├── nexus-turn/          ← exists (Rust STUN/TURN)
-├── nexus-relay/         ← exists (Rust TCP tunnel)
-└── nexus-ether/         ← future
-    ├── nexus-modem/     ← software modem (HF encoding)
-    ├── nexus-mesh/      ← LoRa / WiFi-adhoc mesh relay
-    └── nexus-sync/      ← CRDT delta serialization (Cap'n Proto / FlatBuffers)
+nodyx-p2p/
+├── nodyx-turn/          ← exists (Rust STUN/TURN)
+├── nodyx-relay/         ← exists (Rust TCP tunnel)
+└── nodyx-ether/         ← future
+    ├── nodyx-modem/     ← software modem (HF encoding)
+    ├── nodyx-mesh/      ← LoRa / WiFi-adhoc mesh relay
+    └── nodyx-sync/      ← CRDT delta serialization (Cap'n Proto / FlatBuffers)
 ```
 
 The workspace is already Rust. The CRDT is already written.
@@ -259,7 +259,7 @@ That question doesn't come from a lab. It comes from people who have learned —
 
 ---
 
-Nexus exists because some tools should be like good animals.
+Nodyx exists because some tools should be like good animals.
 
 No hidden agenda. No terms of service that change overnight. No algorithm that decides what you see. No company that owns what you shared.
 
@@ -275,6 +275,6 @@ That's not a feature. That's the whole point.
 
 ---
 
-*Written March 2026 — Nexus v0.9.0*
+*Written March 2026 — Nodyx v0.9.0*
 *"The network is the people. And people have always found ways to communicate."*
 *AGPL-3.0 — Fork us if we betray you.*

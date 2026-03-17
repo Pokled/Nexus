@@ -1,10 +1,10 @@
-# NEXUS — Roadmap
+# NODYX — Roadmap
 ### Version 1.4 — Le chemin réaliste
 
 ---
 
 > *"Un projet qui veut tout faire en même temps ne fait rien bien."*
-> La roadmap Nexus est construite sur une règle simple :
+> La roadmap Nodyx est construite sur une règle simple :
 > chaque phase doit fonctionner parfaitement avant de passer à la suivante.
 
 ---
@@ -19,13 +19,13 @@
 | **Phase 3** | Infrastructure P2P + Fondation Rust | 🔨 En cours |
 | **Phase 4** | Enrichissement de la plateforme | 🔨 En cours (v1.7) |
 | Phase 5 | Mobile et réputation | ⏳ Planifiée |
-| **Phase Horizon** | NEXUS-ETHER — Souveraineté de la couche physique | 🌌 Vision |
-| **Phase Radio** | NEXUS-RADIO — Tuner radio internet + régie publicitaire coopérative | 📻 Vision |
+| **Phase Horizon** | NODYX-ETHER — Souveraineté de la couche physique | 🌌 Vision |
+| **Phase Radio** | NODYX-RADIO — Tuner radio internet + régie publicitaire coopérative | 📻 Vision |
 
 ---
 
 ## PHASE 1 — MVP Forum + Admin ✅ COMPLÈTE
-### Objectif : Une communauté peut s'installer, se configurer, et vivre sur Nexus
+### Objectif : Une communauté peut s'installer, se configurer, et vivre sur Nodyx
 
 ### 1.1 Backend Forum
 - [x] Migration SQL initiale (users, communities, categories, threads, posts)
@@ -67,7 +67,7 @@
 
 ### 1.3 Frontend
 - [x] SvelteKit initialisé + Tailwind v4
-- [x] Homepage = communauté de l'instance (NEXUS_COMMUNITY_NAME via .env)
+- [x] Homepage = communauté de l'instance (NODYX_COMMUNITY_NAME via .env)
 - [x] Arbre de catégories récursif (CategoryTree.svelte)
 - [x] Page liste catégories + threads (avec pills de tags)
 - [x] Page thread + posts + formulaire réponse
@@ -84,10 +84,10 @@
 ### 1.4 Self-hosting
 - [x] `install.sh` — installeur one-click VPS (ports 80/443, Let's Encrypt via Caddy, PM2, coturn, PostgreSQL, Redis)
 - [x] `install_tunnel.sh` — installeur home server via Cloudflare Tunnel (aucun port à ouvrir, Raspberry Pi, box)
-- [x] docker-compose.yml (Nexus + PostgreSQL + Redis)
+- [x] docker-compose.yml (Nodyx + PostgreSQL + Redis)
 - [x] Dockerfile multi-stage
 - [x] Script seed (données de démonstration)
-- [x] Script PowerShell "Nexus-Easy-Install" — automatise Node/PostgreSQL/Redis sur Windows Server sans Docker
+- [x] Script PowerShell "Nodyx-Easy-Install" — automatise Node/PostgreSQL/Redis sur Windows Server sans Docker
 - [x] Health check visuel post-installation (spinner braille, score PASS/WARN/FAIL)
 - [x] Documentation installation en 15 minutes
 - [x] Guide complet des noms de domaine (DOMAIN.md — types, compatibilité, FAQ)
@@ -95,7 +95,7 @@
 
 ### Critère de succès Phase 1 ✅
 Une personne non-développeur peut :
-1. Installer Nexus sur son serveur en moins de 15 minutes ✅
+1. Installer Nodyx sur son serveur en moins de 15 minutes ✅
 2. Configurer son instance via l'installeur interactif ✅
 3. Créer des catégories, des threads, des tags ✅
 4. Administrer sa communauté via le panneau admin ✅
@@ -177,14 +177,14 @@ Une personne non-développeur peut :
 
 > *"Le P2P est l'âme. Rust est le corps."*
 >
-> Nexus ne remplacera pas Node.js ou SvelteKit — ils font leur travail parfaitement.
+> Nodyx ne remplacera pas Node.js ou SvelteKit — ils font leur travail parfaitement.
 > Rust viendra **en dessous**, invisible pour l'utilisateur, pour gérer les parties
 > que JavaScript ne peut pas bien faire : réseau bas niveau, chiffrement, WireGuard, DHT.
-> La couche Rust communique avec nexus-core via un socket Unix local — simple et découplé.
+> La couche Rust communique avec nodyx-core via un socket Unix local — simple et découplé.
 
 ---
 
-### 3.0 — `nexus-p2p` : La fondation Rust 🔨 EN COURS
+### 3.0 — `nodyx-p2p` : La fondation Rust 🔨 EN COURS
 
 #### Pourquoi Rust ici ?
 
@@ -194,19 +194,19 @@ Aujourd'hui, un utilisateur sans domaine et sans ports ouverts doit :
 3. Configurer `cloudflared` manuellement ou via `install_tunnel.sh`
 
 C'est trop de friction. Et surtout : **c'est une dépendance à un service tiers**,
-contraire à la philosophie Nexus.
+contraire à la philosophie Nodyx.
 
 La couche Rust résout ça de façon radicale et progressive.
 
 #### Architecture
 
 ```
-nexus-frontend (SvelteKit) ──────────────────────┐
-nexus-core    (Fastify/Node.js) ─────────────────┤
+nodyx-frontend (SvelteKit) ──────────────────────┐
+nodyx-core    (Fastify/Node.js) ─────────────────┤
                                                   │ IPC (Unix socket)
                                                   ▼
                                     ┌─────────────────────┐
-                                    │     nexus-p2p       │
+                                    │     nodyx-p2p       │
                                     │       (Rust)        │
                                     │                     │
                                     │  ┌───────────────┐  │
@@ -227,7 +227,7 @@ nexus-core    (Fastify/Node.js) ────────────────
                                     └─────────────────────┘
 ```
 
-#### Phase 3.0-A — `nexus-relay-client` ✅ VALIDÉE — 1er mars 2026
+#### Phase 3.0-A — `nodyx-relay-client` ✅ VALIDÉE — 1er mars 2026
 
 > Remplace `install_tunnel.sh` + Cloudflare Tunnel. Zéro domaine requis. Zéro port à ouvrir.
 > **Testé en conditions réelles : Raspberry Pi 4, aucun port ouvert, aucun compte Cloudflare.**
@@ -238,8 +238,8 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Enregistrement automatique `slug.nexusnode.app` sans DNS ni CF account
 - [x] Reconnexion automatique avec backoff exponentiel (1s → 2s → 4s → max 30s)
 - [x] GitHub Release `v0.1.2-p2p` — binaires amd64 + arm64 (rate limiting auth + fix traitement concurrent)
-- [x] Intégration dans `install.sh` : option 2 "Nexus Relay (recommandé)"
-- [x] Service systemd côté client (`nexus-relay-client.service`)
+- [x] Intégration dans `install.sh` : option 2 "Nodyx Relay (recommandé)"
+- [x] Service systemd côté client (`nodyx-relay-client.service`)
 
 **Résultat utilisateur :** `bash install.sh` → choisir "Relay" → obtenir `moncommunaute.nexusnode.app` **sans aucune configuration réseau**.
 
@@ -254,7 +254,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 
 **v0.8 — POC deux navigateurs ✅ :**
 - [x] Ajouter events `p2p:offer`, `p2p:answer`, `p2p:ice` dans `voice.ts` (3 lignes — même pattern que `voice:offer/answer/ice`)
-- [x] Créer `nexus-frontend/src/lib/p2p.ts` — gestionnaire RTCPeerConnection + DataChannel
+- [x] Créer `nodyx-frontend/src/lib/p2p.ts` — gestionnaire RTCPeerConnection + DataChannel
 - [x] Découverte de pair via Socket.IO existant (handshake polite/impolite — un seul initiateur)
 - [x] Utiliser le coturn de l'instance (déjà installé) — pas de STUN tiers
 - [x] Handler `ondatachannel` côté répondeur (crucial — sinon le répondeur ne reçoit jamais le canal)
@@ -270,7 +270,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] Fallback gracieux si WebRTC échoue (ICE timeout 12s, toast discret, flags _hadAttempt/_hadSuccess)
 - [x] Transfert d'assets entre pairs (chunks 32 Ko, protocole p2p:asset:*, store p2pAssetPeers, bouton ⚡ jaune)
 
-#### Phase 3.0-C — `nexus-turn` (remplace coturn) ✅ VALIDÉE — 4 mars 2026 / Mise à jour 8 mars 2026
+#### Phase 3.0-C — `nodyx-turn` (remplace coturn) ✅ VALIDÉE — 4 mars 2026 / Mise à jour 8 mars 2026
 
 > coturn est un projet C des années 2000. Complexe à configurer, surface d'attaque importante.
 > **Remplacé par un binaire Rust de 2.9MB — zéro dépendance, credentials dynamiques.**
@@ -281,7 +281,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] **TURN-over-TCP (RFC 6062)** — TCP:3478 en parallèle de UDP:3478, registry d'allocations partagé
 - [x] Framing RFC 4571 (longueur 2 octets big-endian par message TCP)
 - [x] Abstraction `ResponseSink` — tous les handlers TURN transport-agnostiques (UDP et TCP unifiés)
-- [x] nexus-core génère les creds par utilisateur → `voice:init` Socket.IO (pas d'IPC)
+- [x] nodyx-core génère les creds par utilisateur → `voice:init` Socket.IO (pas d'IPC)
 - [x] ChannelBind / ChannelData (optimisation relay, moins d'overhead header)
 - [x] Rate limiter UDP par IP (30 pkt/sec) — protection flood non authentifié
 - [x] Quotas d'allocations : 10/IP, 1000 total, MAX_LIFETIME=300s (prévient la saturation du quota)
@@ -289,7 +289,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] **Voix — Relay failover** : bascule automatique vers `iceTransportPolicy: relay` après perte de paquets élevée (>25% × 3 mesures consécutives)
 - [x] **Voix — Opus optimisé** : 32 kbps par défaut, DTX désactivé, mono, FEC actif — optimisé pour VPN/liens dégradés
 
-#### Phase 3.0-D — `nexus-p2p` core (vision long terme 2027-2028)
+#### Phase 3.0-D — `nodyx-p2p` core (vision long terme 2027-2028)
 
 > Le cœur distribué. Quand un nœud veut contacter un autre nœud directement, sans passer par nous.
 > Réseau immortel : chaque donnée répliquée sur 3+ nœuds, auto-guérison.
@@ -297,7 +297,7 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [ ] DHT Kademlia (via `libp2p`) — découverte de pairs sans serveur central
 - [ ] WireGuard (via `wireguard-rs`) — tunnel chiffré direct entre instances volontaires
 - [ ] ICE/STUN natif — traversée NAT sans coturn pour les connexions P2P
-- [ ] API IPC exposée à nexus-core : `relay.register(slug)`, `peer.connect(slug)`, `network.peers()`
+- [ ] API IPC exposée à nodyx-core : `relay.register(slug)`, `peer.connect(slug)`, `network.peers()`
 - [ ] Gossip protocol — propagation naturelle de l'état du réseau
 - [ ] CRDTs — données sans conflit entre nœuds (compteurs de likes, présence distribuée)
 - [ ] Réplication facteur 3 — auto-guérison si un nœud tombe
@@ -378,10 +378,10 @@ nexus-core    (Fastify/Node.js) ────────────────
 ---
 
 ## PHASE 4 — Enrichissement de la plateforme
-### Objectif : Nexus devient la plateforme communautaire complète
+### Objectif : Nodyx devient la plateforme communautaire complète
 
 **Livré en avance :**
-- [x] **NexusCanvas** (v0.9) — tableau blanc collaboratif P2P dans les salons vocaux (CRDT LWW, curseurs vocaux, export PNG)
+- [x] **NodyxCanvas** (v0.9) — tableau blanc collaboratif P2P dans les salons vocaux (CRDT LWW, curseurs vocaux, export PNG)
 - [x] **Système de thèmes de profil** (v1.0) — 6 presets (Défaut, Minuit, Forêt, Chaleur, Rose, Verre), moteur CSS variables (`--p-bg`, `--p-card-bg`, `--p-accent`…), éditeur live avec color pickers, propagation dans toute l'app (nav, sidebars, fond)
 - [x] **UI responsive mobile** (v1.0) — drawer de canaux, barre de navigation basse, VoicePanel accessible sur mobile, forum + admin responsives
 - [x] **Bibliothèque d'assets 12 Mo** (v1.0) — limite augmentée (était 5 Mo), conseils de design par type d'asset
@@ -395,37 +395,37 @@ nexus-core    (Fastify/Node.js) ────────────────
 - [x] **Messages privés (DMs)** (v1.2) — conversations 1:1, `dm_conversations` + `dm_messages`, badge non-lu, Socket.IO `dm:send/typing/read`
 - [x] **Sondages** (v1.2) — dans le chat (bouton 📊) et le forum (à la création + standalone), 3 types : choix / planning / classement, résultats temps réel Socket.IO
 - [x] **Système de ban** (v1.2) — ban IP, ban email, enforcement multi-couches (inscription, connexion, middleware), interface admin
-- [x] **nexus-turn — TURN-over-TCP** (v1.3) — RFC 6062, TCP:3478, bypass VPN/firewall pour la voix
-- [x] **nexus-turn — Fix MESSAGE-INTEGRITY** (v1.3) — RFC 5389 §10.3, relay fonctionne désormais dans Firefox, Chrome, tous les clients WebRTC
+- [x] **nodyx-turn — TURN-over-TCP** (v1.3) — RFC 6062, TCP:3478, bypass VPN/firewall pour la voix
+- [x] **nodyx-turn — Fix MESSAGE-INTEGRITY** (v1.3) — RFC 5389 §10.3, relay fonctionne désormais dans Firefox, Chrome, tous les clients WebRTC
 - [x] **Voix — Relay failover** (v1.3) — redémarrage ICE automatique avec `iceTransportPolicy: relay` après 3 mesures de perte élevée consécutives
 - [x] **Voix — Opus optimisé** (v1.3) — 32 kbps par défaut, DTX désactivé, mono, FEC actif
-- [x] **Calendrier d'événements** (v1.6) — CRUD complet, RSVP, cover upload, pages `/calendar` + `/calendar/[id]` + edit, `can_manage` (auteur OU mod/admin), sanitize-html étendu — [SPEC 011](../en/specs/011-nexus-event-calendar/SPEC.md)
+- [x] **Calendrier d'événements** (v1.6) — CRUD complet, RSVP, cover upload, pages `/calendar` + `/calendar/[id]` + edit, `can_manage` (auteur OU mod/admin), sanitize-html étendu — [SPEC 011](../en/specs/011-nodyx-event-calendar/SPEC.md)
 - [x] **Gossip Protocol** (v1.6) — `announceEventsToDirectory()` toutes les 10 min, `/discover` multi-type (communautés + threads + événements)
-- [x] **Global Search Gossip-based** (v1.5) — `network_index` FTS GIN PostgreSQL, `announceThreadsToDirectory()`, `/discover` avec barre de recherche et cards cross-instances, opt-in `NEXUS_GLOBAL_INDEXING=true` — [SPEC 010](../en/specs/010-nexus-global-search/SPEC.md)
+- [x] **Global Search Gossip-based** (v1.5) — `network_index` FTS GIN PostgreSQL, `announceThreadsToDirectory()`, `/discover` avec barre de recherche et cards cross-instances, opt-in `NODYX_GLOBAL_INDEXING=true` — [SPEC 010](../en/specs/010-nodyx-global-search/SPEC.md)
 - [x] **Admin — Dashboard enrichi** (v1.7) — stats v2 (événements/sondages/assets/chat/DMs), graphique activité duale 7j (posts + nouveaux membres), top 5 contributeurs, derniers inscrits
 - [x] **Annonces système** (v1.7) — bannières colorées (6 variantes) admin-créées, dismissibles, expirables, prévisualisation live — `/admin/announcements`
 - [x] **Journal de modération** (v1.7) — audit trail 11 types d'actions, filtres action/acteur, pagination — `/admin/audit-log`, migrations 045-046
 
 **Connaissance & Découverte :**
 - [ ] **Nodes** — connaissance structurée durable, Anchors, validée via le Jardin — [SPEC 013](../en/specs/013-node/SPEC.md)
-- [ ] **Galaxy Bar** — switcher multi-instances, SSO décentralisé, notifications bio-luminescentes — [SPEC 012](../en/specs/012-nexus-galaxy-bar/SPEC.md)
+- [ ] **Galaxy Bar** — switcher multi-instances, SSO décentralisé, notifications bio-luminescentes — [SPEC 012](../en/specs/012-nodyx-galaxy-bar/SPEC.md)
 
 **Outils :**
 - [ ] Partage de fichiers (hébergé sur le nœud, pas de CDN central)
 - [x] **Système de tâches léger** (v1.8) — Kanban par communauté, colonnes configurables, cartes avec assignation/échéance/priorité, drag & drop natif, `/tasks`
 - [ ] Ollama IA locale — assistant de savoir (indexe le forum local)
-- [ ] **Nexus Guard Protocol** — middleware scoring toxicité dans `chat:send`, seuil configurable, logs DB
+- [ ] **Nodyx Guard Protocol** — middleware scoring toxicité dans `chat:send`, seuil configurable, logs DB
 - [ ] Marketplace plugins — API stable pour extensions tierces (fondations dans `plugins/`)
 
 ---
 
 ## PHASE 5 — Mobile et réputation
-### Objectif : Nexus dans la poche de tout le monde
+### Objectif : Nodyx dans la poche de tout le monde
 
 - [ ] App iOS via Capacitor
 - [ ] App Android via Capacitor
 - [ ] Desktop via Tauri (.exe/.app/.sh ~10MB, autonome)
-- [ ] NexusPoints — système de réputation communautaire inter-instances
+- [ ] NodyxPoints — système de réputation communautaire inter-instances
 - [ ] Badges et niveaux
 - [ ] API publique documentée pour développeurs tiers
 
@@ -455,19 +455,19 @@ nexus-core    (Fastify/Node.js) ────────────────
 
 ---
 
-## PHASE HORIZON — NEXUS-ETHER
+## PHASE HORIZON — NODYX-ETHER
 ### La couche physique. La dernière frontière.
 
 > *"Les ondes radio n'ont pas besoin de permission."*
 
-Nexus décentralise la couche applicative.
+Nodyx décentralise la couche applicative.
 Mais nous dépendons encore d'une chose : l'infrastructure physique d'internet.
 Des câbles en fibre contrôlés par des FAI. Des satellites contrôlés par des entreprises.
 
-**NEXUS-ETHER décentralise la couche physique elle-même.**
+**NODYX-ETHER décentralise la couche physique elle-même.**
 
 Le pont qui rend ça possible : **les CRDTs**.
-Déjà dans Nexus (NexusCanvas). Déjà en production.
+Déjà dans Nodyx (NodyxCanvas). Déjà en production.
 Le même CRDT qui synchronise un coup de pinceau peut synchroniser un post de forum
 sur un lien LoRa à 250 bits/s — même avec 2 heures de délai.
 
@@ -478,14 +478,14 @@ Couche 3 — Ionosphère       HF ondes courtes      Mondial       sans câble, 
 ```
 
 ```
-nexus-p2p/
-└── nexus-ether/          ← workspace futur
-    ├── nexus-modem/      ← modem logiciel (encodage HF / LoRa en Rust)
-    ├── nexus-mesh/       ← relais mesh LoRa / Wi-Fi ad-hoc
-    └── nexus-sync/       ← sérialisation des deltas CRDT (Cap'n Proto / FlatBuffers)
+nodyx-p2p/
+└── nodyx-ether/          ← workspace futur
+    ├── nodyx-modem/      ← modem logiciel (encodage HF / LoRa en Rust)
+    ├── nodyx-mesh/       ← relais mesh LoRa / Wi-Fi ad-hoc
+    └── nodyx-sync/       ← sérialisation des deltas CRDT (Cap'n Proto / FlatBuffers)
 ```
 
-**nexus-relay devient un orchestrateur multi-chemins :**
+**nodyx-relay devient un orchestrateur multi-chemins :**
 `ethernet → wifi-mesh → lora → hf-radio` — fallback automatique, les CRDTs gèrent la convergence.
 
 **Ce que ça signifie concrètement :**
@@ -500,14 +500,14 @@ Ce n'est pas une feature pour demain. C'est un **appel à contributeurs :**
 → L'architecture est là. La fondation CRDT est livrée.
 → La couche radio attend les bonnes mains.
 
-→ **[Spec complète : docs/ideas/NEXUS-ETHER.md](../ideas/NEXUS-ETHER.md)**
+→ **[Spec complète : docs/ideas/NODYX-ETHER.md](../ideas/NODYX-ETHER.md)**
 
 ---
 
-## PHASE RADIO — NEXUS-RADIO
+## PHASE RADIO — NODYX-RADIO
 ### La radio internet qui a enfin une raison d'exister.
 
-> *"50 000 opérateurs de radio internet qui émettent dans le vide. Nexus est la réponse."*
+> *"50 000 opérateurs de radio internet qui émettent dans le vide. Nodyx est la réponse."*
 
 Le problème que personne n'a résolu : 100 000+ stations radio internet à leur apogée.
 Moins de 5% avaient plus de 10 auditeurs simultanés.
@@ -517,13 +517,13 @@ pour transformer des auditeurs simultanés en communauté.
 **Les stations qui ont survécu** avaient une couche communautaire structurellement attachée.
 **Les stations qui sont mortes** avaient des auditeurs, mais pas de communauté.
 
-L'inversion que Nexus rend possible :
+L'inversion que Nodyx rend possible :
 ```
 Stations mortes    :  broadcast → espoir de communauté
 Stations vivantes  :  communauté → broadcast comme expression
 ```
 
-**Une instance Nexus EST la couche communautaire.** Une station qui tourne Nexus obtient :
+**Une instance Nodyx EST la couche communautaire.** Une station qui tourne Nodyx obtient :
 - Forum (archives, discussions, notes d'émission — indexées par tous les moteurs de recherche)
 - Chat en direct (les auditeurs réagissent en temps réel pendant les émissions)
 - Salons vocaux (studio ouvert, coulisses, questions/réponses en direct)
@@ -532,7 +532,7 @@ Stations vivantes  :  communauté → broadcast comme expression
 **La régie coopérative — le modèle économique manquant :**
 
 Une petite station avec 80 auditeurs ne peut pas négocier avec des annonceurs seule.
-Mais 200 stations Nexus-Radio avec 80 auditeurs chacune = **16 000 auditeurs locaux**.
+Mais 200 stations Nodyx-Radio avec 80 auditeurs chacune = **16 000 auditeurs locaux**.
 Un artisan, un boulanger, un événement régional paie pour cette portée.
 
 ```
@@ -550,7 +550,7 @@ Le boulanger du village finance la radio du village qui tourne sur un Pi dans le
 De nouvelles stations vont voir le jour parce qu'elles ont enfin une communauté.
 Et parce qu'elles peuvent enfin se financer.
 
-→ **[Vision complète : docs/ideas/NEXUS-RADIO.md](../ideas/NEXUS-RADIO.md)**
+→ **[Vision complète : docs/ideas/NODYX-RADIO.md](../ideas/NODYX-RADIO.md)**
 
 ---
 

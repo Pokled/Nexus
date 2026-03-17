@@ -1,9 +1,9 @@
-# Contributing to Nexus
-### Welcome to the Nexus community
+# Contributing to Nodyx
+### Welcome to the Nodyx community
 
 ---
 
-> "Nexus belongs to its community. Not its creators."
+> "Nodyx belongs to its community. Not its creators."
 > If you're reading this file, you are potentially a builder of the free internet.
 > Welcome.
 
@@ -12,11 +12,11 @@
 ## Before you start
 
 Read these files in this order:
-1. `ARCHITECTURE.md` — How Nexus is built
+1. `ARCHITECTURE.md` — How Nodyx is built
 2. `MANIFESTO.md` — The soul of the project
 3. `ROADMAP.md` — Where we're going
 
-If you disagree with the Manifesto, Nexus may not be the right project for you.
+If you disagree with the Manifesto, Nodyx may not be the right project for you.
 And that's okay.
 
 ---
@@ -25,18 +25,18 @@ And that's okay.
 
 ### You can contribute freely in
 ```
-nexus-plugins/    — Create plugins
-nexus-themes/     — Create visual themes
-nexus-docs/       — Improve documentation
+nodyx-plugins/    — Create plugins
+nodyx-themes/     — Create visual themes
+nodyx-docs/       — Improve documentation
 i18n/             — Translate into your language
 community/        — Community content
 ```
 
 ### You cannot modify without validation
 ```
-nexus-core/src/           — Main server code
-nexus-core/ARCHITECTURE.md
-nexus-core/NEXUS_CONTEXT.md
+nodyx-core/src/           — Main server code
+nodyx-core/ARCHITECTURE.md
+nodyx-core/NODYX_CONTEXT.md
 docs/en/MANIFESTO.md
 ```
 
@@ -48,7 +48,7 @@ If you think something in the core should change, open an Issue and explain why.
 
 ### Minimal structure
 ```
-nexus-plugins/my-plugin/
+nodyx-plugins/my-plugin/
 ├── plugin.json     — Required manifest
 ├── index.ts        — Entry point
 ├── README.md       — Documentation
@@ -63,7 +63,7 @@ nexus-plugins/my-plugin/
   "description": "What my plugin does",
   "author": "Your name or username",
   "license": "MIT",
-  "nexusVersion": ">=1.0.0"
+  "nodyxVersion": ">=1.0.0"
 }
 ```
 
@@ -110,7 +110,7 @@ All commit messages and code comments must be in **English**.
 
 ---
 
-## Translating Nexus
+## Translating Nodyx
 
 Translation is the most accessible contribution. No coding required.
 
@@ -134,14 +134,14 @@ ROADMAP.md      — Development roadmap
 - Translate meaning, not word-for-word
 - Keep the original tone (direct, human, not corporate)
 - If a concept has no equivalent in your language, keep the English term
-- Proper nouns (Nexus, NexusPoints, Guard Protocol, etc.) are never translated
+- Proper nouns (Nodyx, NodyxPoints, Guard Protocol, etc.) are never translated
 
 ---
 
 ## Reporting a bug
 
 Open an Issue with:
-- The Nexus version
+- The Nodyx version
 - The server operating system
 - Steps to reproduce
 - What you saw vs. what you expected
@@ -181,7 +181,7 @@ The rule: if it can be a plugin, it must be a plugin.
 
 - GitHub Issues for bugs and features
 - GitHub Discussions for general questions
-- The Nexus forum itself for everything else
+- The Nodyx forum itself for everything else
 
 ---
 

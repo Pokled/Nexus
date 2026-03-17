@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Nexus — One-click node installer
+#  Nodyx — One-click node installer
 #  Supports : Ubuntu 22.04 / 24.04, Debian 11 / 12 / 13
 #
 #  Prérequis / Prerequisites:
@@ -9,13 +9,13 @@
 #      apt-get install -y git curl
 #
 #  Usage — Option A (clone + run) :
-#    git clone https://github.com/Pokled/Nexus.git && cd Nexus && sudo bash install.sh
+#    git clone https://github.com/Pokled/Nodyx.git && cd Nodyx && sudo bash install.sh
 #
 #  Usage — Option B (curl, sans git / without git) :
-#    curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+#    curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh | sudo bash
 #
 #  Usage — Option C (wget, si curl absent / if curl missing) :
-#    wget -qO- https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+#    wget -qO- https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh | sudo bash
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -23,9 +23,9 @@ set -euo pipefail
 # Les prompts interactifs (read) nécessitent un vrai terminal.
 # Si stdin n'est pas un TTY (ex: curl|bash), on se télécharge dans /tmp et on relance.
 if [[ ! -t 0 ]]; then
-  _SELF=$(mktemp /tmp/nexus_install_XXXXXX.sh)
-  curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh -o "$_SELF" 2>/dev/null \
-    || wget -qO "$_SELF" https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh
+  _SELF=$(mktemp /tmp/nodyx_install_XXXXXX.sh)
+  curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh -o "$_SELF" 2>/dev/null \
+    || wget -qO "$_SELF" https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh
   exec bash "$_SELF" "$@" </dev/tty
 fi
 
@@ -48,7 +48,7 @@ banner() {
   ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 EOF
   echo -e "${RESET}"
-  echo -e "  ${BOLD}Nexus Node Installer${RESET} — v1.8"
+  echo -e "  ${BOLD}Nodyx Node Installer${RESET} — v1.8"
   echo -e "  Forum + Chat + Voice • AGPL-3.0\n"
 }
 
@@ -92,7 +92,7 @@ _HC_SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 # Affiche le temps écoulé en temps réel. Dump les dernières lignes du log en cas d'erreur.
 run_bg() {
   local label="$1"; shift
-  local log; log=$(mktemp /tmp/nexus_bg_XXXXXX.log)
+  local log; log=$(mktemp /tmp/nodyx_bg_XXXXXX.log)
   local pid si=0 elapsed=0 rc=0
   "$@" >"$log" 2>&1 &
   pid=$!
@@ -195,10 +195,10 @@ prompt   COMMUNITY_COUNTRY "Pays (ex: FR, BE, CH) — optionnel" ""
 echo ""
 echo -e "  ${BOLD}Mode de connexion réseau${RESET}"
 echo -e "  ┌─ ${BOLD}[1] Domaine personnel${RESET}  — tu as un domaine (ex: moncommunaute.fr) et les ports 80/443 sont ouverts"
-echo -e "  ├─ ${BOLD}[2] Nexus Relay${RESET}         — ${GREEN}recommandé${RESET} — aucun port à ouvrir, aucun domaine requis (RPi, box, ...)"
+echo -e "  ├─ ${BOLD}[2] Nodyx Relay${RESET}         — ${GREEN}recommandé${RESET} — aucun port à ouvrir, aucun domaine requis (RPi, box, ...)"
 echo -e "  └─ ${BOLD}[3] sslip.io auto${RESET}       — domaine gratuit automatique, ports 80/443 ouverts requis"
 echo ""
-read -rp "$(echo -e "  ${CYAN}?${RESET} Choix [1/2/3] (défaut: 2 — Nexus Relay): ")" NET_MODE
+read -rp "$(echo -e "  ${CYAN}?${RESET} Choix [1/2/3] (défaut: 2 — Nodyx Relay): ")" NET_MODE
 NET_MODE="${NET_MODE:-2}"
 
 RELAY_MODE=false
@@ -211,7 +211,7 @@ case "$NET_MODE" in
   2)
     RELAY_MODE=true
     DOMAIN="${COMMUNITY_SLUG}.nexusnode.app"
-    ok "Mode Nexus Relay — URL : ${BOLD}https://${DOMAIN}${RESET}"
+    ok "Mode Nodyx Relay — URL : ${BOLD}https://${DOMAIN}${RESET}"
     info "Aucun port à ouvrir. Le tunnel sera établi vers relay.nexusnode.app."
     ;;
   3|*)
@@ -242,13 +242,13 @@ read -rp "$(echo -e "  ${BOLD}Continuer ? [O/n] ${RESET}")" confirm
 # ═══════════════════════════════════════════════════════════════════════════════
 #  GENERATED SECRETS
 # ═══════════════════════════════════════════════════════════════════════════════
-DB_NAME="nexus"
-DB_USER="nexus_user"
+DB_NAME="nodyx"
+DB_USER="nodyx_user"
 DB_PASSWORD=$(gen_pass)
 JWT_SECRET=$(gen_secret)
 TURN_SECRET=$(gen_secret)
-NEXUS_DIR="/opt/nexus"
-REPO_URL="https://github.com/Pokled/Nexus.git"
+NODYX_DIR="/opt/nodyx"
+REPO_URL="https://github.com/Pokled/Nodyx.git"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  SYSTEM PACKAGES
@@ -404,7 +404,7 @@ $_REDIS_OK || die "Redis n'a pas démarré.\nVérifie : sudo journalctl -xeu red
 ok "Redis démarré"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS-TURN (STUN/TURN Rust natif — remplace coturn) — ignoré en mode Relay
+#  NODYX-TURN (STUN/TURN Rust natif — remplace coturn) — ignoré en mode Relay
 # ═══════════════════════════════════════════════════════════════════════════════
 if ! $RELAY_MODE; then
   step "Installation de nexus-turn (relay vocal WebRTC)"
@@ -417,12 +417,12 @@ if ! $RELAY_MODE; then
   esac
 
   _TURN_VERSION="v0.1.2-p2p"
-  _TURN_URL="https://github.com/Pokled/Nexus/releases/download/${_TURN_VERSION}/nexus-turn-linux-${_TURN_ARCH}"
+  _TURN_URL="https://github.com/Pokled/Nodyx/releases/download/${_TURN_VERSION}/nexus-turn-linux-${_TURN_ARCH}"
   info "Téléchargement nexus-turn ${_TURN_VERSION} (${_TURN_ARCH})..."
   curl -sL "$_TURN_URL" -o /usr/local/bin/nexus-turn
   chmod +x /usr/local/bin/nexus-turn
 
-  # Fichier de configuration (secret partagé avec nexus-core)
+  # Fichier de configuration (secret partagé avec nodyx-core)
   cat > /etc/nexus-turn.env <<TURNENV
 TURN_PUBLIC_IP=${PUBLIC_IP}
 TURN_REALM=${DOMAIN}
@@ -435,7 +435,7 @@ TURNENV
   # Service systemd
   cat > /etc/systemd/system/nexus-turn.service <<SVC
 [Unit]
-Description=Nexus TURN Server (WebRTC relay)
+Description=Nodyx TURN Server (WebRTC relay)
 After=network.target
 
 [Service]
@@ -482,20 +482,20 @@ ufw --force enable >/dev/null 2>&1
 ok "Pare-feu configuré${RELAY_MODE:+ (mode Relay — seul SSH ouvert, connexions sortantes libres)}"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS RELAY CLIENT — binaire (mode Relay uniquement)
+#  NODYX RELAY CLIENT — binaire (mode Relay uniquement)
 # ═══════════════════════════════════════════════════════════════════════════════
 if $RELAY_MODE; then
-  step "Téléchargement du binaire Nexus Relay Client"
+  step "Téléchargement du binaire Nodyx Relay Client"
 
   _ARCH=$(uname -m)
   case "$_ARCH" in
     x86_64)  _RELAY_ARCH="amd64" ;;
     aarch64) _RELAY_ARCH="arm64" ;;
-    *) die "Architecture non supportée pour Nexus Relay : $_ARCH (supporté: x86_64, aarch64)" ;;
+    *) die "Architecture non supportée pour Nodyx Relay : $_ARCH (supporté: x86_64, aarch64)" ;;
   esac
 
   _RELAY_VERSION="v0.1.2-p2p"
-  _RELAY_URL="https://github.com/Pokled/Nexus/releases/download/${_RELAY_VERSION}/nexus-relay-linux-${_RELAY_ARCH}"
+  _RELAY_URL="https://github.com/Pokled/Nodyx/releases/download/${_RELAY_VERSION}/nexus-relay-linux-${_RELAY_ARCH}"
 
   info "Téléchargement nexus-relay ${_RELAY_VERSION} (${_RELAY_ARCH})..."
   curl -sL "$_RELAY_URL" -o /usr/local/bin/nexus-relay
@@ -504,34 +504,34 @@ if $RELAY_MODE; then
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS — CLONE / UPDATE
+#  NODYX — CLONE / UPDATE
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Téléchargement de Nexus"
+step "Téléchargement de Nodyx"
 
-if [[ -d "$NEXUS_DIR/.git" ]]; then
+if [[ -d "$NODYX_DIR/.git" ]]; then
   info "Mise à jour du dépôt existant..."
-  git -C "$NEXUS_DIR" pull --ff-only
+  git -C "$NODYX_DIR" pull --ff-only
 else
-  info "Clonage du dépôt dans $NEXUS_DIR..."
-  GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$REPO_URL" "$NEXUS_DIR"
+  info "Clonage du dépôt dans $NODYX_DIR..."
+  GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$REPO_URL" "$NODYX_DIR"
 fi
-ok "Code Nexus présent dans $NEXUS_DIR"
+ok "Code Nodyx présent dans $NODYX_DIR"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS-CORE — .env + build
+#  NODYX-CORE — .env + build
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Configuration du backend (nexus-core)"
+step "Configuration du backend (nodyx-core)"
 
-cat > "${NEXUS_DIR}/nexus-core/.env" <<COREENV
+cat > "${NODYX_DIR}/nodyx-core/.env" <<COREENV
 # Généré par install.sh — ne pas modifier manuellement
 
 # Identité de la communauté
-NEXUS_COMMUNITY_NAME=${COMMUNITY_NAME}
-NEXUS_COMMUNITY_SLUG=${COMMUNITY_SLUG}
-NEXUS_COMMUNITY_DESCRIPTION=${COMMUNITY_DESC}
-NEXUS_COMMUNITY_LANGUAGE=${COMMUNITY_LANG}
-NEXUS_COMMUNITY_COUNTRY=${COMMUNITY_COUNTRY}
-NEXUS_VERSION=1.8.0
+NODYX_COMMUNITY_NAME=${COMMUNITY_NAME}
+NODYX_COMMUNITY_SLUG=${COMMUNITY_SLUG}
+NODYX_COMMUNITY_DESCRIPTION=${COMMUNITY_DESC}
+NODYX_COMMUNITY_LANGUAGE=${COMMUNITY_LANG}
+NODYX_COMMUNITY_COUNTRY=${COMMUNITY_COUNTRY}
+NODYX_VERSION=1.8.0
 
 # Serveur
 PORT=3000
@@ -563,37 +563,37 @@ COREENV
 # En mode Relay, ajouter des STUN publics en fallback (pas de nexus-turn)
 if $RELAY_MODE; then
   printf "\n# Fallback STUN (relay mode — nexus-turn non installé)\nSTUN_FALLBACK_URLS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302\n" \
-    >> "${NEXUS_DIR}/nexus-core/.env"
+    >> "${NODYX_DIR}/nodyx-core/.env"
 fi
 
-cd "${NEXUS_DIR}/nexus-core"
+cd "${NODYX_DIR}/nodyx-core"
 run_bg "npm install (backend)..." npm install --no-fund --no-audit \
   || die "npm install backend échoué. Vérifie ta connexion Internet."
 run_bg "Compilation TypeScript (backend)..." npm run build \
   || die "Build backend échoué. Vérifie les logs ci-dessus."
-[[ -f "${NEXUS_DIR}/nexus-core/dist/index.js" ]] \
+[[ -f "${NODYX_DIR}/nodyx-core/dist/index.js" ]] \
   || die "dist/index.js absent — le build TypeScript n'a pas produit de sortie."
 ok "Backend compilé"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS-FRONTEND — .env + build
+#  NODYX-FRONTEND — .env + build
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Configuration du frontend (nexus-frontend)"
+step "Configuration du frontend (nodyx-frontend)"
 
-cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
+cat > "${NODYX_DIR}/nodyx-frontend/.env" <<FEENV
 # Généré par install.sh — ne pas modifier manuellement
 
 PUBLIC_API_URL=https://${DOMAIN}
-# Nexus Signet (authentificateur optionnel) — laisser vide si non utilisé
+# Nodyx Signet (authentificateur optionnel) — laisser vide si non utilisé
 PUBLIC_SIGNET_URL=
-# Les credentials TURN sont désormais générés dynamiquement par nexus-core (nexus-turn).
+# Les credentials TURN sont désormais générés dynamiquement par nodyx-core (nexus-turn).
 # Ces variables sont conservées pour compatibilité avec d'éventuelles instances existantes.
 PUBLIC_TURN_URL=
 PUBLIC_TURN_USERNAME=
 PUBLIC_TURN_CREDENTIAL=
 FEENV
 
-cd "${NEXUS_DIR}/nexus-frontend"
+cd "${NODYX_DIR}/nodyx-frontend"
 run_bg "npm install (frontend)..." npm install --no-fund --no-audit \
   || die "npm install frontend échoué. Vérifie ta connexion Internet."
 
@@ -611,7 +611,7 @@ run_bg "Build SvelteKit (peut durer 2-5 min sur ARM)..." \
   npm run build \
   || die "Build frontend échoué. Vérifie les logs ci-dessus."
 unset NODE_OPTIONS
-[[ -f "${NEXUS_DIR}/nexus-frontend/build/index.js" ]] \
+[[ -f "${NODYX_DIR}/nodyx-frontend/build/index.js" ]] \
   || die "build/index.js absent — le build SvelteKit n'a pas produit de sortie."
 ok "Frontend compilé"
 
@@ -659,20 +659,20 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration de PM2"
 
-cat > "${NEXUS_DIR}/ecosystem.config.js" <<PM2
+cat > "${NODYX_DIR}/ecosystem.config.js" <<PM2
 module.exports = {
   apps: [
     {
-      name: 'nexus-core',
+      name: 'nodyx-core',
       script: 'dist/index.js',
-      cwd: '${NEXUS_DIR}/nexus-core',
+      cwd: '${NODYX_DIR}/nodyx-core',
       watch: false,
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'nexus-frontend',
+      name: 'nodyx-frontend',
       script: 'build/index.js',
-      cwd: '${NEXUS_DIR}/nexus-frontend',
+      cwd: '${NODYX_DIR}/nodyx-frontend',
       watch: false,
       env: { NODE_ENV: 'production', PORT: '4173', HOST: '127.0.0.1', ORIGIN: 'https://${DOMAIN}', PRIVATE_API_SSR_URL: 'http://127.0.0.1:3000/api/v1' },
     },
@@ -680,9 +680,9 @@ module.exports = {
 }
 PM2
 
-cd "$NEXUS_DIR"
-pm2 delete nexus-core    2>/dev/null || true
-pm2 delete nexus-frontend 2>/dev/null || true
+cd "$NODYX_DIR"
+pm2 delete nodyx-core    2>/dev/null || true
+pm2 delete nodyx-frontend 2>/dev/null || true
 pm2 startOrRestart ecosystem.config.js --update-env
 pm2 save
 pm2 startup systemd -u root --hp /root >/dev/null 2>&1 | tail -1 | bash 2>/dev/null || true
@@ -690,7 +690,7 @@ ok "PM2 configuré et lancé"
 
 info "Vérification du démarrage des processus (5s)..."
 sleep 5
-for _app in nexus-core nexus-frontend; do
+for _app in nodyx-core nodyx-frontend; do
   _st=$(pm2 list 2>/dev/null | grep " ${_app} " | grep -oE 'online|stopped|errored|launching' | head -1 || echo "absent")
   if [[ "$_st" == "online" ]]; then
     ok "  $_app — online"
@@ -723,10 +723,10 @@ printf "\r\033[2K"
 
 if ! $_BACKEND_READY; then
   warn "Backend non opérationnel après 180s."
-  warn "Logs PM2 (nexus-core) :"
-  pm2 logs nexus-core --lines 35 --nostream 2>/dev/null || true
-  warn "Pour relancer : cd ${NEXUS_DIR} && pm2 restart nexus-core"
-  warn "Pour déboguer : pm2 logs nexus-core"
+  warn "Logs PM2 (nodyx-core) :"
+  pm2 logs nodyx-core --lines 35 --nostream 2>/dev/null || true
+  warn "Pour relancer : cd ${NODYX_DIR} && pm2 restart nodyx-core"
+  warn "Pour déboguer : pm2 logs nodyx-core"
   warn "Tentative de création du compte admin quand même..."
 fi
 
@@ -736,7 +736,7 @@ for _reg_try in 1 2 3; do
   _REG_JSON=$(python3 -c "import json,sys; print(json.dumps({'username':sys.argv[1],'email':sys.argv[2],'password':sys.argv[3]}))" \
     "$ADMIN_USERNAME" "$ADMIN_EMAIL" "$ADMIN_PASSWORD" 2>/dev/null \
     || printf '{"username":"%s","email":"%s","password":"%s"}' "$ADMIN_USERNAME" "$ADMIN_EMAIL" "$ADMIN_PASSWORD")
-  HTTP_CODE=$(curl -s -o /tmp/nexus_register.json -w "%{http_code}" \
+  HTTP_CODE=$(curl -s -o /tmp/nodyx_register.json -w "%{http_code}" \
     -X POST http://localhost:3000/api/v1/auth/register \
     -H "Content-Type: application/json" \
     -d "$_REG_JSON" 2>/dev/null || echo "000")
@@ -747,7 +747,7 @@ for _reg_try in 1 2 3; do
     ok "Compte '${ADMIN_USERNAME}' déjà existant (réinstallation ?)"
     _REGISTER_OK=true; break
   else
-    warn "Tentative ${_reg_try}/3 — HTTP ${HTTP_CODE} : $(cat /tmp/nexus_register.json 2>/dev/null | head -c 200)"
+    warn "Tentative ${_reg_try}/3 — HTTP ${HTTP_CODE} : $(cat /tmp/nodyx_register.json 2>/dev/null | head -c 200)"
     [[ $_reg_try -lt 3 ]] && { info "Retry dans 8s..."; sleep 8; }
   fi
 done
@@ -797,9 +797,9 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Sous-domaine gratuit nexusnode.app"
 
-NEXUS_SUBDOMAIN=""
-NEXUS_DIRECTORY_TOKEN=""
-NEXUS_DIRECTORY_URL="https://nexusnode.app/api/directory"
+NODYX_SUBDOMAIN=""
+NODYX_DIRECTORY_TOKEN=""
+NODYX_DIRECTORY_URL="https://nexusnode.app/api/directory"
 
 echo ""
 # En mode Relay ou auto-domaine, le sous-domaine nexusnode.app est obligatoire/automatique.
@@ -820,37 +820,37 @@ fi
 if [[ "${want_subdomain,,}" != "n" ]]; then
   info "Enregistrement auprès du directory nexusnode.app..."
 
-  REGISTER_RESPONSE=$(curl -s -X POST "${NEXUS_DIRECTORY_URL}/register" \
+  REGISTER_RESPONSE=$(curl -s -X POST "${NODYX_DIRECTORY_URL}/register" \
     -H "Content-Type: application/json" \
     -d "{
       \"name\":        \"${COMMUNITY_NAME}\",
       \"slug\":        \"${COMMUNITY_SLUG}\",
       \"url\":         \"https://${DOMAIN}\",
       \"language\":    \"${COMMUNITY_LANG}\",
-      \"version\":     \"${NEXUS_VERSION:-1.8.0}\"
+      \"version\":     \"${NODYX_VERSION:-1.8.0}\"
     }" 2>/dev/null || true)
 
   REGISTER_TOKEN=$(echo "$REGISTER_RESPONSE" | grep -o '"token":"[^"]*"' | cut -d'"' -f4 || true)
   REGISTER_SLUG=$(echo "$REGISTER_RESPONSE" | grep -o '"subdomain":"[^"]*"' | cut -d'"' -f4 || true)
 
   if [[ -n "$REGISTER_TOKEN" ]]; then
-    NEXUS_DIRECTORY_TOKEN="$REGISTER_TOKEN"
-    NEXUS_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nexusnode.app}"
-    ok "Enregistré ! Sous-domaine : ${BOLD}https://${NEXUS_SUBDOMAIN}${RESET}"
+    NODYX_DIRECTORY_TOKEN="$REGISTER_TOKEN"
+    NODYX_SUBDOMAIN="${REGISTER_SLUG:-${COMMUNITY_SLUG}.nexusnode.app}"
+    ok "Enregistré ! Sous-domaine : ${BOLD}https://${NODYX_SUBDOMAIN}${RESET}"
     if ! $RELAY_MODE; then
       info "Le DNS sera actif dans ~30 secondes."
       info "Sauvegarde le token directory — nécessaire pour les heartbeats et la désinscription."
     fi
-    # Injecter le token dans .env + redémarrer nexus-core pour activer les heartbeats
+    # Injecter le token dans .env + redémarrer nodyx-core pour activer les heartbeats
     {
       printf "\n# Annuaire nexusnode.app\n"
-      printf "DIRECTORY_TOKEN=%s\n" "${NEXUS_DIRECTORY_TOKEN}"
+      printf "DIRECTORY_TOKEN=%s\n" "${NODYX_DIRECTORY_TOKEN}"
       printf "DIRECTORY_API_URL=https://nexusnode.app\n"
       printf "SELF_URL=http://127.0.0.1:3000\n"
       printf "VPS_IP=%s\n" "${PUBLIC_IP:-}"
-      printf "NEXUS_GLOBAL_INDEXING=true\n"
-    } >> "${NEXUS_DIR}/nexus-core/.env"
-    cd "${NEXUS_DIR}" && pm2 restart nexus-core 2>/dev/null || true
+      printf "NODYX_GLOBAL_INDEXING=true\n"
+    } >> "${NODYX_DIR}/nodyx-core/.env"
+    cd "${NODYX_DIR}" && pm2 restart nodyx-core 2>/dev/null || true
   else
     # Check for slug conflict (409) — common on reinstall
     if echo "$REGISTER_RESPONSE" | grep -q 'Slug already taken'; then
@@ -872,19 +872,19 @@ else
 fi
 
 # ── Relay client systemd service (mode Relay uniquement) ──────────────────────
-if $RELAY_MODE && [[ -n "$NEXUS_DIRECTORY_TOKEN" ]]; then
-  step "Configuration du service Nexus Relay Client"
+if $RELAY_MODE && [[ -n "$NODYX_DIRECTORY_TOKEN" ]]; then
+  step "Configuration du service Nodyx Relay Client"
 
   cat > /etc/systemd/system/nexus-relay-client.service <<SVC
 [Unit]
-Description=Nexus Relay Client — tunnel vers relay.nexusnode.app
+Description=Nodyx Relay Client — tunnel vers relay.nexusnode.app
 After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/nexus-relay client \
   --server relay.nexusnode.app:7443 \
   --slug ${COMMUNITY_SLUG} \
-  --token ${NEXUS_DIRECTORY_TOKEN} \
+  --token ${NODYX_DIRECTORY_TOKEN} \
   --local-port 80
 Restart=on-failure
 RestartSec=5s
@@ -899,14 +899,14 @@ SVC
   systemctl daemon-reload
   systemctl enable nexus-relay-client --quiet
   systemctl start nexus-relay-client
-  ok "Nexus Relay Client démarré — tunnel vers relay.nexusnode.app:7443 actif"
+  ok "Nodyx Relay Client démarré — tunnel vers relay.nexusnode.app:7443 actif"
   info "Ton instance sera accessible sur https://${DOMAIN} dans quelques secondes."
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  SAVE CREDENTIALS
 # ═══════════════════════════════════════════════════════════════════════════════
-CREDS_FILE="/root/nexus-credentials.txt"
+CREDS_FILE="/root/nodyx-credentials.txt"
 
 # Prépare les blocs conditionnels pour le fichier credentials
 _CREDS_TURN=""
@@ -916,13 +916,13 @@ TURN secret      : ${TURN_SECRET}"
 fi
 _CREDS_RELAY=""
 if $RELAY_MODE; then
-  _CREDS_RELAY="Mode réseau      : Nexus Relay (tunnel TCP sortant)
+  _CREDS_RELAY="Mode réseau      : Nodyx Relay (tunnel TCP sortant)
 Relay service    : sudo systemctl status nexus-relay-client"
 fi
 
 cat > "$CREDS_FILE" <<CREDS
 ═══════════════════════════════════════════════
-  NEXUS — Credentials de l'instance
+  NODYX — Credentials de l'instance
   Générés le $(date)
 ═══════════════════════════════════════════════
 
@@ -939,19 +939,19 @@ JWT secret       : ${JWT_SECRET}
 
 ${_CREDS_TURN}
 ${_CREDS_RELAY}
-Nexus dir        : ${NEXUS_DIR}
-$([ -n "$NEXUS_SUBDOMAIN" ] && echo "Sous-domaine     : https://${NEXUS_SUBDOMAIN}")
-$([ -n "$NEXUS_DIRECTORY_TOKEN" ] && echo "Directory token  : ${NEXUS_DIRECTORY_TOKEN}")
+Nodyx dir        : ${NODYX_DIR}
+$([ -n "$NODYX_SUBDOMAIN" ] && echo "Sous-domaine     : https://${NODYX_SUBDOMAIN}")
+$([ -n "$NODYX_DIRECTORY_TOKEN" ] && echo "Directory token  : ${NODYX_DIRECTORY_TOKEN}")
 
 GARDE CE FICHIER EN LIEU SÛR — ne le partage jamais.
 CREDS
 chmod 600 "$CREDS_FILE"
 
 # ── Génération du script de mise à jour ───────────────────────────────────────
-UPDATE_SCRIPT="/usr/local/bin/nexus-update"
+UPDATE_SCRIPT="/usr/local/bin/nodyx-update"
 cat > "$UPDATE_SCRIPT" <<'UPDATESCRIPT'
 #!/usr/bin/env bash
-# nexus-update — Met à jour Nexus vers la dernière version
+# nodyx-update — Met à jour Nodyx vers la dernière version
 set -euo pipefail
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
 ok()   { echo -e "${GREEN}✔${RESET}  $*"; }
@@ -960,43 +960,43 @@ warn() { echo -e "${YELLOW}⚠${RESET}  $*"; }
 die()  { echo -e "${RED}✘  $*${RESET}" >&2; exit 1; }
 UPDATESCRIPT
 
-# Injecter NEXUS_DIR (résolu au moment de l'install)
+# Injecter NODYX_DIR (résolu au moment de l'install)
 cat >> "$UPDATE_SCRIPT" <<UPDATESCRIPT2
-NEXUS_DIR="${NEXUS_DIR}"
+NODYX_DIR="${NODYX_DIR}"
 UPDATESCRIPT2
 
 cat >> "$UPDATE_SCRIPT" <<'UPDATESCRIPT3'
 
-[[ $EUID -ne 0 ]] && die "Lance en root : sudo nexus-update"
-echo -e "\n${BOLD}━━━  Mise à jour Nexus  ━━━${RESET}\n"
+[[ $EUID -ne 0 ]] && die "Lance en root : sudo nodyx-update"
+echo -e "\n${BOLD}━━━  Mise à jour Nodyx  ━━━${RESET}\n"
 
 info "Récupération des dernières modifications..."
-git -C "$NEXUS_DIR" pull --ff-only || die "git pull échoué. Vérifie ta connexion ou résous les conflits."
+git -C "$NODYX_DIR" pull --ff-only || die "git pull échoué. Vérifie ta connexion ou résous les conflits."
 
 info "Rebuild backend..."
-cd "${NEXUS_DIR}/nexus-core"
+cd "${NODYX_DIR}/nodyx-core"
 npm install --no-fund --no-audit --silent
 npm run build || die "Build backend échoué."
 ok "Backend compilé"
 
 info "Rebuild frontend..."
-cd "${NEXUS_DIR}/nexus-frontend"
+cd "${NODYX_DIR}/nodyx-frontend"
 npm install --no-fund --no-audit --silent
 npm run build || die "Build frontend échoué."
 ok "Frontend compilé"
 
 info "Redémarrage des services..."
-cd "$NEXUS_DIR"
+cd "$NODYX_DIR"
 pm2 restart ecosystem.config.js --update-env
 pm2 save
 
 echo ""
-ok "Nexus mis à jour et redémarré."
+ok "Nodyx mis à jour et redémarré."
 pm2 list
 UPDATESCRIPT3
 
 chmod +x "$UPDATE_SCRIPT"
-ok "Script de mise à jour : ${BOLD}nexus-update${RESET} (sudo nexus-update)"
+ok "Script de mise à jour : ${BOLD}nodyx-update${RESET} (sudo nodyx-update)"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  HEALTH CHECK
@@ -1041,9 +1041,9 @@ for _svc in $_HC_SVCS; do
   fi
 done
 
-# ── Nexus (PM2) ───────────────────────────────────────────────────────────────
-_hc_sect "Nexus (PM2)"
-for _app in nexus-core nexus-frontend; do
+# ── Nodyx (PM2) ───────────────────────────────────────────────────────────────
+_hc_sect "Nodyx (PM2)"
+for _app in nodyx-core nodyx-frontend; do
   _pm2=$(pm2 list 2>/dev/null | grep " $_app " | grep -oE 'online|stopped|errored|launching' | head -1 || echo "absent")
   if [[ "$_pm2" == "online" ]]; then
     _hc_pass "$_app"
@@ -1086,18 +1086,18 @@ else
   fi
 fi
 
-# ── Annuaire Nexus ────────────────────────────────────────────────────────────
-if [[ -n "${NEXUS_SUBDOMAIN:-}" ]]; then
-  _hc_sect "Annuaire Nexus"
+# ── Annuaire Nodyx ────────────────────────────────────────────────────────────
+if [[ -n "${NODYX_SUBDOMAIN:-}" ]]; then
+  _hc_sect "Annuaire Nodyx"
 
-  _sub_ip=$(getent hosts "$NEXUS_SUBDOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
+  _sub_ip=$(getent hosts "$NODYX_SUBDOMAIN" 2>/dev/null | awk '{print $1}' | head -1 || true)
   if [[ -n "$_sub_ip" ]]; then
-    _hc_pass "DNS ${NEXUS_SUBDOMAIN}  →  ${_sub_ip}"
+    _hc_pass "DNS ${NODYX_SUBDOMAIN}  →  ${_sub_ip}"
   else
-    _hc_warn "DNS ${NEXUS_SUBDOMAIN}  →  propagation en cours  ${YELLOW}(~30s, c'est normal)${RESET}"
+    _hc_warn "DNS ${NODYX_SUBDOMAIN}  →  propagation en cours  ${YELLOW}(~30s, c'est normal)${RESET}"
   fi
 
-  _dir_status=$(curl -s --max-time 5 "${NEXUS_DIRECTORY_URL}/instances/${COMMUNITY_SLUG}" 2>/dev/null \
+  _dir_status=$(curl -s --max-time 5 "${NODYX_DIRECTORY_URL}/instances/${COMMUNITY_SLUG}" 2>/dev/null \
     | grep -o '"status":"[^"]*"' | cut -d'"' -f4 || true)
   if [[ "$_dir_status" == "active" ]]; then
     _hc_pass "Annuaire  →  instance ${GREEN}active${RESET}"
@@ -1127,12 +1127,12 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════╗${RESET}"
-echo -e "${GREEN}${BOLD}║           ✔  Nexus installé avec succès !        ║${RESET}"
+echo -e "${GREEN}${BOLD}║           ✔  Nodyx installé avec succès !        ║${RESET}"
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  ${BOLD}Instance  :${RESET} https://${DOMAIN}"
-if ! $RELAY_MODE && [[ -n "$NEXUS_SUBDOMAIN" ]]; then
-  echo -e "  ${BOLD}Alias     :${RESET} https://${NEXUS_SUBDOMAIN} ${CYAN}(nexusnode.app)${RESET}"
+if ! $RELAY_MODE && [[ -n "$NODYX_SUBDOMAIN" ]]; then
+  echo -e "  ${BOLD}Alias     :${RESET} https://${NODYX_SUBDOMAIN} ${CYAN}(nexusnode.app)${RESET}"
 fi
 echo -e "  ${BOLD}Admin     :${RESET} ${ADMIN_USERNAME} / ${ADMIN_EMAIL}"
 if ! $RELAY_MODE; then
@@ -1145,9 +1145,9 @@ echo ""
 echo -e "  ${CYAN}Credentials sauvegardés dans :${RESET} ${BOLD}${CREDS_FILE}${RESET}"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Gestion des services${RESET}"
-echo -e "  pm2 list                           → état de nexus-core + nexus-frontend"
-echo -e "  pm2 logs nexus-core                → logs backend en temps réel"
-echo -e "  pm2 logs nexus-frontend            → logs frontend en temps réel"
+echo -e "  pm2 list                           → état de nodyx-core + nodyx-frontend"
+echo -e "  pm2 logs nodyx-core                → logs backend en temps réel"
+echo -e "  pm2 logs nodyx-frontend            → logs frontend en temps réel"
 echo -e "  pm2 restart all                    → redémarrer tout"
 echo -e "  pm2 stop all / pm2 start all       → arrêt / démarrage"
 if $RELAY_MODE; then
@@ -1159,11 +1159,11 @@ if $RELAY_MODE; then
 fi
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Mise à jour${RESET}"
-echo -e "  sudo nexus-update                  → git pull + rebuild + restart en une commande"
+echo -e "  sudo nodyx-update                  → git pull + rebuild + restart en une commande"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Base de données${RESET}"
 echo -e "  sudo -u postgres psql ${DB_NAME}   → console PostgreSQL"
-echo -e "  sudo -u postgres pg_dump ${DB_NAME} > backup_nexus_\$(date +%F).sql"
+echo -e "  sudo -u postgres pg_dump ${DB_NAME} > backup_nodyx_\$(date +%F).sql"
 echo -e "                                     → sauvegarde de la base"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Diagnostic${RESET}"

@@ -1,6 +1,6 @@
 # Table Templates — Thèmes de la Table collaborative
 
-Un **table template** définit l'identité visuelle d'un salon vocal dans Nexus :
+Un **table template** définit l'identité visuelle d'un salon vocal dans Nodyx :
 surface de la table, couleurs, texture, widgets activés par défaut.
 
 L'hôte du salon choisit le template. Il est synchronisé via DataChannel
@@ -95,7 +95,7 @@ Inspirez-vous de ces trois templates pour créer le vôtre.
 
 ## Soumettre un template
 
-1. Fork le repo Nexus
+1. Fork le repo Nodyx
 2. Crée ton dossier `plugins/table-templates/mon-template/`
 3. Ajoute `template.json` + `preview.svg` (+ `grain.svg` si texture custom)
 4. Ouvre une Pull Request — la review est rapide pour les templates

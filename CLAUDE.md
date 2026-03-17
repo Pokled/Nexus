@@ -11,12 +11,12 @@ Nexus is a self-hosted, open-source, decentralized community platform — Forum 
 Two independent apps, one reverse proxy:
 
 ```
-nexus-core/    → Fastify v5 + TypeScript API (port 3000)
-nexus-frontend/ → SvelteKit 5 + Tailwind v4 (port 5173)
+nodyx-core/    → Fastify v5 + TypeScript API (port 3000)
+nodyx-frontend/ → SvelteKit 5 + Tailwind v4 (port 5173)
 Caddy          → /api/* + /socket.io/* → 3000 | * → 5173
 ```
 
-### nexus-core
+### nodyx-core
 
 - Entry point: `src/index.ts` — registers all routes, attaches Socket.IO **after** `server.listen()` (Fastify v5 incompatibility with fastify-socket.io)
 - Routes: `src/routes/` — one file per domain (`auth`, `admin`, `communities`, `forums`, `chat`, `users`, `search`, `notifications`, `instance`), all prefixed `/api/v1/`
@@ -25,7 +25,7 @@ Caddy          → /api/* + /socket.io/* → 3000 | * → 5173
 - Database: `src/config/database.ts` exports `db` (pg Pool) and `redis` (ioredis). Migrations run automatically at startup from `src/migrations/` (001–013)
 - Auth: JWT Bearer token + Redis session (`session:<token>`, 7-day TTL). Online presence tracked via `heartbeat:<userId>` (15-min TTL)
 
-### nexus-frontend
+### nodyx-frontend
 
 - `src/lib/api.ts` — `apiFetch` wrapper; uses `PUBLIC_API_URL` in browser, `http://127.0.0.1:3000/api/v1` server-side (SSR bypass)
 - `src/lib/socket.ts` — Socket.IO client (dynamic import, SSR-safe), stores: `socket`, `tokenStore`, `onlineMembersStore`, `unreadCountStore`
@@ -35,9 +35,9 @@ Caddy          → /api/* + /socket.io/* → 3000 | * → 5173
 
 ## Commands
 
-### nexus-core (dev)
+### nodyx-core (dev)
 ```bash
-cd nexus-core
+cd nodyx-core
 npm run dev          # ts-node src/index.ts
 npm run build        # tsc → dist/
 npm run test         # vitest run
@@ -46,9 +46,9 @@ npm run seed         # seed DB with test data
 npm run seed:reset   # drop + reseed
 ```
 
-### nexus-frontend (dev)
+### nodyx-frontend (dev)
 ```bash
-cd nexus-frontend
+cd nodyx-frontend
 npm run dev          # vite dev
 npm run build        # vite build → build/
 npm run check        # svelte-check (type checking)
@@ -57,20 +57,20 @@ npm run check        # svelte-check (type checking)
 ### Production (VPS)
 ```bash
 # Rebuild and restart backend
-cd /var/www/nexus/nexus-core && npm run build && pm2 restart nexus-core
+cd /var/www/nexus/nodyx-core && npm run build && pm2 restart nodyx-core
 
 # Rebuild and restart frontend
-cd /var/www/nexus/nexus-frontend && npm run build && pm2 restart nexus-frontend
+cd /var/www/nexus/nodyx-frontend && npm run build && pm2 restart nodyx-frontend
 
 # Status
 pm2 list
-pm2 logs nexus-core --lines 50
-pm2 logs nexus-frontend --lines 50
+pm2 logs nodyx-core --lines 50
+pm2 logs nodyx-frontend --lines 50
 ```
 
 ## Key Rules
 
-- **nexus-core = SANCTUAIRE** — any modification requires explicit validation from the project owner
+- **nodyx-core = SANCTUAIRE** — any modification requires explicit validation from the project owner
 - No proprietary/centralized services, no Electron, no React
 - New DB changes go through a new migration file in `src/migrations/` (increment number, e.g. `014_...sql`)
 - Socket.IO must be attached after `server.listen()`, not before (Fastify v5 constraint)
@@ -78,11 +78,11 @@ pm2 logs nexus-frontend --lines 50
 
 ## Environment Variables
 
-`.env` files are never committed. Reference `.env.example` in `nexus-core/`.
+`.env` files are never committed. Reference `.env.example` in `nodyx-core/`.
 
-Key vars for nexus-core: `JWT_SECRET`, `DB_HOST/PORT/NAME/USER/PASSWORD`, `REDIS_HOST/PORT`, `FRONTEND_URL`, `NODE_ENV`, `NEXUS_COMMUNITY_NAME/SLUG/LANGUAGE`
+Key vars for nodyx-core: `JWT_SECRET`, `DB_HOST/PORT/NAME/USER/PASSWORD`, `REDIS_HOST/PORT`, `FRONTEND_URL`, `NODE_ENV`, `NEXUS_COMMUNITY_NAME/SLUG/LANGUAGE`
 
-Key vars for nexus-frontend: `PUBLIC_API_URL` (browser-facing API URL)
+Key vars for nodyx-frontend: `PUBLIC_API_URL` (browser-facing API URL)
 
 ## Infrastructure (Production)
 

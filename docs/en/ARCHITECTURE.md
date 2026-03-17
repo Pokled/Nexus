@@ -1,9 +1,9 @@
-# NEXUS — Architecture
+# NODYX — Architecture
 ### Version 1.0 — Technical reference document
 
 ---
 
-> This document is the technical law of Nexus.
+> This document is the technical law of Nodyx.
 > No architectural decision may be changed without project lead validation.
 > Read this document before any implementation.
 
@@ -17,7 +17,7 @@ SvelteKit PWA / Tauri / Capacitor
         |
         | HTTP / WebSocket
         |
-NEXUS CORE API
+NODYX CORE API
 Fastify + TypeScript
 /api/v1/...   +   Socket.io (real-time)
         |               |               |
@@ -150,22 +150,22 @@ users ----------< threads
 ## 4. REDIS — USAGE
 
 ```
-User sessions           nexus:session:{token}       TTL 7 days
-Profile cache           nexus:user:{id}              TTL 1 hour
-Thread cache            nexus:thread:{id}            TTL 5 minutes
-Chat Pub/Sub            nexus:chat:{community_id}    Real-time
-Notification Pub/Sub    nexus:notif:{user_id}        Real-time
-Rate limiting           nexus:rate:{ip}              TTL 1 minute
+User sessions           nodyx:session:{token}       TTL 7 days
+Profile cache           nodyx:user:{id}              TTL 1 hour
+Thread cache            nodyx:thread:{id}            TTL 5 minutes
+Chat Pub/Sub            nodyx:chat:{community_id}    Real-time
+Notification Pub/Sub    nodyx:notif:{user_id}        Real-time
+Rate limiting           nodyx:rate:{ip}              TTL 1 minute
 ```
 
 ---
 
 ## 5. PLUGIN ARCHITECTURE
 
-Plugins extend Nexus without modifying the core.
+Plugins extend Nodyx without modifying the core.
 
 ```
-nexus-plugins/
+nodyx-plugins/
 └── my-plugin/
     ├── plugin.json      — Plugin manifest
     ├── index.ts         — Entry point
@@ -180,7 +180,7 @@ nexus-plugins/
   "name": "my-plugin",
   "version": "1.0.0",
   "author": "Contributor",
-  "nexusVersion": ">=1.0.0",
+  "nodyxVersion": ">=1.0.0",
   "hooks": ["onPostCreate", "onUserJoin"],
   "routes": "/api/v1/plugins/my-plugin"
 }
@@ -213,7 +213,7 @@ Headers           Helmet.js (XSS, CSP, HSTS)
 ## 7. SOURCE FILE STRUCTURE
 
 ```
-nexus-core/src/
+nodyx-core/src/
 ├── index.ts                — Server entry point
 ├── fortunes.ts             — Random quotes
 ├── config/

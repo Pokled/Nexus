@@ -1,24 +1,24 @@
-# 📧 Nexus — Configurer l'envoi d'emails
+# 📧 Nodyx — Configurer l'envoi d'emails
 
-> **En bref :** Sans email configuré, Nexus fonctionne parfaitement. Mais si un membre oublie son mot de passe, c'est toi qui dois lui envoyer le lien manuellement. Configurer un email évite ça.
+> **En bref :** Sans email configuré, Nodyx fonctionne parfaitement. Mais si un membre oublie son mot de passe, c'est toi qui dois lui envoyer le lien manuellement. Configurer un email évite ça.
 
 ---
 
 ## À quoi ça sert ?
 
-Nexus envoie des emails dans deux situations :
+Nodyx envoie des emails dans deux situations :
 
 - **Mot de passe oublié** — un membre clique sur "Mot de passe oublié" et reçoit un lien sécurisé par email
 - **Email de bienvenue** *(optionnel)* — un message de bienvenue à l'inscription
 
-C'est tout. Nexus n'envoie pas de newsletters, pas de spam, pas de notifications par email.
+C'est tout. Nodyx n'envoie pas de newsletters, pas de spam, pas de notifications par email.
 
 ---
 
 ## Est-ce obligatoire ?
 
 **Non.** Si tu ne configures pas d'email :
-- Nexus fonctionne normalement
+- Nodyx fonctionne normalement
 - Le reset de mot de passe ne s'envoie pas automatiquement
 - En tant qu'admin, tu peux générer un lien de reset depuis le panneau d'administration → Membres → "Réinitialiser le mot de passe"
 
@@ -31,7 +31,7 @@ Tu as besoin de trois informations auprès de ton fournisseur d'email :
 - **Ton identifiant** (souvent ton adresse email)
 - **Ton mot de passe SMTP** (attention : ce n'est pas forcément ton mot de passe habituel — certains services génèrent un mot de passe spécifique pour les applications)
 
-Ouvre le fichier `.env` dans le dossier `nexus-core` et ajoute ces lignes :
+Ouvre le fichier `.env` dans le dossier `nodyx-core` et ajoute ces lignes :
 
 ```bash
 SMTP_HOST=smtp.brevo.com
@@ -42,9 +42,9 @@ SMTP_PASS=ton_mot_de_passe_smtp
 SMTP_FROM=noreply@ton-domaine.com   # optionnel — utilise SMTP_USER si absent
 ```
 
-Puis redémarre Nexus :
+Puis redémarre Nodyx :
 ```bash
-pm2 restart nexus-core
+pm2 restart nodyx-core
 ```
 
 ---
@@ -122,7 +122,7 @@ SMTP_PASS=ton_mot_de_passe
 
 ## Tester la configuration
 
-Depuis le panneau d'administration de Nexus → **Paramètres** → **Email**, tu peux envoyer un email de test pour vérifier que tout fonctionne.
+Depuis le panneau d'administration de Nodyx → **Paramètres** → **Email**, tu peux envoyer un email de test pour vérifier que tout fonctionne.
 
 Si l'email n'arrive pas :
 1. Vérifie les identifiants dans `.env`
@@ -131,9 +131,9 @@ Si l'email n'arrive pas :
 
 ---
 
-## Ce que Nexus ne fera jamais avec tes emails
+## Ce que Nodyx ne fera jamais avec tes emails
 
-- Nexus n'envoie jamais d'emails marketing
-- Nexus ne partage aucune adresse email avec des tiers
-- Nexus n'utilise pas de service d'emailing tiers dans son code (juste SMTP standard)
+- Nodyx n'envoie jamais d'emails marketing
+- Nodyx ne partage aucune adresse email avec des tiers
+- Nodyx n'utilise pas de service d'emailing tiers dans son code (juste SMTP standard)
 - Les adresses emails de tes membres ne transitent que par **ton** serveur SMTP

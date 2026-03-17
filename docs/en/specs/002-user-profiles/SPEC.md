@@ -5,7 +5,7 @@
 
 ## Context
 
-Every Nexus user has an enriched profile.
+Every Nodyx user has an enriched profile.
 This profile is used in TWO places:
 
 1. **Full profile page** — `/users/:username`
@@ -18,7 +18,7 @@ The profile must therefore be built BEFORE finalizing the thread view in the for
 
 ## Step 1 — Database
 
-File: `nexus-core/src/migrations/002_user_profiles.sql`
+File: `nodyx-core/src/migrations/002_user_profiles.sql`
 
 ```sql
 CREATE TABLE user_profiles (
@@ -59,14 +59,14 @@ Format of the `links` field (JSONB):
 **Apply the migration:**
 ```powershell
 $env:PATH += ";C:\Program Files\PostgreSQL\16\bin"
-psql -U postgres -d nexus -f src/migrations/002_user_profiles.sql
+psql -U postgres -d nodyx -f src/migrations/002_user_profiles.sql
 ```
 
 ---
 
 ## Step 2 — Backend API
 
-File: `nexus-core/src/routes/users.ts`
+File: `nodyx-core/src/routes/users.ts`
 
 Add these two routes to the existing user routes:
 
@@ -92,7 +92,7 @@ GET response format:
   "avatar_url": "https://...",
   "banner_url": "https://...",
   "bio": "Passionate about Linux and coffee.",
-  "status": "Coding Nexus right now",
+  "status": "Coding Nodyx right now",
   "location": "France",
   "tags": ["linux", "photo", "gaming"],
   "links": [
@@ -107,7 +107,7 @@ GET response format:
 
 ## Step 3 — Mini-profile component (SvelteKit)
 
-File: `nexus-frontend/src/lib/components/ProfileCard.svelte`
+File: `nodyx-frontend/src/lib/components/ProfileCard.svelte`
 
 This component is displayed to the LEFT of each post in a thread.
 
@@ -143,7 +143,7 @@ interface ProfileCardProps {
 
 ## Step 4 — Full profile page (SvelteKit)
 
-File: `nexus-frontend/src/routes/users/[username]/+page.svelte`
+File: `nodyx-frontend/src/routes/users/[username]/+page.svelte`
 
 **What is displayed:**
 ```
@@ -164,7 +164,7 @@ Last posts (5 max)
 ```
 
 **SEO:**
-- Title: `{display_name} (@{username}) — Nexus`
+- Title: `{display_name} (@{username}) — Nodyx`
 - Description: bio truncated to 160 characters
 - og:image: avatar_url
 
@@ -172,7 +172,7 @@ Last posts (5 max)
 
 ## Step 5 — Forum integration
 
-File: `nexus-frontend/src/routes/forum/[category]/[thread]/+page.svelte`
+File: `nodyx-frontend/src/routes/forum/[category]/[thread]/+page.svelte`
 
 Replace the current author display with the `ProfileCard` component.
 

@@ -8,7 +8,7 @@ It is designed to evolve over time and become, if the community chooses, a **col
 A Node is neither a chat, nor a strict wiki, nor a todo-list.
 It can borrow from these formats without ever losing its history or freedom.
 
-> Nexus does not govern Nodes.
+> Nodyx does not govern Nodes.
 > Each instance decides their use, visibility, and lifecycle.
 
 ---
@@ -75,7 +75,7 @@ An **Anchor** is a message identified as structuring.
 
 An Anchor:
 - has a stable URL
-- can be referenced by Nexus search
+- can be referenced by Nodyx search
 - can be linked from other Nodes
 - remains anchored in its context (not extracted from the thread)
 
@@ -103,7 +103,7 @@ Each Node can be:
 - private
 - visible only on the instance
 - federated
-- indexable by the Nexus engine
+- indexable by the Nodyx engine
 - indexable by external engines (if the admin chooses)
 
 Even a non-visible Node can contribute to the network (relay, resilience).
@@ -148,7 +148,7 @@ It has no obligation to disappear.
 
 ## NODE_SCHEMA — Minimal technical schema
 
-This document describes the minimal structure of a Node in Nexus.
+This document describes the minimal structure of a Node in Nodyx.
 The schema is intentionally simple and extensible.
 
 ### Identity
@@ -354,7 +354,7 @@ In a Node:
 
 > "This Node favors thoughtful responses."
 
-### 7. Nexus search
+### 7. Nodyx search
 
 In results:
 - Node appears as an entity
@@ -386,5 +386,5 @@ Nodes must **impose themselves through their utility**, not by rule.
 
 ---
 
-*Respect Svelte format and Nexus core technologies. No new server-side languages or tools that would require new infrastructure.*
+*Respect Svelte format and Nodyx core technologies. No new server-side languages or tools that would require new infrastructure.*
 *"The network is the people." — AGPL-3.0*

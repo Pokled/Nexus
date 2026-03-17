@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Nexus are documented here.
+All notable changes to Nodyx are documented here.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
@@ -22,10 +22,10 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **`tasks.ts` — try/catch sur toutes les routes** — les 9 handlers propagaient les erreurs DB en 500 non maîtrisé. Chaque handler est maintenant enveloppé dans un try/catch avec `reply.code(500).send({ error: 'Internal server error' })`.
 - **`/api/v1/instance/announcement` — rateLimit ajouté** — route appelée à chaque chargement de page (layout.server.ts), exposée au flood sans protection.
 - **`instance.ts POST /tags` — modérateurs autorisés** — les modérateurs étaient bloqués à tort pour créer/supprimer des tags (incohérent avec les autres routes où mods = admins).
-- **Version corrigée** — `nexus-core/package.json` et `nexus-frontend/package.json` passés de `1.0.0` à `1.8.0` ; `GET /` retournait `version: '0.1.0'` → lit désormais `process.env.NEXUS_VERSION ?? '1.8.0'`.
-- **`install.sh` — bannière et version** — bannière affichait `v1.0`, enregistrement directory hardcodait `"1.0.0"` → corrigés en `v1.8` et `${NEXUS_VERSION:-1.8.0}`.
+- **Version corrigée** — `nodyx-core/package.json` et `nodyx-frontend/package.json` passés de `1.0.0` à `1.8.0` ; `GET /` retournait `version: '0.1.0'` → lit désormais `process.env.NODYX_VERSION ?? '1.8.0'`.
+- **`install.sh` — bannière et version** — bannière affichait `v1.0`, enregistrement directory hardcodait `"1.0.0"` → corrigés en `v1.8` et `${NODYX_VERSION:-1.8.0}`.
 - **`admin/ai` — Neural Engine** — `selectModel()` appelait `POST /api/v1/admin/neural/set-model` (route inexistante) avec token depuis `localStorage` (violation de la convention HttpOnly cookie). Remplacé par un no-op avec bannière "En développement".
-- **`.env.example` — variables manquantes documentées** — `nexus-core/.env.example` : ajout de `GOSSIP_PEERS`, `STUN_FALLBACK_URLS`, `SIGNET_URL`, `VPS_IP`, `CF_TOKEN`, `CF_ZONE_ID` ; `nexus-frontend/.env.example` : `PUBLIC_API_URL` corrigé (était `/api/v1` → maintenant la racine du domaine), ajout de `PRIVATE_API_SSR_URL` et `PUBLIC_DIRECTORY_URL`.
+- **`.env.example` — variables manquantes documentées** — `nodyx-core/.env.example` : ajout de `GOSSIP_PEERS`, `STUN_FALLBACK_URLS`, `SIGNET_URL`, `VPS_IP`, `CF_TOKEN`, `CF_ZONE_ID` ; `nodyx-frontend/.env.example` : `PUBLIC_API_URL` corrigé (était `/api/v1` → maintenant la racine du domaine), ajout de `PRIVATE_API_SSR_URL` et `PUBLIC_DIRECTORY_URL`.
 
 ### Added
 - **Previews SVG pour les table-templates** — `brasserie-de-nuit`, `pierre-et-braise`, `table-de-feutre` : fichier `preview.svg` (280×160px) créé pour chaque template officiel, requis par la future UI de sélection.
@@ -44,7 +44,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Permissions : tout membre peut créer tableaux et cartes ; gestion colonnes réservée au créateur + admin/mod
   - Migration 047 (`task_boards`, `task_columns`, `task_cards`)
 - **Alerte de mise à jour dans le panel admin** — bannière indigo affichée dès qu'une nouvelle version est disponible sur GitHub, avec lien vers les notes de version ; vérification via l'API GitHub Releases, résultat mis en cache Redis 6h
-- **Numéro de version** affiché sur la page d'accueil dans la section "Cette instance" (ex: `Nexus v1.8.0`) — lu depuis la variable d'environnement `NEXUS_VERSION`
+- **Numéro de version** affiché sur la page d'accueil dans la section "Cette instance" (ex: `Nodyx v1.8.0`) — lu depuis la variable d'environnement `NODYX_VERSION`
 - **Directory réseau — instances hors ligne masquées** — `GET /directory` filtre désormais les instances dont `last_seen > 30 minutes` ; seules les instances actives apparaissent dans la Galaxy Bar et sur `/admin/status`
 
 ### Fixed
@@ -99,7 +99,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Scheduler `announceThreadsToDirectory()` : pousse les threads publics toutes les 10 min
   - Directory : `POST /announce` + `GET /search` avec `ts_rank` et fallback `updated_at`
   - Page `/discover` avec barre de recherche, cards instances, tags, pagination
-  - Opt-in via `NEXUS_GLOBAL_INDEXING=true` dans `.env`
+  - Opt-in via `NODYX_GLOBAL_INDEXING=true` dans `.env`
   - Lien « Découvrir » dans la navigation principale
 - **URLs cross-instances correctes** — les liens depuis `/discover` pointent vers `/forum/{category_slug}/{thread_slug}` de l'instance distante
 
@@ -148,12 +148,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Page `/banned` dédiée, redirection automatique dès l'événement `banned` Socket.IO
   - Panel admin : formulaire de ban avec motif, durée optionnelle, confirmation modale
   - Migration 030 : `community_bans` (userId, reason, bannedBy, expiresAt, ipBan, emailBan)
-- **nexus-turn — TURN over TCP (RFC 6062)** — les utilisateurs derrière VPN ou firewall strict peuvent désormais utiliser les salons vocaux
+- **nodyx-turn — TURN over TCP (RFC 6062)** — les utilisateurs derrière VPN ou firewall strict peuvent désormais utiliser les salons vocaux
   - Écoute simultanée UDP:3478 + TCP:3478 — même binaire, même configuration
   - Framing RFC 4571 : préfixe 2 octets big-endian par message
   - Registry partagée UDP/TCP — une seule allocation par client quel que soit le transport
   - ICE server URL ajouté automatiquement : `turn:IP:3478?transport=tcp`
-- **nexus-turn — MESSAGE-INTEGRITY sur les réponses** (RFC 5389 §10.3)
+- **nodyx-turn — MESSAGE-INTEGRITY sur les réponses** (RFC 5389 §10.3)
   - Les réponses TURN (Allocate, Refresh, CreatePermission, ChannelBind) incluent désormais le champ MESSAGE-INTEGRITY obligatoire
   - Fixe le problème fondamental : Firefox et Chrome rejetaient silencieusement les réponses sans MI → aucun relay candidate généré → TURN inutilisable en relay
 
@@ -167,8 +167,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Mono forcé (`stereo=0`) : la voix ne nécessite pas la stéréo, réduit encore la bande passante
   - FEC (in-band Forward Error Correction) maintenu : `useinbandfec=1`
 - **Voice — Calcul packet loss** — `Math.max(0, dLost)` protège contre les deltas négatifs lors d'un ICE restart
-- **nexus-turn — Quota allocation** — `MAX_LIFETIME` plafonné à 300s (Firefox demandait 3600s → quota saturé en ~25 reconnexions → vocal bloqué 1h)
-- **Socket.IO — Transport polling-first** — `transports: ['polling', 'websocket']` — nexus-relay strip le header `Upgrade`, le WebSocket seul en premier tentait indéfiniment → `online_count = 0` sur toutes les instances relay
+- **nodyx-turn — Quota allocation** — `MAX_LIFETIME` plafonné à 300s (Firefox demandait 3600s → quota saturé en ~25 reconnexions → vocal bloqué 1h)
+- **Socket.IO — Transport polling-first** — `transports: ['polling', 'websocket']` — nodyx-relay strip le header `Upgrade`, le WebSocket seul en premier tentait indéfiniment → `online_count = 0` sur toutes les instances relay
 - **Salons vocaux — Capacité portée à 25** — limite relevée + enforcement côté serveur + notification `voice:full` côté client
 
 ---
@@ -185,14 +185,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **Messages Privés (DM)** — messagerie 1-to-1 temps réel
   - Route dédiée `/dm/:username`, inbox triée par dernier message
   - Socket.IO room `dm:<userId>` — livraison instantanée, badge de non-lus
-- **Galaxy Bar — instances liées** — affichage des instances Nexus fédérées dans la barre latérale gauche
+- **Galaxy Bar — instances liées** — affichage des instances Nodyx fédérées dans la barre latérale gauche
   - Liste dynamique depuis le directory, indicateur d'état (en ligne / hors ligne)
   - Navigation rapide entre communautés
 - **Forum — sélecteur catégorie/sous-catégorie** — formulaire de nouveau sujet avec dropdown hiérarchique, navigation URL persistée
 - **uninstall.sh** — script de désinstallation complète interactif
   - Double confirmation avant toute suppression
-  - Suppression sélective : PM2, Caddy, Redis, PostgreSQL, nexus-turn, nexus-relay, UFW
-- **nexus-update** — script `/usr/local/bin/nexus-update` généré à l'install pour mettre à jour Nexus en une commande
+  - Suppression sélective : PM2, Caddy, Redis, PostgreSQL, nodyx-turn, nodyx-relay, UFW
+- **nodyx-update** — script `/usr/local/bin/nodyx-update` généré à l'install pour mettre à jour Nodyx en une commande
 
 ### Fixed
 - **Installer — Redis sur Debian Trixie / Raspberry Pi** — service marqué "static" → `systemctl unmask` ajouté ; répertoires `/var/lib/redis` et `/var/log/redis` créés avant le démarrage (cause de crash "No such file or directory")
@@ -200,7 +200,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **Installer — Détection crash PM2** — vérification `online` 5s après `pm2 start`, dump des logs si crash
 - **Installer — Attente backend** — timeout porté à 180s avec spinner animé (était 60s silencieux)
 - **Installer — Enregistrement admin** — 3 tentatives avec délai 8s, gestion des codes 409 (réinstall)
-- **Installer — README** — `cd Nexus` manquant dans la commande one-liner
+- **Installer — README** — `cd Nodyx` manquant dans la commande one-liner
 - **SSR — URL API** — configurable via `PRIVATE_API_SSR_URL` pour les environnements non-standard
 - **Polls — persistance** — `getMessages` n'incluait pas `poll_id` dans le SELECT → sondages perdus au refresh
 - **Polls — messages vides** — contrainte `content NOT NULL` → insérer `''` pour les messages de type poll
@@ -230,8 +230,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 ### Fixed
 - **Voice en mode Relay** — `TURN_PUBLIC_IP` vide = zéro ICE server → voix impossible en NAT strict. `voice.ts` lit désormais `STUN_FALLBACK_URLS` et `install.sh` injecte deux STUN Google publics en mode Relay
 - **install.sh — Version** — enregistrement auprès du directory avec `"0.4.1"` → corrigé en `"1.0.0"`
-- **install.sh — Description communauté** — jamais renseignée (créée vide en SQL), `NEXUS_COMMUNITY_DESCRIPTION` absent du `.env` → prompt ajouté, variable injectée
-- **install.sh — Pays** — `NEXUS_COMMUNITY_COUNTRY` toujours vide → prompt ajouté
+- **install.sh — Description communauté** — jamais renseignée (créée vide en SQL), `NODYX_COMMUNITY_DESCRIPTION` absent du `.env` → prompt ajouté, variable injectée
+- **install.sh — Pays** — `NODYX_COMMUNITY_COUNTRY` toujours vide → prompt ajouté
 
 ---
 
@@ -267,7 +267,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 ## [0.9.0] — 2026-03-04
 
 ### Added
-- **NexusCanvas** — tableau blanc collaboratif P2P dans les salons vocaux
+- **NodyxCanvas** — tableau blanc collaboratif P2P dans les salons vocaux
   - CRDT LWW (Last-Write-Wins) par élément — convergence garantie sans conflit
   - Curseurs distants en temps réel (throttle 50ms, fade 4s, halo vocal si `speaking: true`)
   - Outils : stylo, post-it, rect, cercle, effaceur, colorpicker, undo local, clear all
@@ -280,12 +280,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Volume individuel (GainNode + localStorage, jamais broadcasté)
   - Autoplay unblock automatique (gestion politique navigateur)
   - VoiceToolbar : boutons Jukebox / Canvas / Screenshare + controls row compact
-- **nexus-turn** — STUN/TURN Rust natif remplace coturn (Phase 3.0-C ✅)
+- **nodyx-turn** — STUN/TURN Rust natif remplace coturn (Phase 3.0-C ✅)
   - Binaire 2.9MB statique (tokio + RFC 5389/5766)
   - Credentials dynamiques HMAC-SHA1 time-based (coturn `use-auth-secret` compatible)
   - MESSAGE-INTEGRITY vérification, ChannelBind / ChannelData
   - Rate limiter UDP par IP (30 pkt/sec) + quotas allocations (10/IP, 1000 total)
-  - Migration : nexus-core génère les creds par utilisateur → `voice:init` Socket.IO
+  - Migration : nodyx-core génère les creds par utilisateur → `voice:init` Socket.IO
   - `install.sh` intégré, service systemd, GitHub Release `v0.1.2-p2p` (amd64 + arm64)
 - **P2P asset transfer** — transfert de fichiers entre pairs via DataChannels
   - Protocole `p2p:asset:*` (chunks 32 Ko, indicateur de progression)
@@ -306,7 +306,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ### Added
 - **Phase 3.0-B — Browser P2P DataChannels** ✅ POC validé
-  - `nexus-frontend/src/lib/p2p.ts` — gestionnaire RTCPeerConnection + DataChannel
+  - `nodyx-frontend/src/lib/p2p.ts` — gestionnaire RTCPeerConnection + DataChannel
   - Signaling via Socket.IO existant (events `p2p:offer`, `p2p:answer`, `p2p:ice`)
   - Handshake polite/impolite — un seul initiateur, pas de collision
   - Indicateur UI `⚡ P2P · N` dans l'en-tête du canal texte (jaune si actif, gris pulsant si en cours)
@@ -363,13 +363,13 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 ## [0.5.0] — 2026-03-01
 
 ### Added
-- **nexus-relay** — Rust P2P relay infrastructure (Phase 3.0-A ✅)
-  - `nexus-relay server` — deployed on VPS: TCP:7443 (relay clients) + HTTP:7001 (Caddy proxy), tokio async, DashMap in-memory registry
-  - `nexus-relay client` — 9MB static binary, outbound TCP connection only — **zero open ports, zero domain required**
+- **nodyx-relay** — Rust P2P relay infrastructure (Phase 3.0-A ✅)
+  - `nodyx-relay server` — deployed on VPS: TCP:7443 (relay clients) + HTTP:7001 (Caddy proxy), tokio async, DashMap in-memory registry
+  - `nodyx-relay client` — 9MB static binary, outbound TCP connection only — **zero open ports, zero domain required**
   - Automatic `slug.nexusnode.app` provisioning — slug reserved in DB at registration, DNS wildcard served by relay proxy
   - Exponential backoff reconnection (1s → 2s → 4s → max 30s)
-  - `install.sh` — option 2 "Nexus Relay (recommended)" → auto-downloads binary, generates systemd service, full URL without touching a router
-  - `nexus-relay-client.service` — systemd unit, auto-restart, enabled on boot
+  - `install.sh` — option 2 "Nodyx Relay (recommended)" → auto-downloads binary, generates systemd service, full URL without touching a router
+  - `nodyx-relay-client.service` — systemd unit, auto-restart, enabled on boot
   - GitHub Releases `v0.1.0-relay` + `v0.1.1-relay` — amd64 + arm64 static binaries
   - **Validated:** Raspberry Pi 4, zero open ports, zero Cloudflare account → `https://test.nexusnode.app` live ✅
 - **Voice channel member interaction panel**
@@ -382,14 +382,14 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - VoiceSettings popup — fixed-position (`bottom-24 left-1/2`), 360px wide, escapes sidebar overflow with backdrop blur overlay
 
 ### Fixed
-- **nexus-relay concurrent requests** — relay client was processing requests sequentially. With Socket.IO long-polling (pingInterval 8s), one user's blocking GET delayed all others → relay server 10s timeout → 504 Gateway Timeout → Socket.IO disconnect → presence sidebar empty. Fixed by spawning a tokio task per request; writes are serialized via `mpsc`. Timeout ladder: `pingInterval(8s) < reqwest(12s) < relay-server(15s)`
-- **online_count off-by-default** — `/info` and `/admin/stats` counted `redis.keys('nexus:heartbeat:*')` (set on API calls, 15 min TTL). Active Socket.IO session ≠ recent API call → count dropped to 0 after 15 min of browse-only activity. Fixed: `io.in('presence').fetchSockets()` — Socket.IO presence room as the source of truth, deduplicated by `userId`
+- **nodyx-relay concurrent requests** — relay client was processing requests sequentially. With Socket.IO long-polling (pingInterval 8s), one user's blocking GET delayed all others → relay server 10s timeout → 504 Gateway Timeout → Socket.IO disconnect → presence sidebar empty. Fixed by spawning a tokio task per request; writes are serialized via `mpsc`. Timeout ladder: `pingInterval(8s) < reqwest(12s) < relay-server(15s)`
+- **online_count off-by-default** — `/info` and `/admin/stats` counted `redis.keys('nodyx:heartbeat:*')` (set on API calls, 15 min TTL). Active Socket.IO session ≠ recent API call → count dropped to 0 after 15 min of browse-only activity. Fixed: `io.in('presence').fetchSockets()` — Socket.IO presence room as the source of truth, deduplicated by `userId`
 
 ### Infrastructure
 - `relay.nexusnode.app` — DNS A record (grey cloud, no Cloudflare proxy) for direct TCP:7443 relay client connections
 - UFW: port 7443/tcp opened on the VPS for relay client inbound connections
-- `nexus-relay.service` — systemd unit active on VPS, ~1.3MB RAM, Restart=on-failure
-- Caddy: `*.nexusnode.app` now routes to `localhost:7001` (nexus-relay HTTP proxy) instead of `localhost:3000` — relay handles routing (tunnel → active relay, 302 → DB URL, 404 → unknown)
+- `nodyx-relay.service` — systemd unit active on VPS, ~1.3MB RAM, Restart=on-failure
+- Caddy: `*.nexusnode.app` now routes to `localhost:7001` (nodyx-relay HTTP proxy) instead of `localhost:3000` — relay handles routing (tunnel → active relay, 302 → DB URL, 404 → unknown)
 
 ---
 
@@ -428,7 +428,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Configures UFW firewall (SSH, HTTP, HTTPS, TURN ports, WebRTC relay range)
   - Generates secure random secrets (DB password, JWT secret, TURN credential)
   - Bootstraps the instance community and creates the admin account automatically
-  - Saves all credentials to `/root/nexus-credentials.txt` (chmod 600)
+  - Saves all credentials to `/root/nodyx-credentials.txt` (chmod 600)
   - TURN URL uses server IP directly — bypasses Cloudflare proxy automatically
 - **`docs/en/INSTALL.md`** — comprehensive English installation guide
   - Hardware requirements, OS compatibility table
@@ -439,7 +439,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - Common errors & fixes (port conflicts, DNS, TURN, SSL, uploads)
   - Post-install guide and admin tips
 - **`docs/fr/INSTALL.md`** — guide d'installation complet en français (même contenu)
-- **`nexus-core/src/migrations/015_admin_role.sql`** — fixes `community_members_role` constraint to include `'admin'` role (was missing from migration 001, causing DB errors when promoting users to admin)
+- **`nodyx-core/src/migrations/015_admin_role.sql`** — fixes `community_members_role` constraint to include `'admin'` role (was missing from migration 001, causing DB errors when promoting users to admin)
 - **GitHub CLI (`gh`)** — installed on the VPS for release management
 
 ### Fixed
@@ -518,21 +518,21 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - PostgreSQL healthcheck ensures API waits for DB before starting
   - Volumes for persistent data (`postgres_data`, `redis_data`) and uploads bind-mount
 - **`.env.example`** (root) — `DB_PASSWORD` for docker-compose
-- **`nexus-core/src/scripts/migrate.ts`** — idempotent SQL migration runner
+- **`nodyx-core/src/scripts/migrate.ts`** — idempotent SQL migration runner
   - Creates `schema_migrations` tracking table on first run
   - Skips already-applied migrations — safe to call on every boot
-- **`nexus-frontend/Dockerfile`** — multi-stage Node.js build (builder → runner, PORT=3001)
+- **`nodyx-frontend/Dockerfile`** — multi-stage Node.js build (builder → runner, PORT=3001)
 
 ### Changed
-- **`nexus-core/src/index.ts`** — `runMigrations()` called before `server.listen()`
-- **`nexus-core/Dockerfile`** — `src/migrations/` copied into runner image; `uploads/` subdirs created
+- **`nodyx-core/src/index.ts`** — `runMigrations()` called before `server.listen()`
+- **`nodyx-core/Dockerfile`** — `src/migrations/` copied into runner image; `uploads/` subdirs created
 
 ---
 
 ## [0.2.0] — 2026-02-27
 
 ### Added
-- **Test suite** (nexus-core): 34 Vitest tests covering auth routes, middleware, and forum routes
+- **Test suite** (nodyx-core): 34 Vitest tests covering auth routes, middleware, and forum routes
   - `auth.test.ts` — 13 tests: register/login/logout with mocked DB + Redis
   - `middleware.test.ts` — 10 tests: `requireAuth`, `optionalAuth`, `rateLimit`
   - `forums.test.ts` — 11 tests: GET /threads, POST /threads, POST /posts
@@ -548,12 +548,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 ### Security
 - Removed sensitive files from git tracking: hardcoded IP addresses, absolute paths, user upload assets
 - Sanitized `turn-server/server.js`: replaced hardcoded IP (`87.88.104.61`) and domain with env vars (`TURN_EXTERNAL_IP`, `TURN_REALM`)
-- Updated `.gitignore` to exclude `uploads/avatars/*`, `uploads/banners/*`, `uploads/logos/*`, `.claude/`, `.nexus-context/`
+- Updated `.gitignore` to exclude `uploads/avatars/*`, `uploads/banners/*`, `uploads/logos/*`, `.claude/`, `.nodyx-context/`
 - Added `.gitkeep` files to preserve `uploads/` directory structure
 
 ### Removed
 - Dead files: `VoicePanel_old.svelte`, `svelte.config_old.js`, boilerplate SvelteKit README
-- Redundant docs scattered across `nexus-core/` root (moved to `docs/`)
+- Redundant docs scattered across `nodyx-core/` root (moved to `docs/`)
 
 ---
 
@@ -574,24 +574,24 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **AI assistant** — local Ollama integration (no cloud dependency)
 - **13 SQL migrations** — complete schema from users to voice channels
 
-[Unreleased]: https://github.com/Pokled/Nexus/compare/v1.8.1...HEAD
-[1.8.1]: https://github.com/Pokled/Nexus/compare/v1.8.0...v1.8.1
-[1.8.0]: https://github.com/Pokled/Nexus/compare/v1.7.0...v1.8.0
-[1.7.0]: https://github.com/Pokled/Nexus/compare/v1.6.0...v1.7.0
-[1.6.0]: https://github.com/Pokled/Nexus/compare/v1.5.0...v1.6.0
-[1.5.0]: https://github.com/Pokled/Nexus/compare/v1.4.0...v1.5.0
-[1.4.0]: https://github.com/Pokled/Nexus/compare/v1.3.0...v1.4.0
-[1.3.0]: https://github.com/Pokled/Nexus/compare/v1.2.0...v1.3.0
-[1.2.0]: https://github.com/Pokled/Nexus/compare/v1.1.0...v1.2.0
-[1.1.0]: https://github.com/Pokled/Nexus/compare/v1.0.0...v1.1.0
-[0.9.0]: https://github.com/Pokled/Nexus/compare/v0.8.0...v0.9.0
-[0.8.0]: https://github.com/Pokled/Nexus/compare/v0.7.0...v0.8.0
-[0.7.0]: https://github.com/Pokled/Nexus/compare/v0.5.0...v0.7.0
-[0.5.0]: https://github.com/Pokled/Nexus/compare/v0.4.1...v0.5.0
-[0.4.1]: https://github.com/Pokled/Nexus/compare/v0.3.3...v0.4.1
-[0.3.3]: https://github.com/Pokled/Nexus/compare/v0.3.2...v0.3.3
-[0.3.2]: https://github.com/Pokled/Nexus/compare/v0.3.1...v0.3.2
-[0.3.1]: https://github.com/Pokled/Nexus/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/Pokled/Nexus/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/Pokled/Nexus/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/Pokled/Nexus/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Pokled/Nodyx/compare/v1.8.1...HEAD
+[1.8.1]: https://github.com/Pokled/Nodyx/compare/v1.8.0...v1.8.1
+[1.8.0]: https://github.com/Pokled/Nodyx/compare/v1.7.0...v1.8.0
+[1.7.0]: https://github.com/Pokled/Nodyx/compare/v1.6.0...v1.7.0
+[1.6.0]: https://github.com/Pokled/Nodyx/compare/v1.5.0...v1.6.0
+[1.5.0]: https://github.com/Pokled/Nodyx/compare/v1.4.0...v1.5.0
+[1.4.0]: https://github.com/Pokled/Nodyx/compare/v1.3.0...v1.4.0
+[1.3.0]: https://github.com/Pokled/Nodyx/compare/v1.2.0...v1.3.0
+[1.2.0]: https://github.com/Pokled/Nodyx/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/Pokled/Nodyx/compare/v1.0.0...v1.1.0
+[0.9.0]: https://github.com/Pokled/Nodyx/compare/v0.8.0...v0.9.0
+[0.8.0]: https://github.com/Pokled/Nodyx/compare/v0.7.0...v0.8.0
+[0.7.0]: https://github.com/Pokled/Nodyx/compare/v0.5.0...v0.7.0
+[0.5.0]: https://github.com/Pokled/Nodyx/compare/v0.4.1...v0.5.0
+[0.4.1]: https://github.com/Pokled/Nodyx/compare/v0.3.3...v0.4.1
+[0.3.3]: https://github.com/Pokled/Nodyx/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/Pokled/Nodyx/compare/v0.3.1...v0.3.2
+[0.3.1]: https://github.com/Pokled/Nodyx/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/Pokled/Nodyx/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Pokled/Nodyx/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/Pokled/Nodyx/releases/tag/v0.1.0

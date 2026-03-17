@@ -1,11 +1,11 @@
-# SPEC 012 — NEXUS GALAXY BAR (MULTI-INSTANCE SWITCHER)
+# SPEC 012 — NODYX GALAXY BAR (MULTI-INSTANCE SWITCHER)
 ### "Navigate between worlds, without ever leaving the network."
 
 ---
 
 ## 🎯 1. WHAT: The Vision
 
-The Galaxy Bar is a persistent sidebar located at the far left of the screen. It allows users to see and instantly switch between all the Nexus instances they are members of.
+The Galaxy Bar is a persistent sidebar located at the far left of the screen. It allows users to see and instantly switch between all the Nodyx instances they are members of.
 
 It must embody the power of the network while remaining an elegant and discreet design element.
 
@@ -47,9 +47,9 @@ Instead of narrow circles, give breathing room and elegance:
 
 ### A. The "Global Switcher" (Logic)
 
-- **Decentralized SSO:** Use of a shared JWT token or session key recognized by the parent domain (`*.nexus.io`).
+- **Decentralized SSO:** Use of a shared JWT token or session key recognized by the parent domain (`*.nodyx.io`).
 - **Zero Latency:** Uses SvelteKit prefetch: when the mouse hovers over an instance icon, the browser already starts loading data so the click feels instant.
-- **"+" button (Discovery):** At the bottom of the list, a button that opens the Nexus-Directory directly to discover new communities to join.
+- **"+" button (Discovery):** At the bottom of the list, a button that opens the Nodyx-Directory directly to discover new communities to join.
 
 ### B. "Bio-Luminescent" Notification System
 
@@ -62,7 +62,7 @@ Instead of an aggressive red badge:
 
 ### C. Zero-Reload Navigation (SPA Power)
 
-- **Unique identity:** Since the user has their Nexus account, clicking another instance in the left bar already has them logged in (automatic SSO).
+- **Unique identity:** Since the user has their Nodyx account, clicking another instance in the left bar already has them logged in (automatic SSO).
 - **Drag & drop reordering:** Users can reorganize their instances.
 
 ---
@@ -71,7 +71,7 @@ Instead of an aggressive red badge:
 
 ### A. "Drag-to-Share"
 - **Idea:** You're on instance A, you see a great thread. Drag it onto instance B's icon in the Galaxy Bar.
-- **Effect:** Nexus automatically offers to share this link in instance B's general channel. Cross-community sharing becomes child's play.
+- **Effect:** Nodyx automatically offers to share this link in instance B's general channel. Cross-community sharing becomes child's play.
 
 ### B. "Folders" (Instance Groups)
 - **Idea:** Group instances by theme (e.g., a "Dev" folder, a "Leisure" folder).
@@ -91,4 +91,4 @@ Instead of an aggressive red badge:
 
 ---
 
-*With the Galaxy Bar, Nexus becomes a true social operating system. Users are no longer "lost" on the web — they are "home" everywhere in the network.*
+*With the Galaxy Bar, Nodyx becomes a true social operating system. Users are no longer "lost" on the web — they are "home" everywhere in the network.*

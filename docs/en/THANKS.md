@@ -1,14 +1,14 @@
-# THANKS — Nexus exists because of you
+# THANKS — Nodyx exists because of you
 
 > "If I have seen further, it is by standing on the shoulders of giants."
 > — Isaac Newton
 
-Nexus invented nothing. Nexus assembled, with respect and gratitude,
+Nodyx invented nothing. Nodyx assembled, with respect and gratitude,
 the work of thousands of developers who chose freedom over ownership.
 
 ---
 
-## 🔧 Tools that power Nexus
+## 🔧 Tools that power Nodyx
 
 | Project | Role | License |
 |---------|------|---------|
@@ -34,12 +34,12 @@ the work of thousands of developers who chose freedom over ownership.
 **Linux** — Without you none of this would exist.
 
 **Internet** — You were invented to bring us together.
-Nexus makes sure you stay that way.
+Nodyx makes sure you stay that way.
 
 ## 😺 Chief Supervisor
 **Iris** — For making sure the developer stayed focused.
 
 ---
 
-*Nexus is free because these projects were free before it.*
+*Nodyx is free because these projects were free before it.*
 *AGPL-3.0 — The code belongs to its community.*

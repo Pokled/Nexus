@@ -1,24 +1,24 @@
-# 📧 Nexus — Setting up email
+# 📧 Nodyx — Setting up email
 
-> **Quick summary:** Nexus works perfectly without email configured. But if a member forgets their password, you'll have to manually send them the reset link. Setting up email handles this automatically.
+> **Quick summary:** Nodyx works perfectly without email configured. But if a member forgets their password, you'll have to manually send them the reset link. Setting up email handles this automatically.
 
 ---
 
 ## What is it used for?
 
-Nexus sends emails in two situations:
+Nodyx sends emails in two situations:
 
 - **Forgot password** — a member clicks "Forgot my password" and receives a secure link by email
 - **Welcome email** *(optional)* — a welcome message on registration
 
-That's it. Nexus doesn't send newsletters, spam, or email notifications.
+That's it. Nodyx doesn't send newsletters, spam, or email notifications.
 
 ---
 
 ## Is it mandatory?
 
 **No.** Without email configured:
-- Nexus works normally
+- Nodyx works normally
 - Password resets don't send automatically
 - As admin, you can generate a reset link from the admin panel → Members → "Reset password"
 
@@ -31,7 +31,7 @@ You need three pieces of information from your email provider:
 - **Your login** (usually your email address)
 - **Your SMTP password** (note: this may not be your regular password — some services generate a specific app password)
 
-Open the `.env` file in the `nexus-core` folder and add these lines:
+Open the `.env` file in the `nodyx-core` folder and add these lines:
 
 ```bash
 SMTP_HOST=smtp.brevo.com
@@ -42,9 +42,9 @@ SMTP_PASS=your_smtp_password
 SMTP_FROM=noreply@your-domain.com   # optional — uses SMTP_USER if not set
 ```
 
-Then restart Nexus:
+Then restart Nodyx:
 ```bash
-pm2 restart nexus-core
+pm2 restart nodyx-core
 ```
 
 ---
@@ -122,7 +122,7 @@ SMTP_PASS=your_password
 
 ## Testing your configuration
 
-From the Nexus admin panel → **Settings** → **Email**, you can send a test email to verify everything works.
+From the Nodyx admin panel → **Settings** → **Email**, you can send a test email to verify everything works.
 
 If the email doesn't arrive:
 1. Check the credentials in `.env`
@@ -131,9 +131,9 @@ If the email doesn't arrive:
 
 ---
 
-## What Nexus will never do with your emails
+## What Nodyx will never do with your emails
 
-- Nexus never sends marketing emails
-- Nexus never shares email addresses with third parties
-- Nexus doesn't use third-party emailing services in its code (just standard SMTP)
+- Nodyx never sends marketing emails
+- Nodyx never shares email addresses with third parties
+- Nodyx doesn't use third-party emailing services in its code (just standard SMTP)
 - Your members' email addresses only pass through **your** SMTP server

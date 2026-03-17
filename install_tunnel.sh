@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ═══════════════════════════════════════════════════════════════════════════════
-#  Nexus — Cloudflare Tunnel installer
+#  Nodyx — Cloudflare Tunnel installer
 #  Pour les serveurs SANS port ouvert : Raspberry Pi, NAS, box internet…
 #  Supports : Ubuntu 22.04 / 24.04, Debian 11 / 12
 #  Usage    : bash install_tunnel.sh
@@ -28,7 +28,7 @@ _HC_SPIN=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 # run_bg "label" cmd [args...] — exécute une commande en arrière-plan avec spinner animé
 run_bg() {
   local label="$1"; shift
-  local log; log=$(mktemp /tmp/nexus_bg_XXXXXX.log)
+  local log; log=$(mktemp /tmp/nodyx_bg_XXXXXX.log)
   local pid si=0 elapsed=0 rc=0
   "$@" >"$log" 2>&1 &
   pid=$!
@@ -60,7 +60,7 @@ banner() {
   ╚═╝  ╚═══╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚══════╝
 EOF
   echo -e "${RESET}"
-  echo -e "  ${BOLD}Nexus Node Installer${RESET} — v1.0  ${CYAN}✦ Mode Cloudflare Tunnel${RESET}"
+  echo -e "  ${BOLD}Nodyx Node Installer${RESET} — v1.0  ${CYAN}✦ Mode Cloudflare Tunnel${RESET}"
   echo -e "  Hébergement à domicile • zéro port 80/443 requis • AGPL-3.0"
   echo ""
 }
@@ -246,14 +246,14 @@ read -rp "$(echo -e "  ${BOLD}Tout est bon ? On lance ! [O/n] ${RESET}")" confir
 # ═══════════════════════════════════════════════════════════════════════════════
 #  GENERATED SECRETS
 # ═══════════════════════════════════════════════════════════════════════════════
-DB_NAME="nexus"
-DB_USER="nexus_user"
+DB_NAME="nodyx"
+DB_USER="nodyx_user"
 DB_PASSWORD=$(gen_pass)
 JWT_SECRET=$(gen_secret)
-TURN_USER="nexus"
+TURN_USER="nodyx"
 TURN_CREDENTIAL=$(gen_pass)
-NEXUS_DIR="/opt/nexus"
-REPO_URL="https://github.com/Pokled/Nexus.git"
+NODYX_DIR="/opt/nodyx"
+REPO_URL="https://github.com/Pokled/Nodyx.git"
 CF_TUNNEL_ID=""
 CF_TUNNEL_NAME="$COMMUNITY_SLUG"
 
@@ -369,7 +369,7 @@ ok "Redis démarré"
 step "Configuration de coturn (relay vocal)"
 
 cat > /etc/turnserver.conf <<TURN
-# Nexus TURN relay — généré par install_tunnel.sh
+# Nodyx TURN relay — généré par install_tunnel.sh
 listening-port=3478
 tls-listening-port=5349
 
@@ -418,31 +418,31 @@ ok "Pare-feu configuré : SSH + TURN autorisés"
 info "Ports 80/443 intentionnellement fermés — CF Tunnel gère le trafic web en sortie."
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS — CLONE / UPDATE
+#  NODYX — CLONE / UPDATE
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Téléchargement de Nexus"
+step "Téléchargement de Nodyx"
 
-if [[ -d "$NEXUS_DIR/.git" ]]; then
+if [[ -d "$NODYX_DIR/.git" ]]; then
   info "Mise à jour du dépôt existant..."
-  git -C "$NEXUS_DIR" pull --ff-only
+  git -C "$NODYX_DIR" pull --ff-only
 else
-  info "Clonage du dépôt dans $NEXUS_DIR..."
-  GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$REPO_URL" "$NEXUS_DIR"
+  info "Clonage du dépôt dans $NODYX_DIR..."
+  GIT_TERMINAL_PROMPT=0 git clone --depth 1 "$REPO_URL" "$NODYX_DIR"
 fi
-ok "Code Nexus présent dans $NEXUS_DIR"
+ok "Code Nodyx présent dans $NODYX_DIR"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS-CORE — .env + build
+#  NODYX-CORE — .env + build
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Configuration du backend (nexus-core)"
+step "Configuration du backend (nodyx-core)"
 
-cat > "${NEXUS_DIR}/nexus-core/.env" <<COREENV
+cat > "${NODYX_DIR}/nodyx-core/.env" <<COREENV
 # Généré par install_tunnel.sh — ne pas modifier manuellement
 
-NEXUS_COMMUNITY_NAME=${COMMUNITY_NAME}
-NEXUS_COMMUNITY_SLUG=${COMMUNITY_SLUG}
-NEXUS_COMMUNITY_LANGUAGE=${COMMUNITY_LANG}
-NEXUS_COMMUNITY_COUNTRY=
+NODYX_COMMUNITY_NAME=${COMMUNITY_NAME}
+NODYX_COMMUNITY_SLUG=${COMMUNITY_SLUG}
+NODYX_COMMUNITY_LANGUAGE=${COMMUNITY_LANG}
+NODYX_COMMUNITY_COUNTRY=
 
 PORT=3000
 HOST=0.0.0.0
@@ -463,23 +463,23 @@ REDIS_PORT=6379
 FRONTEND_URL=https://${DOMAIN}
 COREENV
 
-cd "${NEXUS_DIR}/nexus-core"
+cd "${NODYX_DIR}/nodyx-core"
 run_bg "npm install (backend)..." npm install --no-fund --no-audit \
   || die "npm install backend échoué. Vérifie ta connexion Internet."
 run_bg "Compilation TypeScript (backend)..." npm run build \
   || die "Build backend échoué. Vérifie les logs ci-dessus."
-[[ -f "${NEXUS_DIR}/nexus-core/dist/index.js" ]] \
+[[ -f "${NODYX_DIR}/nodyx-core/dist/index.js" ]] \
   || die "dist/index.js absent — le build TypeScript n'a pas produit de sortie."
 ok "Backend compilé"
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  NEXUS-FRONTEND — .env + build
+#  NODYX-FRONTEND — .env + build
 # ═══════════════════════════════════════════════════════════════════════════════
-step "Configuration du frontend (nexus-frontend)"
+step "Configuration du frontend (nodyx-frontend)"
 
 TURN_PUBLIC_URL="turn:${PUBLIC_IP}:3478"
 
-cat > "${NEXUS_DIR}/nexus-frontend/.env" <<FEENV
+cat > "${NODYX_DIR}/nodyx-frontend/.env" <<FEENV
 # Généré par install_tunnel.sh — ne pas modifier manuellement
 
 PUBLIC_API_URL=https://${DOMAIN}
@@ -488,18 +488,18 @@ PUBLIC_TURN_USERNAME=${TURN_USER}
 PUBLIC_TURN_CREDENTIAL=${TURN_CREDENTIAL}
 FEENV
 
-cd "${NEXUS_DIR}/nexus-frontend"
+cd "${NODYX_DIR}/nodyx-frontend"
 run_bg "npm install (frontend)..." npm install --no-fund --no-audit \
   || die "npm install frontend échoué. Vérifie ta connexion Internet."
 run_bg "Build SvelteKit (peut durer 2-5 min sur ARM)..." npm run build \
   || die "Build frontend échoué. Vérifie les logs ci-dessus."
-[[ -f "${NEXUS_DIR}/nexus-frontend/build/index.js" ]] \
+[[ -f "${NODYX_DIR}/nodyx-frontend/build/index.js" ]] \
   || die "build/index.js absent — le build SvelteKit n'a pas produit de sortie."
 ok "Frontend compilé"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  CADDY — proxy HTTP local
-#  CF Tunnel → http://localhost:80 → Caddy → nexus-core / nexus-frontend
+#  CF Tunnel → http://localhost:80 → Caddy → nodyx-core / nodyx-frontend
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration de Caddy (proxy HTTP local)"
 
@@ -526,20 +526,20 @@ ok "Caddy configuré en HTTP local (port 80 ← CF Tunnel)"
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Configuration de PM2"
 
-cat > "${NEXUS_DIR}/ecosystem.config.js" <<PM2
+cat > "${NODYX_DIR}/ecosystem.config.js" <<PM2
 module.exports = {
   apps: [
     {
-      name: 'nexus-core',
+      name: 'nodyx-core',
       script: 'dist/index.js',
-      cwd: '${NEXUS_DIR}/nexus-core',
+      cwd: '${NODYX_DIR}/nodyx-core',
       watch: false,
       env: { NODE_ENV: 'production' },
     },
     {
-      name: 'nexus-frontend',
+      name: 'nodyx-frontend',
       script: 'build/index.js',
-      cwd: '${NEXUS_DIR}/nexus-frontend',
+      cwd: '${NODYX_DIR}/nodyx-frontend',
       watch: false,
       env: { NODE_ENV: 'production', PORT: '4173', HOST: '127.0.0.1', ORIGIN: 'https://${DOMAIN}' },
     },
@@ -547,9 +547,9 @@ module.exports = {
 }
 PM2
 
-cd "$NEXUS_DIR"
-pm2 delete nexus-core     2>/dev/null || true
-pm2 delete nexus-frontend 2>/dev/null || true
+cd "$NODYX_DIR"
+pm2 delete nodyx-core     2>/dev/null || true
+pm2 delete nodyx-frontend 2>/dev/null || true
 pm2 start ecosystem.config.js
 pm2 save
 pm2 startup systemd -u root --hp /root >/dev/null 2>&1 | tail -1 | bash 2>/dev/null || true
@@ -557,7 +557,7 @@ ok "PM2 configuré et lancé"
 
 info "Vérification du démarrage des processus (5s)..."
 sleep 5
-for _app in nexus-core nexus-frontend; do
+for _app in nodyx-core nodyx-frontend; do
   _st=$(pm2 list 2>/dev/null | grep " ${_app} " | grep -oE 'online|stopped|errored|launching' | head -1 || echo "absent")
   if [[ "$_st" == "online" ]]; then
     ok "  $_app — online"
@@ -662,7 +662,7 @@ step "Cloudflare Tunnel — Configuration (config.yml)"
 mkdir -p /root/.cloudflared
 
 cat > /root/.cloudflared/config.yml <<CFCFG
-# Nexus — Cloudflare Tunnel config
+# Nodyx — Cloudflare Tunnel config
 # Généré le $(date) par install_tunnel.sh
 tunnel: ${CF_TUNNEL_ID}
 credentials-file: /root/.cloudflared/${CF_TUNNEL_ID}.json
@@ -676,7 +676,7 @@ ingress:
 CFCFG
 
 ok "config.yml généré → /root/.cloudflared/config.yml"
-info "Flux : visiteur → Cloudflare (HTTPS) → Tunnel → Caddy :80 → Nexus"
+info "Flux : visiteur → Cloudflare (HTTPS) → Tunnel → Caddy :80 → Nodyx"
 
 # ── Étape F : Route DNS automatique ──────────────────────────────────────────
 step "Cloudflare Tunnel — Enregistrement DNS"
@@ -697,7 +697,7 @@ step "Cloudflare Tunnel — Service systemd"
 
 cat > /etc/systemd/system/cloudflared.service <<CFSVC
 [Unit]
-Description=Nexus — Cloudflare Tunnel
+Description=Nodyx — Cloudflare Tunnel
 Documentation=https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
 After=network.target
 
@@ -747,16 +747,16 @@ printf "\r\033[2K"
 
 if ! $_BACKEND_READY; then
   warn "Backend non opérationnel après 180s."
-  warn "Logs PM2 (nexus-core) :"
-  pm2 logs nexus-core --lines 35 --nostream 2>/dev/null || true
-  warn "Pour relancer : cd ${NEXUS_DIR} && pm2 restart nexus-core"
+  warn "Logs PM2 (nodyx-core) :"
+  pm2 logs nodyx-core --lines 35 --nostream 2>/dev/null || true
+  warn "Pour relancer : cd ${NODYX_DIR} && pm2 restart nodyx-core"
   warn "Tentative de création du compte admin quand même..."
 fi
 
 # Register admin account — retry jusqu'à 3 fois
 _REGISTER_OK=false
 for _reg_try in 1 2 3; do
-  HTTP_CODE=$(curl -s -o /tmp/nexus_register.json -w "%{http_code}" \
+  HTTP_CODE=$(curl -s -o /tmp/nodyx_register.json -w "%{http_code}" \
     -X POST http://localhost:3000/api/v1/auth/register \
     -H "Content-Type: application/json" \
     -d "{
@@ -771,7 +771,7 @@ for _reg_try in 1 2 3; do
     ok "Compte '${ADMIN_USERNAME}' déjà existant (réinstallation ?)"
     _REGISTER_OK=true; break
   else
-    warn "Tentative ${_reg_try}/3 — HTTP ${HTTP_CODE} : $(cat /tmp/nexus_register.json 2>/dev/null | head -c 200)"
+    warn "Tentative ${_reg_try}/3 — HTTP ${HTTP_CODE} : $(cat /tmp/nodyx_register.json 2>/dev/null | head -c 200)"
     [[ $_reg_try -lt 3 ]] && { info "Retry dans 8s..."; sleep 8; }
   fi
 done
@@ -809,10 +809,10 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 #  SAVE CREDENTIALS
 # ═══════════════════════════════════════════════════════════════════════════════
-CREDS_FILE="/root/nexus-credentials.txt"
+CREDS_FILE="/root/nodyx-credentials.txt"
 cat > "$CREDS_FILE" <<CREDS
 ═══════════════════════════════════════════════════════
-  NEXUS — Credentials de l'instance (Cloudflare Tunnel)
+  NODYX — Credentials de l'instance (Cloudflare Tunnel)
   Générés le $(date)
 ═══════════════════════════════════════════════════════
 
@@ -831,7 +831,7 @@ TURN URL         : turn:${PUBLIC_IP}:3478
 TURN user        : ${TURN_USER}
 TURN credential  : ${TURN_CREDENTIAL}
 
-Nexus dir        : ${NEXUS_DIR}
+Nodyx dir        : ${NODYX_DIR}
 
 ── Cloudflare Tunnel ───────────────────────────────────
 Tunnel name      : ${CF_TUNNEL_NAME}
@@ -849,7 +849,7 @@ CREDS
 chmod 600 "$CREDS_FILE"
 
 # ── Génération du script de mise à jour ───────────────────────────────────────
-UPDATE_SCRIPT="/usr/local/bin/nexus-update"
+UPDATE_SCRIPT="/usr/local/bin/nodyx-update"
 cat > "$UPDATE_SCRIPT" <<'UPDATESCRIPT'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -860,41 +860,41 @@ die()  { echo -e "${RED}✘  $*${RESET}" >&2; exit 1; }
 UPDATESCRIPT
 
 cat >> "$UPDATE_SCRIPT" <<UPDATESCRIPT2
-NEXUS_DIR="${NEXUS_DIR}"
+NODYX_DIR="${NODYX_DIR}"
 UPDATESCRIPT2
 
 cat >> "$UPDATE_SCRIPT" <<'UPDATESCRIPT3'
 
-[[ $EUID -ne 0 ]] && die "Lance en root : sudo nexus-update"
-echo -e "\n${BOLD}━━━  Mise à jour Nexus  ━━━${RESET}\n"
+[[ $EUID -ne 0 ]] && die "Lance en root : sudo nodyx-update"
+echo -e "\n${BOLD}━━━  Mise à jour Nodyx  ━━━${RESET}\n"
 
 info "Récupération des dernières modifications..."
-git -C "$NEXUS_DIR" pull --ff-only || die "git pull échoué."
+git -C "$NODYX_DIR" pull --ff-only || die "git pull échoué."
 
 info "Rebuild backend..."
-cd "${NEXUS_DIR}/nexus-core"
+cd "${NODYX_DIR}/nodyx-core"
 npm install --no-fund --no-audit --silent
 npm run build || die "Build backend échoué."
 ok "Backend compilé"
 
 info "Rebuild frontend..."
-cd "${NEXUS_DIR}/nexus-frontend"
+cd "${NODYX_DIR}/nodyx-frontend"
 npm install --no-fund --no-audit --silent
 npm run build || die "Build frontend échoué."
 ok "Frontend compilé"
 
 info "Redémarrage des services..."
-cd "$NEXUS_DIR"
+cd "$NODYX_DIR"
 pm2 restart ecosystem.config.js --update-env
 pm2 save
 
 echo ""
-ok "Nexus mis à jour et redémarré."
+ok "Nodyx mis à jour et redémarré."
 pm2 list
 UPDATESCRIPT3
 
 chmod +x "$UPDATE_SCRIPT"
-ok "Script de mise à jour : ${BOLD}nexus-update${RESET} (sudo nexus-update)"
+ok "Script de mise à jour : ${BOLD}nodyx-update${RESET} (sudo nodyx-update)"
 
 # ═══════════════════════════════════════════════════════════════════════════════
 #  HEALTH CHECK
@@ -941,9 +941,9 @@ else
   _hc_fail "cloudflared  ${YELLOW}→ systemctl status cloudflared${RESET}"
 fi
 
-# ── Nexus (PM2) ───────────────────────────────────────────────────────────────
-_hc_sect "Nexus (PM2)"
-for _app in nexus-core nexus-frontend; do
+# ── Nodyx (PM2) ───────────────────────────────────────────────────────────────
+_hc_sect "Nodyx (PM2)"
+for _app in nodyx-core nodyx-frontend; do
   _pm2=$(pm2 list 2>/dev/null | grep " $_app " | grep -oE 'online|stopped|errored|launching' | head -1 || echo "absent")
   if [[ "$_pm2" == "online" ]]; then
     _hc_pass "$_app"
@@ -997,7 +997,7 @@ echo ""
 # ═══════════════════════════════════════════════════════════════════════════════
 echo ""
 echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════╗${RESET}"
-echo -e "${GREEN}${BOLD}║  ✔  Nexus installé via Cloudflare Tunnel !      ║${RESET}"
+echo -e "${GREEN}${BOLD}║  ✔  Nodyx installé via Cloudflare Tunnel !      ║${RESET}"
 echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════╝${RESET}"
 echo ""
 echo -e "  ${BOLD}Instance  :${RESET} https://${DOMAIN}"
@@ -1008,9 +1008,9 @@ echo ""
 echo -e "  ${CYAN}Credentials sauvegardés dans :${RESET} ${BOLD}${CREDS_FILE}${RESET}"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Gestion des services${RESET}"
-echo -e "  pm2 list                              → état de nexus-core + nexus-frontend"
-echo -e "  pm2 logs nexus-core                   → logs backend en temps réel"
-echo -e "  pm2 logs nexus-frontend               → logs frontend en temps réel"
+echo -e "  pm2 list                              → état de nodyx-core + nodyx-frontend"
+echo -e "  pm2 logs nodyx-core                   → logs backend en temps réel"
+echo -e "  pm2 logs nodyx-frontend               → logs frontend en temps réel"
 echo -e "  pm2 restart all                       → redémarrer tout"
 echo -e "  pm2 stop all / pm2 start all          → arrêt / démarrage"
 echo ""
@@ -1021,11 +1021,11 @@ echo -e "  cloudflared tunnel info ${CF_TUNNEL_NAME}  → connexions actives"
 echo -e "  systemctl restart cloudflared         → redémarrer le tunnel"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Mise à jour${RESET}"
-echo -e "  sudo nexus-update                     → git pull + rebuild + restart en une commande"
+echo -e "  sudo nodyx-update                     → git pull + rebuild + restart en une commande"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Base de données${RESET}"
 echo -e "  sudo -u postgres psql ${DB_NAME}      → console PostgreSQL"
-echo -e "  sudo -u postgres pg_dump ${DB_NAME} > backup_nexus_\$(date +%F).sql"
+echo -e "  sudo -u postgres pg_dump ${DB_NAME} > backup_nodyx_\$(date +%F).sql"
 echo -e "                                        → sauvegarde de la base"
 echo ""
 echo -e "  ${BOLD}${CYAN}▸ Diagnostic${RESET}"

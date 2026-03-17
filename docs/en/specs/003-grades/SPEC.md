@@ -5,9 +5,9 @@
 
 ## Context
 
-Nexus has two levels of roles:
+Nodyx has two levels of roles:
 
-1. **System roles** — fixed, defined by Nexus
+1. **System roles** — fixed, defined by Nodyx
 2. **Custom grades** — created by the admins of each community
 
 A user can have a system role AND a custom grade.
@@ -25,7 +25,7 @@ moderator   → Can moderate posts and threads
 member      → Standard member
 ```
 
-These roles are NOT renameable. They are internal to Nexus.
+These roles are NOT renameable. They are internal to Nodyx.
 
 ---
 
@@ -43,7 +43,7 @@ Gaming community   → "Grand Master", "Player", "Noob"
 
 ## Step 1 — Database
 
-File: `nexus-core/src/migrations/003_grades.sql`
+File: `nodyx-core/src/migrations/003_grades.sql`
 
 ```sql
 -- Custom grades per community
@@ -115,7 +115,7 @@ checkPermission(permission: keyof Permissions)
 
 ## Step 3 — ProfileCard update
 
-File: `nexus-frontend/src/lib/components/ProfileCard.svelte`
+File: `nodyx-frontend/src/lib/components/ProfileCard.svelte`
 
 Add below the username:
 ```
@@ -135,7 +135,7 @@ The grade badge:
 
 ## Step 4 — Grade administration interface
 
-File: `nexus-frontend/src/routes/communities/[slug]/admin/grades/+page.svelte`
+File: `nodyx-frontend/src/routes/communities/[slug]/admin/grades/+page.svelte`
 
 Simple interface:
 ```
@@ -173,7 +173,7 @@ Accessible only to owners and admins.
 ## What we do NOT do in this spec
 
 - Per-member grade assignment UI → next phase
-- Global Nexus grades (outside community) → Phase 2
+- Global Nodyx grades (outside community) → Phase 2
 - Inherited grade hierarchy → Phase 2
 
 ---

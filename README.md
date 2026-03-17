@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="docs/img/nexus-logo.png" alt="Nexus" width="220"/>
+  <img src="docs/img/nodyx-logo.png" alt="Nodyx" width="220"/>
 
   <h3><em>"The network is the people."</em></h3>
 
@@ -7,10 +7,10 @@
 
   [![Version](https://img.shields.io/badge/version-v1.8.1-7c3aed)](CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-  [![CI](https://github.com/Pokled/Nexus/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nexus/actions/workflows/ci.yml)
+  [![CI](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](docs/en/ARCHITECTURE.md)
 
-  <sub>⭐ If Nexus resonates with you, a star helps others find it — and keeps us going.</sub>
+  <sub>⭐ If Nodyx resonates with you, a star helps others find it — and keeps us going.</sub>
 </div>
 
 ---
@@ -24,7 +24,7 @@
 ---
 
 <div align="center">
-  <img src="docs/img/hero.png" alt="Nexus — community home" width="860"/>
+  <img src="docs/img/hero.png" alt="Nodyx — community home" width="860"/>
 </div>
 
 ---
@@ -33,13 +33,13 @@
 
 ---
 
-## Why Nexus
+## Why Nodyx
 
 - **Discord** locks communities inside a private platform — your 10 years of history vanish if they close or ban you
 - **Forums** are slow and fragmented — no voice, no real-time, invisible to your members' daily workflow
 - **Self-hosted tools** rarely combine chat + voice + searchable knowledge in a single install
 
-Nexus brings them together. One command. Your server. Forever.
+Nodyx brings them together. One command. Your server. Forever.
 
 ---
 
@@ -54,23 +54,23 @@ Locked in silos. Invisible to search engines. Gone when the platform decides.
 
 ---
 
-## Nexus gives it back.
+## Nodyx gives it back.
 
 One command. Your server. Your rules. Your community — permanently.
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git && cd Nexus && sudo bash install.sh
+git clone https://github.com/Pokled/Nodyx.git && cd Nodyx && sudo bash install.sh
 ```
 
 Works on a Raspberry Pi behind a home router. No domain. No open ports. No cloud account.
 
 ---
 
-## What makes Nexus different
+## What makes Nodyx different
 
 ### It's the only platform with all of this in a single install
 
-| | **Nexus** | Discord | Matrix | Discourse | Lemmy |
+| | **Nodyx** | Discord | Matrix | Discourse | Lemmy |
 |---|:---:|:---:|:---:|:---:|:---:|
 | Self-hosted | ✅ | ❌ | ✅ | ✅ | ✅ |
 | Forum indexed by Google | ✅ | ❌ | ❌ | ✅ | ✅ |
@@ -92,18 +92,18 @@ Works on a Raspberry Pi behind a home router. No domain. No open ports. No cloud
 
 | Open source | ✅ AGPL | ❌ | ✅ | ✅ | ✅ |
 
-> Nexus is the only self-hosted platform combining an **indexed forum**, **real-time chat**, **P2P voice**, **collaborative canvas**, and a **federated directory** in a single install.
+> Nodyx is the only self-hosted platform combining an **indexed forum**, **real-time chat**, **P2P voice**, **collaborative canvas**, and a **federated directory** in a single install.
 
 ---
 
 ## The P2P Stack — 100% handwritten Rust
 
-This is where Nexus goes further than anyone else.
+This is where Nodyx goes further than anyone else.
 
-### nexus-turn — Rust STUN/TURN server *(replaces coturn)*
+### nodyx-turn — Rust STUN/TURN server *(replaces coturn)*
 
 coturn is the industry standard — a mature C server used by Signal, Jitsi, Matrix.
-We replaced it with a **2.9MB Rust binary** that does exactly what Nexus needs. Nothing more.
+We replaced it with a **2.9MB Rust binary** that does exactly what Nodyx needs. Nothing more.
 
 ```
 RFC 5389 (STUN) + RFC 5766 (TURN) + RFC 6062 (TURN-over-TCP)
@@ -114,14 +114,14 @@ tokio async runtime — UDP:3478 + TCP:3478 (VPN/firewall bypass)
 Zero coturn dependency on production
 ```
 
-### nexus-relay — Rust P2P TCP tunnel *(no domain, no open ports)*
+### nodyx-relay — Rust P2P TCP tunnel *(no domain, no open ports)*
 
 A Raspberry Pi under your desk. No domain. No router port forwarding. No Cloudflare account.
-Run Nexus anyway.
+Run Nodyx anyway.
 
 ```
-nexus-relay server  →  listens TCP:7443 + HTTP:7001
-nexus-relay client  →  persistent TCP tunnel → exposes local port 80
+nodyx-relay server  →  listens TCP:7443 + HTTP:7001
+nodyx-relay client  →  persistent TCP tunnel → exposes local port 80
 ```
 
 - Automatic reconnection with exponential backoff (1s → 30s max)
@@ -138,7 +138,7 @@ Messages between peers that never touch the server.
 - **P2P file transfer** — assets shared directly between peers
 - **Graceful fallback** — if DataChannel unavailable (strict NAT), Socket.IO takes over transparently
 
-### NexusCanvas — Collaborative P2P whiteboard
+### NodyxCanvas — Collaborative P2P whiteboard
 
 Draw together in real time. Synchronized via existing DataChannels.
 No server touches the data. Session-only by default.
@@ -160,24 +160,24 @@ PNG export (browser-native) + text recap posted to chat channel
     <td align="center"><b>Forum</b></td>
   </tr>
   <tr>
-    <td><img src="docs/img/Index_Api-Nexus.png" alt="Community home page" width="460"/></td>
-    <td><img src="docs/img/Forum_Api-Nexus.png" alt="Forum category" width="460"/></td>
+    <td><img src="docs/img/Index_Api-Nodyx.png" alt="Community home page" width="460"/></td>
+    <td><img src="docs/img/Forum_Api-Nodyx.png" alt="Forum category" width="460"/></td>
   </tr>
   <tr>
     <td align="center"><b>Real-time Chat</b></td>
     <td align="center"><b>Voice Channels — WebRTC P2P</b></td>
   </tr>
   <tr>
-    <td><img src="docs/img/Chat-Texte_Api-Nexus.png" alt="Text chat" width="460"/></td>
-    <td><img src="docs/img/Salon-vocal_Api-Nexus.png" alt="Voice channel with P2P mesh visualization" width="460"/></td>
+    <td><img src="docs/img/Chat-Texte_Api-Nodyx.png" alt="Text chat" width="460"/></td>
+    <td><img src="docs/img/Salon-vocal_Api-Nodyx.png" alt="Voice channel with P2P mesh visualization" width="460"/></td>
   </tr>
   <tr>
     <td align="center"><b>Admin Panel</b></td>
     <td align="center"><b>Instance Directory</b></td>
   </tr>
   <tr>
-    <td><img src="docs/img/AdminPanel_Instance_Api-Nexus.png" alt="Admin dashboard" width="460"/></td>
-    <td><img src="docs/img/Annuaire_instances_Api-Nexus.png" alt="Instance directory" width="460"/></td>
+    <td><img src="docs/img/AdminPanel_Instance_Api-Nodyx.png" alt="Admin dashboard" width="460"/></td>
+    <td><img src="docs/img/Annuaire_instances_Api-Nodyx.png" alt="Instance directory" width="460"/></td>
   </tr>
 </table>
 
@@ -203,19 +203,19 @@ apt-get install -y git curl
 
 **Option A — clone first, then run:**
 ```bash
-git clone https://github.com/Pokled/Nexus.git
-cd Nexus
+git clone https://github.com/Pokled/Nodyx.git
+cd Nodyx
 sudo bash install.sh
 ```
 
 **Option B — single command with `curl` (no `git` needed):**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh | sudo bash
 ```
 
 **Option C — single command with `wget` (if `curl` is not installed):**
 ```bash
-wget -qO- https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh | sudo bash
 ```
 
 The installer offers **three network modes**:
@@ -223,13 +223,13 @@ The installer offers **three network modes**:
 | Mode | Requirements | Result |
 |---|---|---|
 | **Open ports** | Ports 80 + 443, domain or IP | Let's Encrypt HTTPS, full control |
-| **Nexus Relay** ⭐ | Nothing — outbound TCP only | `yourclub.nexusnode.app` in minutes |
+| **Nodyx Relay** ⭐ | Nothing — outbound TCP only | `yourclub.nexusnode.app` in minutes |
 | **Cloudflare Tunnel** | CF account + own domain | Your custom domain, no open ports |
 
-> **Nexus Relay** is the recommended default — works on a Raspberry Pi behind a home router.
+> **Nodyx Relay** is the recommended default — works on a Raspberry Pi behind a home router.
 > No domain. No port forwarding. No cloud account. Just run the script.
 
-Installs automatically: Node.js, PostgreSQL, Redis, nexus-turn (Rust STUN/TURN), Caddy (HTTPS), PM2.
+Installs automatically: Node.js, PostgreSQL, Redis, nodyx-turn (Rust STUN/TURN), Caddy (HTTPS), PM2.
 Generates secrets, bootstraps the database, creates your admin account.
 **No manual configuration.**
 
@@ -241,28 +241,28 @@ Generates secrets, bootstraps the database, creates your admin account.
 ### Docker
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git
-cd Nexus
-cp nexus-core/.env.example nexus-core/.env
+git clone https://github.com/Pokled/Nodyx.git
+cd Nodyx
+cp nodyx-core/.env.example nodyx-core/.env
 docker-compose up -d
 ```
 
 ### Updating an existing instance
 
-Run this single command from the Nexus directory on your server:
+Run this single command from the Nodyx directory on your server:
 
 ```bash
-# If installed in ~/nexus
-cd ~/nexus && git pull && \
-  cd nexus-core && npm run build && sudo pm2 restart nexus-core && \
-  cd ../nexus-frontend && npm run build && sudo pm2 restart nexus-frontend
+# If installed in ~/nodyx
+cd ~/nodyx && git pull && \
+  cd nodyx-core && npm run build && sudo pm2 restart nodyx-core && \
+  cd ../nodyx-frontend && npm run build && sudo pm2 restart nodyx-frontend
 ```
 
 ```bash
-# If installed in /opt/nexus
-cd /opt/nexus && git pull && \
-  cd nexus-core && npm run build && sudo pm2 restart nexus-core && \
-  cd ../nexus-frontend && npm run build && sudo pm2 restart nexus-frontend
+# If installed in /opt/nodyx
+cd /opt/nodyx && git pull && \
+  cd nodyx-core && npm run build && sudo pm2 restart nodyx-core && \
+  cd ../nodyx-frontend && npm run build && sudo pm2 restart nodyx-frontend
 ```
 
 Database migrations are applied automatically on startup — no manual SQL needed.
@@ -278,13 +278,13 @@ Database migrations are applied automatically on startup — no manual SQL neede
                │ HTTP / WebSocket             │ WebRTC P2P
                ▼                             ▼
 ┌──────────────────────────┐    ┌────────────────────────────┐
-│   nexus-core (Fastify)   │    │  Direct peer connection     │
-│   nexus-frontend (Svelte)│    │  DataChannels + Canvas      │
+│   nodyx-core (Fastify)   │    │  Direct peer connection     │
+│   nodyx-frontend (Svelte)│    │  DataChannels + Canvas      │
 │   PostgreSQL + Redis      │    │  Voice + Screen share       │
 └──────────────────────────┘    └────────────────────────────┘
                │                             │
         ┌──────┴──────┐               ┌──────┴──────┐
-        │ nexus-relay │               │ nexus-turn  │
+        │ nodyx-relay │               │ nodyx-turn  │
         │ (Rust TCP)  │               │ (Rust TURN) │
         │ home server │               │ NAT bypass  │
         └─────────────┘               └─────────────┘
@@ -300,9 +300,9 @@ Database migrations are applied automatically on startup — no manual SQL neede
 | Editor | TipTap (WYSIWYG) |
 | Real-time | Socket.IO |
 | Voice | WebRTC P2P mesh |
-| TURN relay | **nexus-turn** — Rust, self-hosted, hardened |
-| P2P relay | **nexus-relay** — Rust, tokio + hyper |
-| Collaborative canvas | **NexusCanvas** — CRDT LWW, P2P DataChannels |
+| TURN relay | **nodyx-turn** — Rust, self-hosted, hardened |
+| P2P relay | **nodyx-relay** — Rust, tokio + hyper |
+| Collaborative canvas | **NodyxCanvas** — CRDT LWW, P2P DataChannels |
 
 ---
 
@@ -321,14 +321,14 @@ Database migrations are applied automatically on startup — no manual SQL neede
 | SEO (sitemap, RSS, JSON-LD) | v0.3 |
 | One-click installer | v0.4 |
 | Instance directory + auto DNS | v0.5 |
-| nexus-relay — Rust P2P TCP tunnel | v0.5 |
+| nodyx-relay — Rust P2P TCP tunnel | v0.5 |
 | Community asset library (frames, banners, badges) | v0.6 |
 | Feature Garden — community voting with organic growth stages | v0.6 |
 | Federated asset directory (cross-instance sharing) | v0.7 |
 | Whispers — ephemeral encrypted chat rooms (1h TTL) | v0.7 |
 | P2P DataChannels — instant typing, optimistic reactions | v0.8 |
-| nexus-turn — Rust STUN/TURN replacing coturn | v0.9 |
-| **NexusCanvas — collaborative P2P whiteboard in voice channels** | **v0.9** |
+| nodyx-turn — Rust STUN/TURN replacing coturn | v0.9 |
+| **NodyxCanvas — collaborative P2P whiteboard in voice channels** | **v0.9** |
 | **Profile theme system** — 6 presets, per-user app-wide CSS engine, live editor | **v1.0** |
 | **Mobile-responsive UI** — chat drawer, bottom nav, voice accessible on mobile | **v1.0** |
 | **Asset library 12 MB** + per-type upload design guidelines | **v1.0** |
@@ -337,8 +337,8 @@ Database migrations are applied automatically on startup — no manual SQL neede
 | **Direct Messages (DMs)** — private 1:1 conversations with unread badge | **v1.2** |
 | **Polls** — in chat and forum, 3 types (choice/schedule/ranking), real-time results | **v1.2** |
 | **Ban system** — IP ban, email ban, multi-layer enforcement | **v1.2** |
-| **nexus-turn — TURN-over-TCP** (RFC 6062) — voice works through VPNs and strict firewalls | **v1.3** |
-| **nexus-turn — MESSAGE-INTEGRITY** fix — relay candidates now accepted by all browsers | **v1.3** |
+| **nodyx-turn — TURN-over-TCP** (RFC 6062) — voice works through VPNs and strict firewalls | **v1.3** |
+| **nodyx-turn — MESSAGE-INTEGRITY** fix — relay candidates now accepted by all browsers | **v1.3** |
 | **Voice — Relay failover** — auto-switches to TURN relay on sustained packet loss | **v1.3** |
 | **Voice — Opus tuning** — 32 kbps default, DTX off, mono for high-loss links | **v1.3** |
 
@@ -351,7 +351,7 @@ Database migrations are applied automatically on startup — no manual SQL neede
 | **Global Search** — cross-instance FTS index, `/discover` UI | v1.5 |
 | **Event Calendar** — CRUD, RSVP, OSM maps, cover image, rich snippets | v1.6 |
 | **Gossip Protocol** — event federation across instances | v1.6 |
-| **Nexus Signet** — passwordless ECDSA P-256 auth PWA at `signet.nexusnode.app` | v1.7 |
+| **Nodyx Signet** — passwordless ECDSA P-256 auth PWA at `signet.nexusnode.app` | v1.7 |
 | **QR enrollment** — scan from settings to skip manual token entry | v1.7 |
 | **Optimistic UI** — all mutations update local state instantly (no page re-fetches) | v1.7 |
 | **Notification center** — purge automatique 30j + effacer les lues | v1.7 |
@@ -362,7 +362,7 @@ Database migrations are applied automatically on startup — no manual SQL neede
 |---|---|
 | **Tasks / Kanban** — per-community boards, drag & drop, assignees, priorities, deadlines | v1.8 |
 | **Update alert** — admin banner when a new GitHub release is available (Redis-cached 6h) | v1.8 |
-| **Instance version display** — "Nexus v1.8.x" shown on home page from `NEXUS_VERSION` env | v1.8 |
+| **Instance version display** — "Nodyx v1.8.x" shown on home page from `NODYX_VERSION` env | v1.8 |
 | **Security audit** — PATCH /cards permission fix, health 503, HOST binding, enrollment adminOnly, rate limit on /announcement, moderators can manage tags | v1.8.1 |
 
 ### Coming
@@ -376,18 +376,18 @@ Database migrations are applied automatically on startup — no manual SQL neede
 
 ## The Vision
 
-Nexus is not a Discord alternative.
+Nodyx is not a Discord alternative.
 
 It is a different answer to a different question.
 
 Discord asked: *"How do we grow fast and capture communities?"*
-Nexus asks: *"How do we give communities sovereignty over their own existence?"*
+Nodyx asks: *"How do we give communities sovereignty over their own existence?"*
 
-Every Nexus instance is a sovereign node. It runs where you run it — a VPS, a Pi, a spare laptop. It stores what you choose to store. It shares what you choose to share. It shuts down when you decide — not when a company pivots.
+Every Nodyx instance is a sovereign node. It runs where you run it — a VPS, a Pi, a spare laptop. It stores what you choose to store. It shares what you choose to share. It shuts down when you decide — not when a company pivots.
 
 The internet was decentralized by design. SMTP, IRC, NNTP — anyone could run a server and talk to anyone else's server. That was the promise. Big Tech centralized it into silos over two decades.
 
-**Nexus is the promise, kept.**
+**Nodyx is the promise, kept.**
 
 And it spreads the same way. Each instance that goes live exposes others to the idea. Each public event indexed by Google brings in someone new. Each community that chooses sovereignty inspires another. The R0 is in the architecture.
 
@@ -407,24 +407,24 @@ We are not building a product. We are rebuilding infrastructure for human commun
 | <img src="https://flagcdn.com/16x12/it.png" alt="IT"> Italiano | *coming soon* |
 | <img src="https://flagcdn.com/16x12/de.png" alt="DE"> Deutsch | *coming soon* |
 
-- [Manifesto](docs/en/MANIFESTO.md) — Why Nexus exists
+- [Manifesto](docs/en/MANIFESTO.md) — Why Nodyx exists
 - [Architecture](docs/en/ARCHITECTURE.md) — How it's built
 - [Roadmap](docs/en/ROADMAP.md) — Where we're going
 - [Audio Engine](docs/en/AUDIO.md) — Broadcast EQ, RNNoise, full audio chain
 - [Neural Engine](docs/en/NEURAL-ENGINE.md) — Local AI with Ollama
 - [Specs](docs/en/specs/) — All functional specifications
 - [Ideas](docs/ideas/) — Design thinking in progress
-- [**NEXUS-ETHER**](docs/ideas/NEXUS-ETHER.md) — The physical layer vision (LoRa / HF radio / ionosphere)
-- [**NEXUS-ETHER Guide**](docs/ideas/NEXUS-ETHER-GUIDE.md) — How to participate: CB, HAM radio, LoRa, regional radio revival
-- [**NEXUS-RADIO**](docs/ideas/NEXUS-RADIO.md) — Nexus as a radio tuner: new stations born because they finally have a community
+- [**NODYX-ETHER**](docs/ideas/NODYX-ETHER.md) — The physical layer vision (LoRa / HF radio / ionosphere)
+- [**NODYX-ETHER Guide**](docs/ideas/NODYX-ETHER-GUIDE.md) — How to participate: CB, HAM radio, LoRa, regional radio revival
+- [**NODYX-RADIO**](docs/ideas/NODYX-RADIO.md) — Nodyx as a radio tuner: new stations born because they finally have a community
 
 ---
 
 ## Contributing
 
-Nexus belongs to its community.
+Nodyx belongs to its community.
 
-1. Browse [open Issues](https://github.com/Pokled/Nexus/issues) or open a [Discussion](https://github.com/Pokled/Nexus/discussions)
+1. Browse [open Issues](https://github.com/Pokled/Nodyx/issues) or open a [Discussion](https://github.com/Pokled/Nodyx/discussions)
 2. Read [CONTRIBUTING.md](docs/en/CONTRIBUTING.md) before opening a PR
 3. Commits follow [Conventional Commits](https://www.conventionalcommits.org/), written in English
 
@@ -435,7 +435,7 @@ docs/        →  improve or translate documentation
 docs/ideas/  →  design thinking, UX proposals, new ideas
 ```
 
-The core (`nexus-core/src/`) requires discussion first — open an Issue.
+The core (`nodyx-core/src/`) requires discussion first — open an Issue.
 
 ---
 
@@ -443,8 +443,8 @@ The core (`nexus-core/src/`) requires discussion first — open an Issue.
 
 **AGPL-3.0** — The strongest open source license for networked software.
 
-If you use Nexus, even over a network, your modifications must be open source.
-If Nexus ever betrays its principles, this license lets anyone fork it and continue in the spirit of the [Manifesto](docs/en/MANIFESTO.md).
+If you use Nodyx, even over a network, your modifications must be open source.
+If Nodyx ever betrays its principles, this license lets anyone fork it and continue in the spirit of the [Manifesto](docs/en/MANIFESTO.md).
 
 ---
 

@@ -1,6 +1,6 @@
-# Nexus Audio Engine
+# Nodyx Audio Engine
 
-Nexus includes a client-side audio processing chain designed to deliver broadcast-quality voice in any voice channel — without dedicated hardware, without external services, and without sending your audio anywhere but directly to your peers.
+Nodyx includes a client-side audio processing chain designed to deliver broadcast-quality voice in any voice channel — without dedicated hardware, without external services, and without sending your audio anywhere but directly to your peers.
 
 ---
 
@@ -75,7 +75,7 @@ It is effective against:
 - Background music
 - Crowd noise
 
-> **Note:** RNNoise requires the `@jitsi/rnnoise-wasm` package. If not installed, the toggle is disabled in the UI. Enable it in production by running `npm install @jitsi/rnnoise-wasm` in `nexus-frontend/`.
+> **Note:** RNNoise requires the `@jitsi/rnnoise-wasm` package. If not installed, the toggle is disabled in the UI. Enable it in production by running `npm install @jitsi/rnnoise-wasm` in `nodyx-frontend/`.
 
 ---
 
@@ -83,7 +83,7 @@ It is effective against:
 
 **Default: disabled — Intensity: 60%**
 
-This is the audio feature that sets Nexus apart. Broadcast Mode applies a three-band equalizer tuned for the human voice, replicating the processing chain used in professional podcasting and radio broadcasting.
+This is the audio feature that sets Nodyx apart. Broadcast Mode applies a three-band equalizer tuned for the human voice, replicating the processing chain used in professional podcasting and radio broadcasting.
 
 #### The three bands
 

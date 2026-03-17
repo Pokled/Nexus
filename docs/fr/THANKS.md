@@ -1,15 +1,15 @@
-# THANKS — Nexus existe grâce à vous
+# THANKS — Nodyx existe grâce à vous
 
 > "Si j'ai vu plus loin, c'est en me tenant sur les épaules de géants."
 > — Isaac Newton
 
-Nexus n'a rien inventé. Nexus a assemblé, avec respect et gratitude,
+Nodyx n'a rien inventé. Nodyx a assemblé, avec respect et gratitude,
 le travail de milliers de développeurs qui ont choisi la liberté
 plutôt que la propriété.
 
 ---
 
-## 🔧 Les outils qui font tourner Nexus
+## 🔧 Les outils qui font tourner Nodyx
 
 | Projet | Rôle | Licence |
 |--------|------|---------|
@@ -35,13 +35,13 @@ plutôt que la propriété.
 **Linux** — Sans toi rien de tout cela n'existerait.
 
 **Internet** — Tu as été inventé pour nous réunir.
-Nexus veille à ce que tu le restes.
+Nodyx veille à ce que tu le restes.
 
 ---
 
 ## 🤝 L'esprit open source
 
-Nexus est libre parce que ces projets étaient libres avant lui.
-En retour Nexus s'engage à rester libre pour toujours.
+Nodyx est libre parce que ces projets étaient libres avant lui.
+En retour Nodyx s'engage à rester libre pour toujours.
 
-AGPL-3.0 — Le code de Nexus appartient à sa communauté.
+AGPL-3.0 — Le code de Nodyx appartient à sa communauté.

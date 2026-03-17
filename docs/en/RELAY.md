@@ -1,8 +1,8 @@
-# ⚡ Nexus Relay — Install without a domain or open ports
+# ⚡ Nodyx Relay — Install without a domain or open ports
 
-> **The problem:** You want to host Nexus at home — on a Raspberry Pi, an old PC, your home router setup — but you don't have a domain, and your ISP blocks incoming ports.
+> **The problem:** You want to host Nodyx at home — on a Raspberry Pi, an old PC, your home router setup — but you don't have a domain, and your ISP blocks incoming ports.
 >
-> **The solution:** Nexus Relay. A 9 MB Rust binary that establishes an **outbound** connection to our infrastructure, making your instance accessible at `your-slug.nexusnode.app` — with zero configuration.
+> **The solution:** Nodyx Relay. A 9 MB Rust binary that establishes an **outbound** connection to our infrastructure, making your instance accessible at `your-slug.nexusnode.app` — with zero configuration.
 
 ---
 
@@ -24,23 +24,23 @@
 ```
                     Your machine (at home)
                     ┌────────────────────────────────┐
-                    │  nexus-core (port 3000)        │
-                    │  nexus-frontend (port 4173)    │
+                    │  nodyx-core (port 3000)        │
+                    │  nodyx-frontend (port 4173)    │
                     │  Caddy (port 80, local)        │
                     │                                │
-                    │  nexus-relay-client  ──────────┼──── outbound TCP connection ───►
+                    │  nodyx-relay-client  ──────────┼──── outbound TCP connection ───►
                     └────────────────────────────────┘                                │
                                                                                       │
                                                                relay.nexusnode.app:7443
                                                                ┌────────────────────────────┐
-                                                               │  nexus-relay-server        │
+                                                               │  nodyx-relay-server        │
                                                                │                            │
                     ◄─────── HTTPS via Caddy ────────────────  │  *.nexusnode.app → :7001   │
                     Browser → your-slug.nexusnode.app           └────────────────────────────┘
 ```
 
-1. **You run `bash install.sh`** and choose option `[2] Nexus Relay`
-2. **`nexus-relay-client`** starts as a systemd service on your machine
+1. **You run `bash install.sh`** and choose option `[2] Nodyx Relay`
+2. **`nodyx-relay-client`** starts as a systemd service on your machine
 3. It establishes an **outbound TCP connection** (port 7443) to `relay.nexusnode.app` — just like opening a website, not like opening a port
 4. When someone visits `your-slug.nexusnode.app`, the HTTPS request arrives at our VPS, the relay server routes it through the tunnel, and your machine responds
 5. **Your machine has no open ports.** Your router has nothing to forward. Your ISP only sees outbound traffic.
@@ -67,7 +67,7 @@
 ### Method 1 — Interactive installer (recommended)
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git && cd Nexus && sudo bash install.sh
+git clone https://github.com/Pokled/Nodyx.git && cd Nodyx && sudo bash install.sh
 ```
 
 When the installer asks for the network mode, choose **`2`**:
@@ -75,16 +75,16 @@ When the installer asks for the network mode, choose **`2`**:
 ```
   Network connection mode
   ┌─ [1] Personal domain  — ports 80/443 open required
-  ├─ [2] Nexus Relay       — recommended — no ports, no domain (RPi, home box, ...)
+  ├─ [2] Nodyx Relay       — recommended — no ports, no domain (RPi, home box, ...)
   └─ [3] sslip.io auto     — free automatic domain, open ports required
 
-  ? Choice [1/2/3] (default: 2 — Nexus Relay):
+  ? Choice [1/2/3] (default: 2 — Nodyx Relay):
 ```
 
 **The installer handles everything:**
-- Downloads the `nexus-relay` binary (amd64 or arm64 auto-detected)
+- Downloads the `nodyx-relay` binary (amd64 or arm64 auto-detected)
 - Registers your slug with the nexusnode.app directory
-- Creates and starts the `nexus-relay-client` systemd service
+- Creates and starts the `nodyx-relay-client` systemd service
 - Configures Caddy in local HTTP mode (no ports to open)
 
 **Result:** `your-slug.nexusnode.app` live in ~5 minutes.
@@ -93,26 +93,26 @@ When the installer asks for the network mode, choose **`2`**:
 
 ### Method 2 — Binary only (existing installation)
 
-If you already have a Nexus instance and just want to add the relay:
+If you already have a Nodyx instance and just want to add the relay:
 
 ```bash
 # 1. Download the binary
 ARCH=$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/')
-sudo curl -L "https://github.com/Pokled/Nexus/releases/download/v0.1.0-relay/nexus-relay-linux-${ARCH}" \
-  -o /usr/local/bin/nexus-relay
-sudo chmod +x /usr/local/bin/nexus-relay
+sudo curl -L "https://github.com/Pokled/Nodyx/releases/download/v0.1.0-relay/nodyx-relay-linux-${ARCH}" \
+  -o /usr/local/bin/nodyx-relay
+sudo chmod +x /usr/local/bin/nodyx-relay
 
 # 2. Verify
-nexus-relay --version
+nodyx-relay --version
 
 # 3. Create the service (replace YOUR_SLUG and YOUR_TOKEN with your real values)
-sudo tee /etc/systemd/system/nexus-relay-client.service > /dev/null <<EOF
+sudo tee /etc/systemd/system/nodyx-relay-client.service > /dev/null <<EOF
 [Unit]
-Description=Nexus Relay Client
+Description=Nodyx Relay Client
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/nexus-relay client \
+ExecStart=/usr/local/bin/nodyx-relay client \
   --server relay.nexusnode.app:7443 \
   --slug YOUR_SLUG \
   --token YOUR_TOKEN \
@@ -126,10 +126,10 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now nexus-relay-client
+sudo systemctl enable --now nodyx-relay-client
 ```
 
-> 💡 Your token is available in `/root/nexus-credentials.txt` if you used `install.sh`, or in the JSON response from the nexusnode.app registration API.
+> 💡 Your token is available in `/root/nodyx-credentials.txt` if you used `install.sh`, or in the JSON response from the nexusnode.app registration API.
 
 ---
 
@@ -137,14 +137,14 @@ sudo systemctl enable --now nexus-relay-client
 
 | Method | Domain required | Ports to open | Third-party account | Dependency |
 |---|---|---|---|---|
-| **Nexus Relay** ⭐ | ❌ No | ❌ No | ❌ No | Our infrastructure only |
+| **Nodyx Relay** ⭐ | ❌ No | ❌ No | ❌ No | Our infrastructure only |
 | VPS + own domain | ✅ Yes (~€1/year) | ✅ 80, 443 | ❌ No | None |
 | sslip.io auto | ❌ No | ✅ 80, 443 | ❌ No | None |
 | Cloudflare Tunnel | ✅ Yes (CF domain) | ❌ No | ✅ Cloudflare | Cloudflare |
 | Tailscale + Funnel | ❌ No | ❌ No | ✅ Tailscale | Tailscale |
 | Ngrok | ❌ No | ❌ No | ✅ Ngrok | Ngrok |
 
-> **Nexus philosophy:** The relay is open source, self-hosted on our own VPS, and can be replaced by a community relay. Zero dependency on a third-party company.
+> **Nodyx philosophy:** The relay is open source, self-hosted on our own VPS, and can be replaced by a community relay. Zero dependency on a third-party company.
 
 ---
 
@@ -152,10 +152,10 @@ sudo systemctl enable --now nexus-relay-client
 
 ```bash
 # Service status
-sudo systemctl status nexus-relay-client
+sudo systemctl status nodyx-relay-client
 
 # Live logs
-sudo journalctl -u nexus-relay-client -f
+sudo journalctl -u nodyx-relay-client -f
 
 # What you should see in the logs:
 # → Connected to relay.nexusnode.app:7443
@@ -177,13 +177,13 @@ curl -I https://your-slug.nexusnode.app/
 ### The service won't start
 
 ```bash
-sudo journalctl -u nexus-relay-client --no-pager -n 50
+sudo journalctl -u nodyx-relay-client --no-pager -n 50
 ```
 
 | Error | Cause | Solution |
 |---|---|---|
 | `Connection refused` | relay.nexusnode.app unreachable | Check your Internet connection |
-| `Registration rejected: Invalid slug or token` | Incorrect token | Check `/root/nexus-credentials.txt` |
+| `Registration rejected: Invalid slug or token` | Incorrect token | Check `/root/nodyx-credentials.txt` |
 | `Binary not found` | Binary not installed | Reinstall with `install.sh` or Method 2 |
 | `Address already in use` (port 80) | Another service listening on :80 | `sudo ss -tlnp \| grep :80` |
 
@@ -193,15 +193,15 @@ The relay client reconnects automatically with exponential backoff (1s → 2s �
 
 ### My instance is not accessible from the Internet
 
-1. Check the service is running: `systemctl is-active nexus-relay-client`
+1. Check the service is running: `systemctl is-active nodyx-relay-client`
 2. Check Caddy is running: `systemctl is-active caddy`
-3. Check nexus-core is running: `pm2 status nexus-core`
+3. Check nodyx-core is running: `pm2 status nodyx-core`
 4. Test locally: `curl http://localhost/api/v1/instance/info`
 
 ### Restart manually
 
 ```bash
-sudo systemctl restart nexus-relay-client
+sudo systemctl restart nodyx-relay-client
 ```
 
 ---
@@ -218,7 +218,7 @@ Your local instance continues to work normally. Only access from the Internet vi
 
 **Q: Do voice channels work in Relay mode?**
 
-Voice channels use WebRTC, which requires a TURN server to traverse NAT. In Relay mode, coturn is not installed (the required UDP ports are not open). Voice calls between members on the same local network will work. For cross-network calls, an external TURN server is needed — this is what **Phase 3.0-B (nexus-turn)** will solve in an integrated way.
+Voice channels use WebRTC, which requires a TURN server to traverse NAT. In Relay mode, coturn is not installed (the required UDP ports are not open). Voice calls between members on the same local network will work. For cross-network calls, an external TURN server is needed — this is what **Phase 3.0-B (nodyx-turn)** will solve in an integrated way.
 
 **Q: Is the relay free?**
 
@@ -230,7 +230,7 @@ The slug is registered at installation time. To change it, contact nexusnode.app
 
 **Q: Does the relay work with Docker?**
 
-Yes. The `nexus-relay client` binary can run outside the Docker container — just point `--local-port` to the port exposed by your container (default 80).
+Yes. The `nodyx-relay client` binary can run outside the Docker container — just point `--local-port` to the port exposed by your container (default 80).
 
 ---
 
@@ -254,7 +254,7 @@ Port 7001 (HTTP, local only — receives requests from Caddy)
 ### The relay client (your machine)
 
 ```
-nexus-relay client
+nodyx-relay client
 └── TCP connection to relay.nexusnode.app:7443
     └── Sends: Register { slug, token }
     └── Receives: ServerMessage::Request { id, method, path, headers, body_b64 }
@@ -275,12 +275,12 @@ Maximum frame size: 16 MB.
 
 ### Repository
 
-The `nexus-relay` source code is in the same repository as Nexus:
+The `nodyx-relay` source code is in the same repository as Nodyx:
 
 ```
-nexus-p2p/
+nodyx-p2p/
 └── crates/
-    └── nexus-relay/
+    └── nodyx-relay/
         └── src/
             ├── main.rs          — CLI (clap)
             ├── protocol.rs      — types + framing

@@ -1,6 +1,6 @@
-# 🌐 Nexus — Complete Domain Name Guide
+# 🌐 Nodyx — Complete Domain Name Guide
 
-> This guide answers the question everyone asks when installing Nexus:
+> This guide answers the question everyone asks when installing Nodyx:
 > **"Do I need a domain? Which one? Why doesn't my No-IP work?"**
 
 ---
@@ -47,9 +47,9 @@ You get a **subdomain** of a domain that belongs to No-IP, DuckDNS, etc. You do 
 
 ---
 
-### Type 3 — Subdomain Offered by Nexus
+### Type 3 — Subdomain Offered by Nodyx
 
-> `mycommunity.nexusnode.app` (via the Nexus directory)
+> `mycommunity.nexusnode.app` (via the Nodyx directory)
 > `46-225-20-193.sslip.io` (via the server's public IP)
 
 These subdomains are provided **automatically** by `install.sh`. No setup required.
@@ -66,7 +66,7 @@ These subdomains are provided **automatically** by `install.sh`. No setup requir
 | Solution | `install.sh` | `install_tunnel.sh` | Auto HTTPS | Prod stable |
 |---|:---:|:---:|:---:|:---:|
 | **Paid real domain** (~$1/year) | ✅ | ✅ | ✅ | ✅ |
-| **nexusnode.app** (provided by Nexus) | ✅ | ❌ | ✅ | ✅ |
+| **nexusnode.app** (provided by Nodyx) | ✅ | ❌ | ✅ | ✅ |
 | **sslip.io** (auto from IP) | ✅ | ❌ | ✅ | ✅ (static IP) |
 | **No-IP / DuckDNS / Afraid** | ⚠️ manual | ❌ | ⚠️ manual | ⚠️ dynamic IP |
 | **Freenom (.tk, .ml, .ga…)** | ❌ service dead | ❌ | ❌ | ❌ |
@@ -82,7 +82,7 @@ These subdomains are provided **automatically** by `install.sh`. No setup requir
 ## 🗺️ Decision Tree — Which Script Should I Use?
 
 ```
-I want to install Nexus on my server
+I want to install Nodyx on my server
 │
 ├── Can I open ports 80 and 443 on my router/box?
 │   │

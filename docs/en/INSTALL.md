@@ -1,10 +1,10 @@
-# 🚀 Nexus — Complete Installation Guide
+# 🚀 Nodyx — Complete Installation Guide
 
 > **TL;DR:** Clone the repo on a Linux server, run `bash install.sh`, answer a few questions. Done. ☕
 >
-> **New — Nexus Relay:** No domain and no open ports? Raspberry Pi, old PC, home router?
-> **Choose option `[2] Nexus Relay`** during installation → your instance goes live at `your-slug.nexusnode.app` with zero configuration.
-> [→ Full Nexus Relay guide](RELAY.md)
+> **New — Nodyx Relay:** No domain and no open ports? Raspberry Pi, old PC, home router?
+> **Choose option `[2] Nodyx Relay`** during installation → your instance goes live at `your-slug.nexusnode.app` with zero configuration.
+> [→ Full Nodyx Relay guide](RELAY.md)
 
 ---
 
@@ -17,7 +17,7 @@
 - [Installation — The Easy Way](#-installation--the-easy-way-recommended)
 - [Windows Users — WSL Guide](#-windows-users--wsl-guide)
 - [Home Server / Behind NAT](#-home-server--behind-nat)
-- [Hosting WITHOUT Opening Ports (Nexus Relay, Cloudflare Tunnel, Tailscale)](#-hosting-at-home-without-opening-ports)
+- [Hosting WITHOUT Opening Ports (Nodyx Relay, Cloudflare Tunnel, Tailscale)](#-hosting-at-home-without-opening-ports)
 - [Behind a VPN or WireGuard](#-behind-a-vpn-or-wireguard)
 - [Common Errors & Fixes](#-common-errors--fixes)
 - [After Installation](#-after-installation)
@@ -55,7 +55,7 @@
 
 ### Only One Prerequisite — Git
 
-The installer needs `git` to clone the Nexus repository. Most VPS images don't include it by default. Install it first:
+The installer needs `git` to clone the Nodyx repository. Most VPS images don't include it by default. Install it first:
 
 ```bash
 # Ubuntu / Debian
@@ -125,7 +125,7 @@ A spare PC, an old laptop, or a Raspberry Pi plugged in at home. Works great, bu
 
 ### Option 3 — Windows with WSL (Testing / Development)
 
-You can run Nexus on Windows 10/11 using WSL2 (Windows Subsystem for Linux). This is great for testing or developing, but not ideal for a 24/7 production server.
+You can run Nodyx on Windows 10/11 using WSL2 (Windows Subsystem for Linux). This is great for testing or developing, but not ideal for a 24/7 production server.
 
 → [See the detailed WSL guide below](#-windows-users--wsl-guide)
 
@@ -179,14 +179,14 @@ The `install.sh` script configures the firewall (UFW) automatically. Here's what
 On your Linux server (via SSH):
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git /opt/nexus-install
-cd /opt/nexus-install
+git clone https://github.com/Pokled/Nodyx.git /opt/nodyx-install
+cd /opt/nodyx-install
 ```
 
 Or download just the install script:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install.sh -o install.sh
+curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install.sh -o install.sh
 ```
 
 ### Step 2 — Run the installer
@@ -227,14 +227,14 @@ The installer will show you a summary at the end:
 
 ```
 ╔══════════════════════════════════════════════════╗
-║       ✔  Nexus installed successfully!           ║
+║       ✔  Nodyx installed successfully!           ║
 ╚══════════════════════════════════════════════════╝
 
   Instance : https://mycommunity.com
   Admin    : alice / alice@example.com
   Voice    : TURN relay on 46.225.20.193:3478
 
-  Credentials saved in: /root/nexus-credentials.txt
+  Credentials saved in: /root/nodyx-credentials.txt
 ```
 
 > 💡 **DNS takes time.** After pointing your domain to your server IP, it can take up to 24–48 hours for DNS to propagate worldwide (usually 5–30 minutes in practice). Caddy will automatically obtain your SSL certificate once DNS resolves.
@@ -243,7 +243,7 @@ The installer will show you a summary at the end:
 
 ## 🪟 Windows Users — WSL Guide
 
-WSL (Windows Subsystem for Linux) lets you run Ubuntu directly inside Windows. Nexus's `install.sh` runs perfectly inside WSL2.
+WSL (Windows Subsystem for Linux) lets you run Ubuntu directly inside Windows. Nodyx's `install.sh` runs perfectly inside WSL2.
 
 ### Step 1 — Enable WSL2
 
@@ -273,11 +273,11 @@ sudo apt update && sudo apt upgrade -y
 sudo apt install -y git
 ```
 
-### Step 5 — Clone Nexus
+### Step 5 — Clone Nodyx
 
 ```bash
-git clone https://github.com/Pokled/Nexus.git
-cd Nexus
+git clone https://github.com/Pokled/Nodyx.git
+cd Nodyx
 ```
 
 ### Step 6 — Run the installer
@@ -288,7 +288,7 @@ sudo bash install.sh
 
 > ⚠️ **WSL limitation:** Services started inside WSL don't automatically restart with Windows. For a 24/7 server, use a real Linux VPS or server. WSL is great for testing and development.
 
-> 💡 **Access from your Windows browser:** Once the install is done, open your browser and go to `http://localhost` — Nexus will be there.
+> 💡 **Access from your Windows browser:** Once the install is done, open your browser and go to `http://localhost` — Nodyx will be there.
 
 ### Tips specific to WSL
 
@@ -306,7 +306,7 @@ sudo bash install.sh
 
 ## 🏠 Home Server / Behind NAT
 
-Running Nexus on a machine at home (behind your router) requires a few extra steps.
+Running Nodyx on a machine at home (behind your router) requires a few extra steps.
 
 ### Step 1 — Find your public IP
 
@@ -379,7 +379,7 @@ Some ISPs use CGNAT — your home connection shares a public IP with hundreds of
 
 ## 🚇 Hosting at Home WITHOUT Opening Ports
 
-Want to run Nexus on a Raspberry Pi (or an old PC) at home, but don't want — or can't — open ports 80/443 on your router? No worries, there are free and simple solutions.
+Want to run Nodyx on a Raspberry Pi (or an old PC) at home, but don't want — or can't — open ports 80/443 on your router? No worries, there are free and simple solutions.
 
 ### Why Are Ports Required? (beginner explanation)
 
@@ -389,15 +389,15 @@ Think of your server as a house. For visitors from all over the world to ring yo
 
 If you don't want to open those doors, you use a **tunnel** — a middleman that receives visitors for you and lets them in through a service entrance you control, without exposing your house directly.
 
-> ⚠️ **Important:** Without HTTPS, **voice channels won't work** — browsers refuse to access the microphone/camera on non-secure HTTP. A tunnel solution is required to use all Nexus features.
+> ⚠️ **Important:** Without HTTPS, **voice channels won't work** — browsers refuse to access the microphone/camera on non-secure HTTP. A tunnel solution is required to use all Nodyx features.
 
 ---
 
-### ⚡ Solution 0 — Nexus Relay *(new recommendation — zero prerequisites)*
+### ⚡ Solution 0 — Nodyx Relay *(new recommendation — zero prerequisites)*
 
-**Nexus Relay** is Nexus's built-in solution. No third-party account, no domain, no open ports.
+**Nodyx Relay** is Nodyx's built-in solution. No third-party account, no domain, no open ports.
 
-| | Nexus Relay | Cloudflare Tunnel |
+| | Nodyx Relay | Cloudflare Tunnel |
 |---|---|---|
 | Third-party account required | ❌ No | ✅ Cloudflare |
 | Domain required | ❌ No | ✅ Yes (~€1/year) |
@@ -405,9 +405,9 @@ If you don't want to open those doors, you use a **tunnel** — a middleman that
 | Built into `install.sh` | ✅ Yes (option 2) | 🔧 Separate script |
 | Open source | ✅ Yes | ❌ No |
 
-**How to activate it:** when installing with `install.sh`, simply choose option `[2] Nexus Relay`. That's it.
+**How to activate it:** when installing with `install.sh`, simply choose option `[2] Nodyx Relay`. That's it.
 
-> 📖 [→ Full Nexus Relay guide](RELAY.md)
+> 📖 [→ Full Nodyx Relay guide](RELAY.md)
 
 ---
 
@@ -419,7 +419,7 @@ Cloudflare Tunnel creates an **outbound** connection from your server to Cloudfl
 - A free Cloudflare account → [dash.cloudflare.com](https://dash.cloudflare.com)
 - A domain name (~$1/year at [Porkbun](https://porkbun.com) or [Namecheap](https://namecheap.com))
 
-> 💡 No domain? Nexus gives you one for free: during installation, your instance automatically gets a **`your-slug.nexusnode.app`** subdomain. No purchase needed.
+> 💡 No domain? Nodyx gives you one for free: during installation, your instance automatically gets a **`your-slug.nexusnode.app`** subdomain. No purchase needed.
 
 ---
 
@@ -428,13 +428,13 @@ Cloudflare Tunnel creates an **outbound** connection from your server to Cloudfl
 > Once your Cloudflare account and domain are ready **(Step 1 below only)**, simply run:
 >
 > ```bash
-> curl -fsSL https://raw.githubusercontent.com/Pokled/Nexus/main/install_tunnel.sh -o install_tunnel.sh
+> curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install_tunnel.sh -o install_tunnel.sh
 > sudo bash install_tunnel.sh
 > ```
 >
 > The script handles everything:
 > - Detects your server architecture (arm64, amd64…)
-> - Installs Nexus completely (PostgreSQL, Redis, coturn, PM2…)
+> - Installs Nodyx completely (PostgreSQL, Redis, coturn, PM2…)
 > - Downloads and installs `cloudflared`
 > - Guides you step by step through the Cloudflare login (a URL to open in your browser)
 > - Creates the tunnel, generates `config.yml`, registers DNS automatically
@@ -533,7 +533,7 @@ These commands automatically create DNS records in Cloudflare. No manual DNS pan
 cloudflared tunnel run my-community
 ```
 
-If everything works, you'll see `INF Connection established` in the logs. Open `https://mycommunity.com` in your browser — Nexus should appear!
+If everything works, you'll see `INF Connection established` in the logs. Open `https://mycommunity.com` in your browser — Nodyx should appear!
 
 #### Step 8 — Start the tunnel automatically on boot
 
@@ -551,7 +551,7 @@ systemctl start cloudflared
 systemctl status cloudflared
 ```
 
-#### Step 9 — Configure Nexus to use this domain
+#### Step 9 — Configure Nodyx to use this domain
 
 During installation, enter your domain `mycommunity.com` when the installer asks. Caddy will be configured, but with a Cloudflare Tunnel you can **disable Caddy** (Cloudflare handles HTTPS):
 
@@ -560,7 +560,7 @@ systemctl stop caddy
 systemctl disable caddy
 ```
 
-Then configure Nexus to listen on HTTP (not HTTPS) on localhost — the Cloudflare Tunnel handles encryption.
+Then configure Nodyx to listen on HTTP (not HTTPS) on localhost — the Cloudflare Tunnel handles encryption.
 
 > 💡 **About voice channels:** Cloudflare Tunnel doesn't support UDP, so **voice channels will use your TURN relay** at your server's IP. For this to work, port **3478 UDP** must be open on your router. It's the only port strictly needed for voice. If you can't open it, voice will still work but in TCP relay mode (slightly higher latency).
 
@@ -594,7 +594,7 @@ A link appears → open it in your browser and sign in to your Tailscale account
 tailscale funnel 4173
 ```
 
-Tailscale gives you a public HTTPS URL (e.g., `https://myserver.tail1234.ts.net`). Use this URL during Nexus installation when asked for your domain.
+Tailscale gives you a public HTTPS URL (e.g., `https://myserver.tail1234.ts.net`). Use this URL during Nodyx installation when asked for your domain.
 
 > ⚠️ **Tailscale Funnel limitations:** The free URL is in `.ts.net` (not customizable without a subscription), and bandwidth is limited on the free plan. Suitable for a small community or testing.
 
@@ -621,7 +621,7 @@ With a VPS:
 
 ## 🔒 Behind a VPN or WireGuard
 
-### Running Nexus behind a traditional VPN (NordVPN, ExpressVPN, etc.)
+### Running Nodyx behind a traditional VPN (NordVPN, ExpressVPN, etc.)
 
 If your server connects to a VPN (not common, but possible), all outgoing traffic goes through the VPN. This creates two problems:
 - Your TURN server advertises the VPN's IP, not your server's real IP
@@ -629,22 +629,22 @@ If your server connects to a VPN (not common, but possible), all outgoing traffi
 
 **Solution:** Configure the VPN to exclude local traffic and not route the server's public services through the VPN.
 
-For most setups, **don't run a personal VPN on the same machine as Nexus**. Use it only for client devices.
+For most setups, **don't run a personal VPN on the same machine as Nodyx**. Use it only for client devices.
 
 ---
 
-### WireGuard P2P Mesh (Nexus Federation — Phase 3)
+### WireGuard P2P Mesh (Nodyx Federation — Phase 3)
 
-> 🔭 **This is coming in Phase 3** — Nexus nodes will form a WireGuard mesh network automatically, making the network truly decentralized and resilient.
+> 🔭 **This is coming in Phase 3** — Nodyx nodes will form a WireGuard mesh network automatically, making the network truly decentralized and resilient.
 
-Today, each Nexus instance is independent. In the future, instances will connect via WireGuard tunnels to:
+Today, each Nodyx instance is independent. In the future, instances will connect via WireGuard tunnels to:
 - Share federation data (instance directory)
 - Route traffic between communities
 - Make the network resilient to individual node failure
 
 **If you already run WireGuard on your server** (e.g., as a personal VPN or between servers), you need to be careful:
 
-1. **Make sure Nexus services bind to the correct interface** — the script binds to `0.0.0.0` by default (all interfaces), which is correct
+1. **Make sure Nodyx services bind to the correct interface** — the script binds to `0.0.0.0` by default (all interfaces), which is correct
 2. **Firewall rules** — UFW is set to allow the necessary ports on all interfaces. If you use WireGuard with strict routing, you may need to add WireGuard interface (`wg0`) rules manually:
    ```bash
    sudo ufw allow in on wg0 to any port 3478
@@ -704,11 +704,11 @@ sudo systemctl restart caddy
 Check the PM2 logs:
 
 ```bash
-pm2 logs nexus-core --lines 50
+pm2 logs nodyx-core --lines 50
 ```
 
 Common causes:
-- **Wrong database password** — check `/opt/nexus/nexus-core/.env`
+- **Wrong database password** — check `/opt/nodyx/nodyx-core/.env`
 - **PostgreSQL not running** — `sudo systemctl start postgresql`
 - **Redis not running** — `sudo systemctl start redis-server`
 - **Port 3000 already used** — `sudo lsof -i :3000`
@@ -734,7 +734,7 @@ tail -f /var/log/coturn.log
 
 # Test TURN connectivity (from your local machine)
 # Use https://webrtc.github.io/samples/src/content/peerconnection/trickle-ice/
-# Enter: turn:YOUR_SERVER_IP:3478 / user: nexus / credential: YOUR_CREDENTIAL
+# Enter: turn:YOUR_SERVER_IP:3478 / user: nodyx / credential: YOUR_CREDENTIAL
 ```
 
 > 💡 **Cloudflare users:** If your domain is proxied by Cloudflare, port 3478 won't work via the domain name. The `install.sh` uses your server's **IP address directly** for the TURN URL (`turn:IP:3478`) to bypass this automatically.
@@ -755,11 +755,11 @@ cat /etc/caddy/Caddyfile
 ### 🔴 Frontend shows blank page or SvelteKit errors
 
 ```bash
-pm2 logs nexus-frontend --lines 50
+pm2 logs nodyx-frontend --lines 50
 ```
 
 Common causes:
-- Frontend build failed — rebuild: `cd /opt/nexus/nexus-frontend && npm run build && pm2 restart nexus-frontend`
+- Frontend build failed — rebuild: `cd /opt/nodyx/nodyx-frontend && npm run build && pm2 restart nodyx-frontend`
 - Wrong `PUBLIC_API_URL` in `.env` — should be `https://yourdomain.com` (no `/api/v1`)
 
 ---
@@ -803,17 +803,17 @@ To promote someone to moderator or admin:
 pm2 list
 
 # View backend logs (real-time)
-pm2 logs nexus-core
+pm2 logs nodyx-core
 
 # View frontend logs
-pm2 logs nexus-frontend
+pm2 logs nodyx-frontend
 
 # Restart everything
 pm2 restart all
 
 # Rebuild and restart after an update
-cd /opt/nexus/nexus-core && npm run build && pm2 restart nexus-core
-cd /opt/nexus/nexus-frontend && npm run build && pm2 restart nexus-frontend
+cd /opt/nodyx/nodyx-core && npm run build && pm2 restart nodyx-core
+cd /opt/nodyx/nodyx-frontend && npm run build && pm2 restart nodyx-frontend
 
 # Check Caddy (HTTPS/proxy)
 sudo systemctl status caddy
@@ -852,27 +852,27 @@ sudo systemctl enable fail2ban --now
 
 ```bash
 # Backup PostgreSQL database
-sudo -u postgres pg_dump nexus > /backup/nexus_$(date +%Y%m%d).sql
+sudo -u postgres pg_dump nodyx > /backup/nodyx_$(date +%Y%m%d).sql
 
 # Backup uploads (avatars, banners)
-tar -czf /backup/uploads_$(date +%Y%m%d).tar.gz /opt/nexus/nexus-core/uploads/
+tar -czf /backup/uploads_$(date +%Y%m%d).tar.gz /opt/nodyx/nodyx-core/uploads/
 
 # Automate with a daily cron job
 crontab -e
-# Add: 0 3 * * * sudo -u postgres pg_dump nexus > /backup/nexus_$(date +%Y%m%d).sql
+# Add: 0 3 * * * sudo -u postgres pg_dump nodyx > /backup/nodyx_$(date +%Y%m%d).sql
 ```
 
-### Update Nexus
+### Update Nodyx
 
 ```bash
-cd /opt/nexus
+cd /opt/nodyx
 git pull
 
 # Rebuild backend
-cd nexus-core && npm install && npm run build && pm2 restart nexus-core
+cd nodyx-core && npm install && npm run build && pm2 restart nodyx-core
 
 # Rebuild frontend
-cd ../nexus-frontend && npm install && npm run build && pm2 restart nexus-frontend
+cd ../nodyx-frontend && npm install && npm run build && pm2 restart nodyx-frontend
 ```
 
 > 💡 **Migrations run automatically** — the backend applies any new SQL migrations on startup.
@@ -881,22 +881,22 @@ cd ../nexus-frontend && npm install && npm run build && pm2 restart nexus-fronte
 
 ## 🗑️ Clean Uninstall
 
-If you want to completely remove Nexus from your server:
+If you want to completely remove Nodyx from your server:
 
 ```bash
 # 1. Stop and remove PM2 processes
-pm2 delete nexus-core nexus-frontend
+pm2 delete nodyx-core nodyx-frontend
 pm2 save
 
 # 2. Remove PM2 startup hook
 pm2 unstartup systemd
 
-# 3. Remove the Nexus directory
-rm -rf /opt/nexus
+# 3. Remove the Nodyx directory
+rm -rf /opt/nodyx
 
 # 4. Drop the PostgreSQL database and user
-sudo -u postgres psql -c "DROP DATABASE IF EXISTS nexus;"
-sudo -u postgres psql -c "DROP ROLE IF EXISTS nexus_user;"
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS nodyx;"
+sudo -u postgres psql -c "DROP ROLE IF EXISTS nodyx_user;"
 
 # 5. Remove Caddy configuration
 sudo rm -f /etc/caddy/Caddyfile
@@ -915,14 +915,14 @@ sudo ufw allow ssh
 sudo ufw --force enable
 
 # 8. Remove credentials file
-rm -f /root/nexus-credentials.txt
+rm -f /root/nodyx-credentials.txt
 ```
 
-> ⚠️ **Uploads** (avatars, banners, etc.) are stored in `/opt/nexus/nexus-core/uploads/`. Back them up before deleting if you want to keep user files.
+> ⚠️ **Uploads** (avatars, banners, etc.) are stored in `/opt/nodyx/nodyx-core/uploads/`. Back them up before deleting if you want to keep user files.
 
 ### Uninstall system packages (optional)
 
-Only do this if you installed these packages exclusively for Nexus:
+Only do this if you installed these packages exclusively for Nodyx:
 
 ```bash
 # Remove coturn
@@ -947,10 +947,10 @@ sudo apt-get remove --purge -y redis-server
 
 ## 🆘 Still stuck?
 
-- Browse [open Issues](https://github.com/Pokled/Nexus/issues)
-- Start a [Discussion](https://github.com/Pokled/Nexus/discussions)
+- Browse [open Issues](https://github.com/Pokled/Nodyx/issues)
+- Start a [Discussion](https://github.com/Pokled/Nodyx/discussions)
 - Read the [Architecture docs](./ARCHITECTURE.md) to understand how things fit together
 
 ---
 
-*Nexus Installation Guide — v0.4.1 — March 2026*
+*Nodyx Installation Guide — v0.4.1 — March 2026*

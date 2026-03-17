@@ -1,9 +1,9 @@
-# NEXUS — Architecture
+# NODYX — Architecture
 ### Version 1.0 — Document de référence technique
 
 ---
 
-> Ce document est la loi technique de Nexus.
+> Ce document est la loi technique de Nodyx.
 > Aucun choix architectural ne peut être modifié sans validation du Chef de Projet.
 > OpenClaw lit ce document avant toute implémentation.
 
@@ -17,7 +17,7 @@ SvelteKit PWA / Tauri / Capacitor
         |
         | HTTP / WebSocket
         |
-NEXUS CORE API
+NODYX CORE API
 Fastify + TypeScript
 /api/v1/...   +   Socket.io (temps réel)
         |               |               |
@@ -150,22 +150,22 @@ users ----------< threads
 ## 4. REDIS — UTILISATION
 
 ```
-Sessions utilisateur    nexus:session:{token}       TTL 7 jours
-Cache profils           nexus:user:{id}              TTL 1 heure
-Cache threads           nexus:thread:{id}            TTL 5 minutes
-Pub/Sub chat            nexus:chat:{community_id}    Temps reel
-Pub/Sub notifications   nexus:notif:{user_id}        Temps reel
-Rate limiting           nexus:rate:{ip}              TTL 1 minute
+Sessions utilisateur    nodyx:session:{token}       TTL 7 jours
+Cache profils           nodyx:user:{id}              TTL 1 heure
+Cache threads           nodyx:thread:{id}            TTL 5 minutes
+Pub/Sub chat            nodyx:chat:{community_id}    Temps reel
+Pub/Sub notifications   nodyx:notif:{user_id}        Temps reel
+Rate limiting           nodyx:rate:{ip}              TTL 1 minute
 ```
 
 ---
 
 ## 5. ARCHITECTURE DES PLUGINS
 
-Les plugins etendent Nexus sans modifier le core.
+Les plugins etendent Nodyx sans modifier le core.
 
 ```
-nexus-plugins/
+nodyx-plugins/
 └── mon-plugin/
     ├── plugin.json      — Manifeste du plugin
     ├── index.ts         — Point d entree
@@ -180,7 +180,7 @@ nexus-plugins/
   "name": "mon-plugin",
   "version": "1.0.0",
   "author": "Contributeur",
-  "nexusVersion": ">=1.0.0",
+  "nodyxVersion": ">=1.0.0",
   "hooks": ["onPostCreate", "onUserJoin"],
   "routes": "/api/v1/plugins/mon-plugin"
 }
@@ -213,7 +213,7 @@ Headers             Helmet.js (XSS, CSP, HSTS)
 ## 7. STRUCTURE DES FICHIERS SOURCE
 
 ```
-nexus-core/src/
+nodyx-core/src/
 ├── index.ts                — Point d entree serveur
 ├── fortunes.ts             — Phrases aleatoires
 ├── config/

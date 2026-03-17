@@ -1,8 +1,8 @@
-# Nexus Plugins
+# Nodyx Plugins
 
-Ce dossier contient les plugins officiels et communautaires pour Nexus.
+Ce dossier contient les plugins officiels et communautaires pour Nodyx.
 
-Un plugin est un bundle autonome qui étend les fonctionnalités de Nexus
+Un plugin est un bundle autonome qui étend les fonctionnalités de Nodyx
 **sans modifier le code source principal**. Chaque plugin est un dossier
 contenant un fichier manifeste et ses ressources.
 
@@ -48,9 +48,9 @@ Les templates officiels du Core Team sont là pour t'inspirer.
 
 | Plugin | Catégorie | Auteur |
 |--------|-----------|--------|
-| `brasserie-de-nuit` | table-templates | Nexus Core Team |
-| `table-de-feutre` | table-templates | Nexus Core Team |
-| `pierre-et-braise` | table-templates | Nexus Core Team |
+| `brasserie-de-nuit` | table-templates | Nodyx Core Team |
+| `table-de-feutre` | table-templates | Nodyx Core Team |
+| `pierre-et-braise` | table-templates | Nodyx Core Team |
 
 ---
 

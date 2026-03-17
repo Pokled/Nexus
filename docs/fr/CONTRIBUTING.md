@@ -1,9 +1,9 @@
-# NEXUS — Contributing Guide
-### Bienvenue dans la communaute Nexus
+# NODYX — Contributing Guide
+### Bienvenue dans la communaute Nodyx
 
 ---
 
-> "Nexus appartient a sa communaute. Pas a ses createurs."
+> "Nodyx appartient a sa communaute. Pas a ses createurs."
 > Si tu lis ce fichier, tu es potentiellement un batisseur d internet libre.
 > Bienvenue.
 
@@ -12,11 +12,11 @@
 ## AVANT DE COMMENCER
 
 Lis ces fichiers dans cet ordre :
-1. `ARCHITECTURE.md` — Comment Nexus est construit
-2. `NEXUS_CONTEXT.md` — La vision et les regles
+1. `ARCHITECTURE.md` — Comment Nodyx est construit
+2. `NODYX_CONTEXT.md` — La vision et les regles
 3. `i18n/en/MANIFESTO.md` — L ame du projet
 
-Si tu n es pas d accord avec le Manifeste, Nexus n est peut-etre pas le bon projet pour toi.
+Si tu n es pas d accord avec le Manifeste, Nodyx n est peut-etre pas le bon projet pour toi.
 Et c est ok.
 
 ---
@@ -25,19 +25,19 @@ Et c est ok.
 
 ### Tu peux contribuer librement dans
 ```
-nexus-plugins/    — Cree des plugins
-nexus-themes/     — Cree des themes visuels
-nexus-docs/       — Ameliore la documentation
+nodyx-plugins/    — Cree des plugins
+nodyx-themes/     — Cree des themes visuels
+nodyx-docs/       — Ameliore la documentation
 i18n/             — Traduis dans ta langue
 community/        — Contenus communautaires
 ```
 
 ### Tu ne peux PAS modifier sans validation
 ```
-nexus-core/src/           — Code serveur principal
-nexus-core/ARCHITECTURE.md
-nexus-core/NEXUS_CONTEXT.md
-nexus-core/i18n/en/MANIFESTO.md
+nodyx-core/src/           — Code serveur principal
+nodyx-core/ARCHITECTURE.md
+nodyx-core/NODYX_CONTEXT.md
+nodyx-core/i18n/en/MANIFESTO.md
 ```
 
 Si tu penses que quelque chose dans le core doit changer,
@@ -50,7 +50,7 @@ La modification unilaterale ne l est pas.
 
 ### Structure minimale
 ```
-nexus-plugins/mon-plugin/
+nodyx-plugins/mon-plugin/
 ├── plugin.json     — Manifeste obligatoire
 ├── index.ts        — Point d entree
 ├── README.md       — Documentation
@@ -65,7 +65,7 @@ nexus-plugins/mon-plugin/
   "description": "Ce que fait mon plugin",
   "author": "Ton nom ou pseudonyme",
   "license": "MIT",
-  "nexusVersion": ">=1.0.0"
+  "nodyxVersion": ">=1.0.0"
 }
 ```
 
@@ -106,13 +106,13 @@ test: Tests pour la route V
 
 ---
 
-## TRADUIRE NEXUS
+## TRADUIRE NODYX
 
 La traduction est la contribution la plus accessible.
 Pas besoin de savoir coder.
 
 ### Comment faire
-1. Va dans `nexus-core/i18n/`
+1. Va dans `nodyx-core/i18n/`
 2. Copie le dossier `en/` et renomme-le avec ton code langue (`fr/`, `de/`, `es/`, `ja/`, etc.)
 3. Traduis les fichiers
 4. Ouvre une Pull Request
@@ -127,14 +127,14 @@ THANKS.md       — Les remerciements
 - Traduis le sens, pas mot a mot
 - Garde le ton original (direct, humain, pas corporatif)
 - Si un concept n a pas d equivalent dans ta langue, garde le terme anglais
-- Les noms propres (Nexus, NexusPoints, etc.) ne se traduisent pas
+- Les noms propres (Nodyx, NodyxPoints, etc.) ne se traduisent pas
 
 ---
 
 ## SIGNALER UN BUG
 
 Ouvre une Issue avec :
-- La version de Nexus
+- La version de Nodyx
 - Le systeme d exploitation du serveur
 - Les etapes pour reproduire
 - Ce que tu as vu vs ce que tu attendais
@@ -174,7 +174,7 @@ La regle : si ca peut etre un plugin, ca doit etre un plugin.
 
 - Issues GitHub pour les bugs et features
 - Discussions GitHub pour les questions generales
-- Le forum Nexus lui-meme pour tout le reste
+- Le forum Nodyx lui-meme pour tout le reste
 
 ---
 

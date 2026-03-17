@@ -1,8 +1,8 @@
-# NEXUS-RADIO — The Internet Radio Tuner
+# NODYX-RADIO — The Internet Radio Tuner
 ### *"De nouvelles ondes vont voir le jour. Parce qu'elles ont enfin une raison d'exister."*
 
 > Ce document est une idée de design — pas encore une SPEC formelle.
-> Il explore comment Nexus peut devenir le système nerveux d'un réseau radio vivant,
+> Il explore comment Nodyx peut devenir le système nerveux d'un réseau radio vivant,
 > à la fois sur IP et sur les ondes physiques.
 
 ---
@@ -42,9 +42,9 @@ pour transformer des auditeurs simultanés en communauté.
 
 ---
 
-## Ce que Nexus peut faire
+## Ce que Nodyx peut faire
 
-Chaque station de radio qui tourne une instance Nexus obtient immédiatement :
+Chaque station de radio qui tourne une instance Nodyx obtient immédiatement :
 
 - **Un forum** — les archives, les discussions, les annonces
 - **Un chat en direct** — les auditeurs qui réagissent en temps réel pendant l'émission
@@ -54,15 +54,15 @@ Chaque station de radio qui tourne une instance Nexus obtient immédiatement :
 
 **La station ne diffuse plus dans le vide. Elle diffuse dans sa communauté.**
 
-Et cette communauté — indexée par Google, accessible sans compte, fedérée avec les autres instances Nexus — attire de nouveaux auditeurs qui ne savaient pas que cette station existait.
+Et cette communauté — indexée par Google, accessible sans compte, fedérée avec les autres instances Nodyx — attire de nouveaux auditeurs qui ne savaient pas que cette station existait.
 
 ---
 
-## NEXUS-RADIO : l'intégration dans Nexus
+## NODYX-RADIO : l'intégration dans Nodyx
 
 ### Côté instance (la station)
 
-Une instance Nexus peut se déclarer comme **station radio** dans ses paramètres :
+Une instance Nodyx peut se déclarer comme **station radio** dans ses paramètres :
 
 ```toml
 [radio]
@@ -74,7 +74,7 @@ genre       = "local / variétés"
 language    = "fr"
 region      = "Occitanie"
 rf_fm_mhz   = 95.4          # fréquence FM locale si émetteur légal
-rf_cb_ch    = 20            # canal CB si nœud NEXUS-ETHER
+rf_cb_ch    = 20            # canal CB si nœud NODYX-ETHER
 rf_hf_khz   = 14074         # fréquence HF si radioamateur
 ```
 
@@ -84,11 +84,11 @@ Ces métadonnées sont publiées dans le **directory nexusnode.app** avec le pro
 
 ### Côté auditeur (le panneau radio intégré)
 
-Un panneau **NEXUS-RADIO** dans l'interface Nexus — accessible depuis n'importe quelle instance.
+Un panneau **NODYX-RADIO** dans l'interface Nodyx — accessible depuis n'importe quelle instance.
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│  📻 NEXUS-RADIO                          [× Fermer] │
+│  📻 NODYX-RADIO                          [× Fermer] │
 ├─────────────────────────────────────────────────────┤
 │  🔴 EN DIRECT   Radio des Collines  · Occitanie      │
 │  ████████████░░░░░░░░░░░░  ▶ 0:14:32                 │
@@ -98,7 +98,7 @@ Un panneau **NEXUS-RADIO** dans l'interface Nexus — accessible depuis n'import
 │  ● Radio des Collines      Occitanie · FR            │
 │  ● Radio Fil Bleu (relance) Bretagne · FR            │
 │  ● HF Node 14.074 MHz       Île-de-France · HAM      │
-│  ● CB Nexus Ch.20 — Alpes   Région PACA              │
+│  ● CB Nodyx Ch.20 — Alpes   Région PACA              │
 │  ○ Radio Compostelle        Espagne · ES             │
 ├─────────────────────────────────────────────────────┤
 │  [🎛️ Genres] [🗺️ Carte] [📡 RF only] [🌐 Toutes]   │
@@ -106,14 +106,14 @@ Un panneau **NEXUS-RADIO** dans l'interface Nexus — accessible depuis n'import
 ```
 
 **Un clic sur une station** → le stream démarre dans le panneau flottant.
-**Un clic sur son nom** → on arrive dans l'instance Nexus de la station.
+**Un clic sur son nom** → on arrive dans l'instance Nodyx de la station.
 Le chat en direct. Le forum. Les gens qui écoutent en même temps.
 
 ---
 
 ## Le changement de paradigme
 
-Avant Nexus-Radio, créer une radio web nécessitait :
+Avant Nodyx-Radio, créer une radio web nécessitait :
 - Un serveur de streaming (Icecast : complexe, coûteux)
 - Un site web (WordPress, entretien, SEO)
 - Des réseaux sociaux (algorithmes, modération, shadowban)
@@ -121,10 +121,10 @@ Avant Nexus-Radio, créer une radio web nécessitait :
 
 Et malgré tout ça : une audience atomisée. Des commentaires éphémères. Zéro mémoire collective.
 
-**Avec Nexus :**
+**Avec Nodyx :**
 
 ```
-install.sh → Nexus tourne
+install.sh → Nodyx tourne
 Ajouter stream_url dans les paramètres → station déclarée dans le directory
 Les auditeurs trouvent via nexusnode.app → arrivent dans l'instance → s'inscrivent
 Le forum accumule les archives de chaque émission → indexé par Google
@@ -138,12 +138,12 @@ Parce qu'elle a maintenant une raison d'exister : sa communauté la soutient.
 
 ---
 
-## Nouvelles stations qui n'existeraient pas sans Nexus
+## Nouvelles stations qui n'existeraient pas sans Nodyx
 
 C'est la partie la plus importante.
 
 Des gens n'ont jamais créé de radio parce que le ratio effort/audience était trop défavorable.
-Nexus change ce calcul.
+Nodyx change ce calcul.
 
 - Un club de jazz local → stream de leurs sessions → forum des membres → archives des concerts
 - Une école de musique → émission hebdo des élèves → feedback de la communauté → Garden pour voter les programmes
@@ -151,35 +151,35 @@ Nexus change ce calcul.
 - Un hameau de 300 habitants → radio communale → agenda local → chat pendant les émissions
 - Un radioamateur → stream de sa fréquence de veille → communauté de passionnés → tutoriels forum
 
-**Ces stations n'émettront que parce que Nexus leur donne une communauté.**
+**Ces stations n'émettront que parce que Nodyx leur donne une communauté.**
 Avant, elles auraient émis dans le vide. Elles ne l'auraient pas fait.
 
 ---
 
-## L'intégration NEXUS-ETHER
+## L'intégration NODYX-ETHER
 
 Quand l'internet tombe (panne, tempête, crise) :
 
 ```
-Station Nexus-Radio
+Station Nodyx-Radio
   → stream IP normal quand internet fonctionne
   → bascule automatique sur émetteur FM local (si disponible)
   → ou RF numérique via CB canal 20 (BPSK31 — métadonnées + texte)
   → ou HF (JS8Call / Winlink — messages store-and-forward)
 
-Auditeur Nexus-Radio
+Auditeur Nodyx-Radio
   → écoute stream IP normal
   → si internet absent : RTL-SDR (~25€) → reçoit FM ou HF
   → les CRDT deltas du forum arrivent via RF → état reconstruit localement
   → "l'émission continue. La communauté aussi."
 ```
 
-Le même RTL-SDR qui reçoit la météo maritime peut recevoir les posts du forum Nexus local.
+Le même RTL-SDR qui reçoit la météo maritime peut recevoir les posts du forum Nodyx local.
 **Ce n'est pas de la science-fiction. Ces protocoles existent et fonctionnent aujourd'hui.**
 
 ---
 
-## Le panneau radio dans Nexus — vision UX
+## Le panneau radio dans Nodyx — vision UX
 
 ### Bouton dans la nav principale
 
@@ -223,7 +223,7 @@ ALTER TABLE instances ADD COLUMN IF NOT EXISTS radio_rf_hf DECIMAL(7,1);  -- kHz
 
 Endpoint : `GET /api/directory/radio?genre=&region=&lang=&active=true`
 
-### Côté nexus-core
+### Côté nodyx-core
 
 ```ts
 // Nouveau endpoint d'état radio (public, non authentifié)
@@ -231,7 +231,7 @@ GET /api/v1/radio/now-playing
 → { title, artist, listeners, stream_url, chat_channel_id }
 ```
 
-### Côté nexus-frontend
+### Côté nodyx-frontend
 
 - `RadioPlayer.svelte` — lecteur audio flottant (Web Audio API)
 - `RadioDirectory.svelte` — liste des stations depuis nexusnode.app/api/directory/radio
@@ -245,7 +245,7 @@ GET /api/v1/radio/now-playing
 ```
 2019 : Radio Fil Bleu ferme. 12 ans d'émissions. Archives perdues.
 
-2026 : Un ancien animateur installe Nexus sur un Raspberry Pi 4.
+2026 : Un ancien animateur installe Nodyx sur un Raspberry Pi 4.
        Connecte un émetteur FM légal (100mW, portée 5 km — légal en France).
        Déclare sa station dans le directory nexusnode.app.
 
@@ -283,26 +283,26 @@ En 2002, la RIAA impose des redevances rétroactives qui tuent presque toutes le
 SomaFM survit parce que sa communauté — dispersée sur Reddit et IRC — se mobilise en 48h et fait des dons
 pour couvrir les factures. Des dizaines de milliers de dollars en quelques jours.
 La communauté a sauvé la station. Mais elle vit *ailleurs* — pas sur la plateforme de la station elle-même.
-**C'est le problème que Nexus résout.**
+**C'est le problème que Nodyx résout.**
 
 **Radio Paradise** (Californie, 2000 — toujours en vie) :
 La seule radio internet à avoir construit une couche communautaire *intégrée* dans le stream :
 les auditeurs votent les chansons en temps réel, ce qui influence la playlist.
 Ce retour direct donne aux auditeurs un sentiment de propriété sur la station.
 2 millions d'auditeurs uniques par mois. Entièrement financée par abonnements volontaires.
-**Modèle le plus proche de Nexus-Radio.**
+**Modèle le plus proche de Nodyx-Radio.**
 
 **SDF anonradio** (1987 — toujours en vie, 40 ans) :
 Tourne sur SDF (Super Dimensional Fortress), un des plus vieux systèmes Unix publics d'internet.
 Radio + forum + chat + identité persistante = **une seule infrastructure**.
 Les auditeurs ne partent pas sur Discord. La communauté *est* la station.
-**C'est exactement l'architecture Nexus.**
+**C'est exactement l'architecture Nodyx.**
 
 **EchoLink / AllStarLink** (HAM radio + internet) :
 400 000+ opérateurs radioamateurs connectés. Actif depuis 20+ ans.
 La licence radioamateur crée l'investissement initial (effort = appartenance).
 Les "nets" hebdomadaires (rendez-vous récurrents sur une fréquence) sont des communautés
-qui se retrouvent autour d'un programme — exactement comme un salon vocal Nexus avec récurrence.
+qui se retrouvent autour d'un programme — exactement comme un salon vocal Nodyx avec récurrence.
 
 ### Les mortes — et pourquoi
 
@@ -311,13 +311,13 @@ Radio culte du rock indépendant américain. Communauté passionnée.
 Fermée en 2010 faute de financement.
 Quand le stream s'est éteint, les fans n'avaient **nulle part où se retrouver ensemble**.
 Même pour faire leur deuil. La communauté s'est dispersée immédiatement.
-Un forum Nexus actif aurait survécu à l'arrêt du stream.
+Un forum Nodyx actif aurait survécu à l'arrêt du stream.
 
 **Last.fm** :
 À son apogée (2007–2010) : 40 millions d'utilisateurs. Social radio, profils de goûts, recommandations.
 Acquis par CBS, revendu, la radio tuée en 2014 (licences trop chères).
 Quand la radio est morte, la communauté s'est effondrée.
-**La communauté dépendait du stream.** Chez Nexus, c'est l'inverse :
+**La communauté dépendait du stream.** Chez Nodyx, c'est l'inverse :
 le stream est une fonctionnalité de la communauté — pas l'inverse.
 
 **Lofi Girl** (YouTube, 20 000+ auditeurs simultanés) :
@@ -373,7 +373,7 @@ La plupart ont 2-3 auditeurs. Souvent eux-mêmes, en test.
 La différence entre Ellie et eux : Ellie cherchait un signal *sortant*.
 Les opérateurs radio cherchent un signal *entrant* — une réponse.
 
-**Nexus est la réponse.**
+**Nodyx est la réponse.**
 
 Pas "quelqu'un écoute ton stream".
 Mais "voici ta communauté. Elle existait déjà. Elle t'attendait."
@@ -402,7 +402,7 @@ Paris → ionosphère → New York
 Juste de la physique. De la même physique qui existait avant internet.
 De la même physique qui existera après.
 
-### Ce que ça signifie pour NEXUS-RADIO
+### Ce que ça signifie pour NODYX-RADIO
 
 Une station de radio communautaire avec un émetteur HF de 100W et une antenne filaire
 faite maison (15€ de fil de cuivre tendu entre deux arbres) peut diffuser son programme
@@ -411,7 +411,7 @@ faite maison (15€ de fil de cuivre tendu entre deux arbres) peut diffuser son 
 Pas en streaming. Pas avec une carte de crédit. Pas avec un CDN.
 Avec de la physique.
 
-Et les CRDT deltas du forum Nexus — les mêmes qui synchronisent NexusCanvas en temps réel —
+Et les CRDT deltas du forum Nodyx — les mêmes qui synchronisent NodyxCanvas en temps réel —
 voyagent sur ces ondes en JS8Call ou VARA HF.
 
 ```
@@ -419,7 +419,7 @@ Radio communautaire, Creuse, France :
   → Programme audio diffusé en HF 14 MHz
   → Reçu à Buenos Aires par un radioamateur qui a un RTL-SDR (~25€)
   → Les CRDT deltas du forum arrivent avec le signal audio
-  → L'état du forum Nexus se reconstitue localement
+  → L'état du forum Nodyx se reconstitue localement
   → L'auditeur argentin peut lire les discussions du village de Creuse
   → Et répondre. Via son émetteur. Ses mots remontent vers l'ionosphère.
   → Et atterrissent dans le village, le lendemain matin.
@@ -435,7 +435,7 @@ Apple peut acheter des satellites.
 C'est de la physique solaire. Elle se recharge chaque jour avec l'énergie du soleil.
 Elle fonctionnait avant internet. Elle fonctionnera après.
 
-Une communauté Nexus avec un émetteur HF et une antenne dans un arbre
+Une communauté Nodyx avec un émetteur HF et une antenne dans un arbre
 est **structurellement indestructible** par n'importe quelle puissance commerciale ou étatique.
 
 Pas de serveur à couper. Pas de domaine à saisir. Pas de compte à fermer.
@@ -449,19 +449,19 @@ Juste des ondes. Et des gens de l'autre côté.
 
 ---
 
-## Connexion avec NEXUS-ETHER
+## Connexion avec NODYX-ETHER
 
-NEXUS-RADIO et NEXUS-ETHER ne sont pas deux projets.
+NODYX-RADIO et NODYX-ETHER ne sont pas deux projets.
 C'est la même infrastructure, deux faces du même prisme.
 
 ```
-NEXUS-ETHER  →  réseau de transport physique (LoRa, CB, HF)
-NEXUS-RADIO  →  couche applicative et communautaire au-dessus des ondes
+NODYX-ETHER  →  réseau de transport physique (LoRa, CB, HF)
+NODYX-RADIO  →  couche applicative et communautaire au-dessus des ondes
 ```
 
-Une station CB qui diffuse des données CRDT (NEXUS-ETHER) peut aussi diffuser
-un programme audio encodé (NEXUS-RADIO). Les deux partagent l'antenne, la licence,
-et la communauté Nexus qui les fait vivre.
+Une station CB qui diffuse des données CRDT (NODYX-ETHER) peut aussi diffuser
+un programme audio encodé (NODYX-RADIO). Les deux partagent l'antenne, la licence,
+et la communauté Nodyx qui les fait vivre.
 
 **Le réseau radio est le réseau de données est le réseau communautaire.**
 Trois en un. Sur des fréquences que personne ne peut éteindre.
@@ -472,7 +472,7 @@ Trois en un. Sur des fréquences que personne ne peut éteindre.
 
 ### Si tu as une station active (association, FM légale, web radio)
 
-Contacte-nous : issue GitHub avec le tag `[nexus-radio]`.
+Contacte-nous : issue GitHub avec le tag `[nodyx-radio]`.
 On veut comprendre ton infrastructure (Icecast ? Liquidsoap ? AzuraCast ?) et adapter l'intégration.
 
 ### Si tu es développeur
@@ -480,12 +480,12 @@ On veut comprendre ton infrastructure (Icecast ? Liquidsoap ? AzuraCast ?) et ad
 Les problèmes techniques à résoudre :
 - Proxy de stream audio (CORS, HLS vs MP3)
 - Lecteur audio flottant persistant en SvelteKit (Web Audio API, SSR-safe)
-- Endpoint `now-playing` côté nexus-core (metadonnées Icecast ICY)
+- Endpoint `now-playing` côté nodyx-core (metadonnées Icecast ICY)
 - Visualisation carte (Leaflet + OpenStreetMap, données directory)
 
 ### Si tu es radioamateur
 
-Le pont NEXUS-ETHER ↔ NEXUS-RADIO est à construire.
+Le pont NODYX-ETHER ↔ NODYX-RADIO est à construire.
 Quelqu'un doit documenter comment un nœud HF (JS8Call) peut aussi devenir une "station" dans le directory.
 
 ---
@@ -500,9 +500,9 @@ Une radio associative avec 80 auditeurs ne peut pas négocier avec un annonceur.
 Elle n'a pas le poids. Elle n'a pas les contacts. Elle n'a pas le temps.
 Résultat : zéro revenus, dépendance aux subventions, mort lente.
 
-### La solution Nexus-Radio : mutualisation des audiences
+### La solution Nodyx-Radio : mutualisation des audiences
 
-200 stations Nexus-Radio avec 80 auditeurs chacune = **16 000 auditeurs locaux/régionaux.**
+200 stations Nodyx-Radio avec 80 auditeurs chacune = **16 000 auditeurs locaux/régionaux.**
 Un artisan, une salle de concert, un événement régional — ils paient pour ça.
 Pas parce que c'est "internet". Parce que c'est **leur bassin de vie**.
 
@@ -515,7 +515,7 @@ nexusnode.app/radio
 
 Répartition :
   80% → la station (son infrastructure, ses animateurs)
-  20% → nexusnode.app (maintenance serveurs, développement Nexus)
+  20% → nexusnode.app (maintenance serveurs, développement Nodyx)
 ```
 
 ### Pourquoi ce n'est pas de la pub Big Tech
@@ -547,7 +547,7 @@ Pas de VC. Pas de levée de fonds. Pas d'actionnaire à satisfaire.
 Parce que les outils existent. Parce que les gens existent.
 Il manquait la plateforme qui les connecte.
 
-Nexus est cette plateforme.
+Nodyx est cette plateforme.
 
 Et elle n'appartient à personne — donc elle appartient à tout le monde.
 
