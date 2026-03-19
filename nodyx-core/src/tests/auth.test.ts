@@ -17,10 +17,12 @@ vi.mock('../config/database', () => ({
     del:   vi.fn().mockResolvedValue(1),
     get:   vi.fn().mockResolvedValue(null),
     exists: vi.fn().mockImplementation((key: string) => Promise.resolve(key.startsWith('banned:') ? 0 : 1)),
-    incr:  vi.fn().mockResolvedValue(1),
-    expire: vi.fn().mockResolvedValue(1),
-    setex: vi.fn().mockResolvedValue('OK'),
-    ttl:   vi.fn().mockResolvedValue(60),
+    incr:     vi.fn().mockResolvedValue(1),
+    expire:   vi.fn().mockResolvedValue(1),
+    setex:    vi.fn().mockResolvedValue('OK'),
+    ttl:      vi.fn().mockResolvedValue(60),
+    sadd:     vi.fn().mockResolvedValue(1),
+    smembers: vi.fn().mockResolvedValue([]),
   },
 }))
 

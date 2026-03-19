@@ -22,10 +22,13 @@ const ALLOWED_FONTS = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2',
                        'application/x-font-ttf', 'application/octet-stream']
 const ALLOWED_TYPES = ['avatar', 'banner', 'font']
 
-// URL validator : HTTPS seulement (prévention tracking pixel / SSRF)
+// URL validator : HTTPS ou upload local (prévention tracking pixel / SSRF)
 const httpsUrlOrNull = z.string().max(500).refine(
-  v => { try { return new URL(v).protocol === 'https:' } catch { return false } },
-  { message: 'URL must use HTTPS' }
+  v => {
+    if (v.startsWith('/uploads/')) return true
+    try { return new URL(v).protocol === 'https:' } catch { return false }
+  },
+  { message: 'URL must use HTTPS or point to /uploads/' }
 ).nullable().optional()
 
 // Font URL : uploads locaux uniquement (prévention CSS injection / SSRF)
