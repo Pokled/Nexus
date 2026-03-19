@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod communities;
 pub mod directory;
 pub mod forums;
 pub mod notifications;
@@ -20,6 +21,7 @@ pub fn build(state: AppState) -> Router {
         .nest("/api/v1", notifications::router())
         .nest("/api/v1", polls::router())
         .nest("/api/v1", tasks::router())
+        .nest("/api/v1", communities::router())
         .layer(middleware::from_fn_with_state(
             state.clone(),
             directory::subdomain_redirect,
