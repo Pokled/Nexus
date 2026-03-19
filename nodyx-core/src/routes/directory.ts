@@ -4,6 +4,7 @@ import { lookup } from 'dns';
 import { promisify } from 'util';
 import https from 'https';
 import http from 'http';
+import sanitizeHtml from 'sanitize-html';
 import { db, redis } from '../config/database';
 
 // Strict rate-limit for public search endpoint (30 req/min per IP)
@@ -106,6 +107,8 @@ export default async function directoryRoutes(app: FastifyInstance) {
         [slug]
       )
       if (rows[0]?.url) {
+        // Valider le schéma avant redirection (prévention open redirect)
+        if (!rows[0].url.startsWith('https://')) return
         // Preserve path + query so deep links work (e.g. community.nodyx.org/forum/thread/42)
         const target = rows[0].url.replace(/\/$/, '') + (req.url === '/' ? '' : req.url)
         return reply.redirect(target, 302)
@@ -151,7 +154,10 @@ export default async function directoryRoutes(app: FastifyInstance) {
     }
 
     try {
-      new URL(url);
+      const parsed = new URL(url);
+      if (parsed.protocol !== 'https:') {
+        return reply.status(400).send({ error: 'URL must use HTTPS' });
+      }
     } catch {
       return reply.status(400).send({ error: 'Invalid URL' });
     }
@@ -226,10 +232,9 @@ export default async function directoryRoutes(app: FastifyInstance) {
       const { token, members, online, logo_url, banner_url } = req.body;
       if (!token) return reply.status(400).send({ error: 'token required' });
 
-      // Capture real IP — prefer CF-Connecting-IP for Cloudflare-proxied instances
-      const rawIp = (req.headers['cf-connecting-ip'] as string)
-        || (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim()
-        || req.ip;
+      // Capture real IP — req.ip est fiable car Caddy écrase X-Forwarded-For
+      // (CF-Connecting-IP n'est pas utilisé : non vérifiable sans liste IP Cloudflare)
+      const rawIp = req.ip;
       const isPrivate = !rawIp || rawIp === '127.0.0.1' || rawIp === '::1'
         || rawIp.startsWith('192.168.') || rawIp.startsWith('10.')
         || rawIp.startsWith('172.16.') || rawIp.startsWith('::ffff:127.');
@@ -497,27 +502,43 @@ export default async function directoryRoutes(app: FastifyInstance) {
   // ── POST /api/directory/gossip/receive — Gossip Protocol (peer-to-peer) ──
   // Une instance reçoit des données (threads + events) d'un autre pair,
   // les stocke dans son network_index local.
-  // Pas besoin d'être enregistré sur le directory — n'importe quel pair
-  // peut envoyer du contenu public.
+  // Requiert un token d'instance valide (Authorization: Bearer <token>).
   app.post<{ Body: { instance_slug: string; instance_url: string; threads?: any[]; events?: any[] } }>(
     '/directory/gossip/receive',
     async (req, reply) => {
+      // Vérification du token d'instance
+      const authHeader = req.headers['authorization'] ?? '';
+      const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+      if (!token) return reply.status(401).send({ error: 'Authorization required' });
+
       const { instance_slug, instance_url, threads = [], events = [] } = req.body;
       if (!instance_slug || !instance_url) {
         return reply.status(400).send({ error: 'instance_slug and instance_url required' });
       }
 
-      // Validation basique de l'URL (empêche les injections de domaine)
-      try { new URL(instance_url); } catch {
+      // Validation du schéma HTTPS
+      try {
+        const parsed = new URL(instance_url);
+        if (parsed.protocol !== 'https:') throw new Error();
+      } catch {
         return reply.status(400).send({ error: 'invalid instance_url' });
       }
+
+      // Vérifier que le token correspond à l'instance enregistrée
+      const { rows: [inst] } = await db.query(
+        `SELECT id FROM directory_instances WHERE slug = $1 AND token = $2 AND status = 'active' LIMIT 1`,
+        [instance_slug, token]
+      );
+      if (!inst) return reply.status(403).send({ error: 'Invalid token or unknown instance' });
 
       let indexed = 0;
 
       // ── Threads ──
       for (const t of threads) {
         if (!t.thread_id || !t.title) continue;
-        const excerpt = String(t.excerpt ?? '').slice(0, 300);
+        // Sanitize : texte brut uniquement (strip HTML)
+        const title   = sanitizeHtml(String(t.title), { allowedTags: [], allowedAttributes: {} }).slice(0, 200);
+        const excerpt = sanitizeHtml(String(t.excerpt ?? ''), { allowedTags: [], allowedAttributes: {} }).slice(0, 300);
         const tags    = Array.isArray(t.tags) ? t.tags.map(String) : [];
         const replies = parseInt(t.reply_count ?? '0', 10) || 0;
 
@@ -541,7 +562,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
              updated_at    = NOW(),
              search_vector = EXCLUDED.search_vector`,
           [instance_slug, instance_url, t.thread_id, t.thread_slug ?? null,
-           t.category_id ?? null, t.category_slug ?? null, t.title, excerpt, tags, replies]
+           t.category_id ?? null, t.category_slug ?? null, title, excerpt, tags, replies]
         );
         indexed++;
       }
@@ -549,8 +570,9 @@ export default async function directoryRoutes(app: FastifyInstance) {
       // ── Events ──
       for (const e of events) {
         if (!e.event_id || !e.title || !e.starts_at) continue;
-        const excerpt = String(e.description ?? '').slice(0, 300);
-        const tags    = Array.isArray(e.tags) ? e.tags.map(String) : [];
+        const title   = sanitizeHtml(String(e.title), { allowedTags: [], allowedAttributes: {} }).slice(0, 200);
+        const excerpt = sanitizeHtml(String(e.description ?? ''), { allowedTags: [], allowedAttributes: {} }).slice(0, 300);
+        const tags    = Array.isArray(e.tags) ? e.tags.map((tag: unknown) => sanitizeHtml(String(tag), { allowedTags: [], allowedAttributes: {} }).slice(0, 50)) : [];
 
         await db.query(
           `INSERT INTO network_index
@@ -570,7 +592,7 @@ export default async function directoryRoutes(app: FastifyInstance) {
              updated_at   = NOW(),
              search_vector = EXCLUDED.search_vector`,
           [instance_slug, instance_url, e.event_id,
-           e.title, excerpt, tags,
+           title, excerpt, tags,
            e.starts_at, e.ends_at ?? null, e.location ?? null, e.is_cancelled ?? false]
         );
         indexed++;
@@ -601,42 +623,50 @@ export default async function directoryRoutes(app: FastifyInstance) {
 
     let rows: any[];
 
-    const typeFilter    = onlyType     ? `AND ni.content_type = '${onlyType}'` : '';
-    const upcomingFilter = onlyUpcoming ? `AND (ni.content_type != 'event' OR ni.starts_at >= NOW())` : '';
-
     if (q?.trim()) {
-      const { rows: r } = await db.query(
-        `SELECT ni.instance_slug, ni.instance_url, ni.content_type, ni.content_id,
+      const params: unknown[] = [q.trim()];
+      let sql = `SELECT ni.instance_slug, ni.instance_url, ni.content_type, ni.content_id,
                 ni.thread_id, ni.thread_slug, ni.category_id, ni.category_slug,
                 ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
                 ni.starts_at, ni.ends_at, ni.location, ni.is_cancelled,
                 ts_rank(ni.search_vector, websearch_to_tsquery('simple', $1)) AS rank
          FROM network_index ni
-         WHERE ni.search_vector @@ websearch_to_tsquery('simple', $1)
-           ${typeFilter} ${upcomingFilter}
-         ORDER BY rank DESC, ni.reply_count DESC, ni.updated_at DESC
-         LIMIT $2 OFFSET $3`,
-        [q.trim(), limit, offset]
-      );
+         WHERE ni.search_vector @@ websearch_to_tsquery('simple', $1)`;
+      if (onlyType) {
+        params.push(onlyType);
+        sql += ` AND ni.content_type = $${params.length}`;
+      }
+      if (onlyUpcoming) {
+        sql += ` AND (ni.content_type != 'event' OR ni.starts_at >= NOW())`;
+      }
+      params.push(limit, offset);
+      sql += ` ORDER BY rank DESC, ni.reply_count DESC, ni.updated_at DESC
+         LIMIT $${params.length - 1} OFFSET $${params.length}`;
+      const { rows: r } = await db.query(sql, params);
       rows = r;
     } else {
       // Sans query : threads triés par activité, events triés par date
-      const orderBy = onlyType === 'event'
-        ? 'ni.starts_at ASC'
-        : 'ni.updated_at DESC';
-
-      const { rows: r } = await db.query(
-        `SELECT ni.instance_slug, ni.instance_url, ni.content_type, ni.content_id,
+      // orderBy est dérivé d'un booléen — jamais de l'input utilisateur
+      const orderBy = onlyType === 'event' ? 'ni.starts_at ASC' : 'ni.updated_at DESC';
+      const params: unknown[] = [];
+      let sql = `SELECT ni.instance_slug, ni.instance_url, ni.content_type, ni.content_id,
                 ni.thread_id, ni.thread_slug, ni.category_id, ni.category_slug,
                 ni.title, ni.excerpt, ni.tags, ni.reply_count, ni.updated_at,
                 ni.starts_at, ni.ends_at, ni.location, ni.is_cancelled,
                 1.0 AS rank
          FROM network_index ni
-         WHERE 1=1 ${typeFilter} ${upcomingFilter}
-         ORDER BY ${orderBy}
-         LIMIT $1 OFFSET $2`,
-        [limit, offset]
-      );
+         WHERE 1=1`;
+      if (onlyType) {
+        params.push(onlyType);
+        sql += ` AND ni.content_type = $${params.length}`;
+      }
+      if (onlyUpcoming) {
+        sql += ` AND (ni.content_type != 'event' OR ni.starts_at >= NOW())`;
+      }
+      params.push(limit, offset);
+      sql += ` ORDER BY ${orderBy}
+         LIMIT $${params.length - 1} OFFSET $${params.length}`;
+      const { rows: r } = await db.query(sql, params);
       rows = r;
     }
 

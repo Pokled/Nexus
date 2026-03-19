@@ -55,13 +55,13 @@
 				signetState = 'error'
 				return
 			}
-			const { challengeId } = await res.json()
+			const { challengeId, pollNonce } = await res.json()
 			signetChallengeId = challengeId
 
 			// Poll toutes les 2 secondes
 			signetPollInterval = setInterval(async () => {
 				try {
-					const poll = await fetch(`/api/auth/challenges/status/${challengeId}`)
+					const poll = await fetch(`/api/auth/challenges/status/${challengeId}?nonce=${pollNonce}`)
 					if (!poll.ok) return
 					const j = await poll.json()
 					if (j.status === 'approved' && j.token) {

@@ -74,18 +74,23 @@ async function registerRateLimit(request: FastifyRequest, reply: FastifyReply): 
   }
 }
 
-// Supprime toutes les sessions Redis d'un utilisateur (invalidation post-reset)
-async function invalidateUserSessions(userId: string): Promise<void> {
-  let cursor = '0'
-  do {
-    const [next, keys] = await redis.scan(cursor, 'MATCH', 'session:*', 'COUNT', '200')
-    cursor = next
-    if (keys.length > 0) {
-      const values = await Promise.all(keys.map((k: string) => redis.get(k)))
-      const toDelete = keys.filter((_: string, i: number) => values[i] === userId)
-      if (toDelete.length > 0) await redis.del(...toDelete)
-    }
-  } while (cursor !== '0')
+// ── Index inversé sessions : user_sessions:<userId> → Set de tokens ──────────
+// Évite le SCAN itératif sur toutes les clés session:* au moment d'un ban/reset.
+
+export async function trackSession(userId: string, token: string): Promise<void> {
+  const indexKey = `user_sessions:${userId}`
+  await redis.sadd(indexKey, token)
+  await redis.expire(indexKey, SESSION_TTL)
+}
+
+export async function invalidateUserSessions(userId: string): Promise<void> {
+  const indexKey = `user_sessions:${userId}`
+  const tokens = await redis.smembers(indexKey)
+  if (tokens.length > 0) {
+    await redis.del(...tokens.map((t: string) => `session:${t}`), indexKey)
+  } else {
+    await redis.del(indexKey)
+  }
 }
 
 const RegisterBody = z.object({
@@ -187,6 +192,7 @@ export default async function authRoutes(app: FastifyInstance) {
 
     const token = signToken(user.id, user.username)
     await redis.set(`session:${token}`, user.id, 'EX', SESSION_TTL)
+    await trackSession(user.id, token)
     return reply.code(201).send({ token, user })
   })
 
@@ -238,6 +244,7 @@ export default async function authRoutes(app: FastifyInstance) {
 
     const token = signToken(user.id, user.username)
     await redis.set(`session:${token}`, user.id, 'EX', SESSION_TTL)
+    await trackSession(user.id, token)
 
     // Ensure user is in community_members — only if not banned
     const communityId = await getDefaultCommunityId()
@@ -400,6 +407,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const { id, username } = rows[0]
     const jwtToken = signToken(id, username)
     await redis.set(`session:${jwtToken}`, id, 'EX', SESSION_TTL)
+    await trackSession(id, jwtToken)
 
     return reply.send({ token: jwtToken })
   })
@@ -410,11 +418,16 @@ export default async function authRoutes(app: FastifyInstance) {
   }, async (request, reply) => {
     const { email } = request.body as { email: string }
 
-    // Rate limit : 1 renvoi / 5 min / email
+    // Rate limit : 1 renvoi / 5 min / email ET 3 / 5 min / IP
     const rateLimitKey = `resend_verify:${email.toLowerCase()}`
-    const count = await redis.incr(rateLimitKey)
-    if (count === 1) await redis.expire(rateLimitKey, 5 * 60)
-    if (count > 1) {
+    const rateLimitIp  = `resend_verify_ip:${request.ip}`
+    const [countEmail, countIp] = await Promise.all([
+      redis.incr(rateLimitKey),
+      redis.incr(rateLimitIp),
+    ])
+    if (countEmail === 1) await redis.expire(rateLimitKey, 5 * 60)
+    if (countIp === 1)    await redis.expire(rateLimitIp, 5 * 60)
+    if (countEmail > 1 || countIp > 3) {
       return reply.code(429).send({ error: 'Un email a déjà été envoyé récemment. Attendez 5 minutes.', code: 'RATE_LIMITED' })
     }
 

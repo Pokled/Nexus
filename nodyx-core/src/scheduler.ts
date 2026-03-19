@@ -235,7 +235,7 @@ export async function announceEventsToDirectory() {
     // ── Push au directory ──
     const res = await fetch(`${directoryUrl}/api/directory/gossip/receive`, {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       body:    JSON.stringify({ instance_slug: slug, instance_url: selfUrl, events }),
     })
 
@@ -265,12 +265,14 @@ async function gossipToPeers(payload: {
   const peers    = peersEnv.split(',').map(p => p.trim()).filter(Boolean)
   if (peers.length === 0) return
 
+  const selfToken = process.env.DIRECTORY_TOKEN ?? ''
+
   await Promise.allSettled(peers.map(async (peerUrl) => {
     try {
       const url = `${peerUrl.replace(/\/$/, '')}/api/directory/gossip/receive`
       const res = await fetch(url, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${selfToken}` },
         body:    JSON.stringify(payload),
         signal:  AbortSignal.timeout(8000),
       })

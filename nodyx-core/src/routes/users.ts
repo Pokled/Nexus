@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { randomUUID } from 'crypto'
 import { mkdirSync } from 'fs'
 import path from 'path'
+import sharp from 'sharp'
 import { rateLimit } from '../middleware/rateLimit'
 import { requireAuth } from '../middleware/auth'
 import { validate } from '../middleware/validate'
@@ -11,6 +12,9 @@ import { db, redis } from '../config/database'
 import { io } from '../socket/io'
 import { scanBuffer } from '../services/fileScanner'
 
+const IMAGE_MAX_WIDTH  = 4096
+const IMAGE_MAX_HEIGHT = 4096
+
 const UPLOADS_DIR = path.join(process.cwd(), 'uploads')
 const ALLOWED_MIME  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
 const ALLOWED_FONTS = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2',
@@ -18,13 +22,25 @@ const ALLOWED_FONTS = ['font/ttf', 'font/otf', 'font/woff', 'font/woff2',
                        'application/x-font-ttf', 'application/octet-stream']
 const ALLOWED_TYPES = ['avatar', 'banner', 'font']
 
+// URL validator : HTTPS seulement (prévention tracking pixel / SSRF)
+const httpsUrlOrNull = z.string().max(500).refine(
+  v => { try { return new URL(v).protocol === 'https:' } catch { return false } },
+  { message: 'URL must use HTTPS' }
+).nullable().optional()
+
+// Font URL : uploads locaux uniquement (prévention CSS injection / SSRF)
+const localFontUrl = z.string().max(500).refine(
+  v => v.startsWith('/uploads/'),
+  { message: 'Font URL must point to /uploads/' }
+).nullable().optional()
+
 const PatchProfileBody = z.object({
   display_name:      z.string().max(100).nullable().optional(),
   bio:               z.string().max(2000).nullable().optional(),
   status:            z.string().max(100).nullable().optional(),
   location:          z.string().max(100).nullable().optional(),
-  avatar_url:        z.string().max(500).nullable().optional(),
-  banner_url:        z.string().max(500).nullable().optional(),
+  avatar_url:        httpsUrlOrNull,
+  banner_url:        httpsUrlOrNull,
   tags:              z.array(z.string().max(30)).max(10).optional(),
   links:             z.array(z.object({
     label: z.string().max(50),
@@ -42,7 +58,7 @@ const PatchProfileBody = z.object({
   name_glow_intensity:  z.number().int().min(5).max(40).optional().nullable(),
   name_animation:       z.enum(['pulse', 'shake', 'float', 'glitch', 'rainbow', 'glow-pulse', 'none']).optional().nullable(),
   name_font_family:     z.string().max(100).optional().nullable(),
-  name_font_url:        z.string().max(500).optional().nullable(),
+  name_font_url:        localFontUrl,
   banner_asset_id:      z.string().uuid().optional().nullable(),
   frame_asset_id:       z.string().uuid().optional().nullable(),
   badge_asset_id:       z.string().uuid().optional().nullable(),
@@ -429,11 +445,20 @@ export default async function userRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: 'Format non supporté (JPEG, PNG, WebP, GIF)' })
     }
 
-    // Les images passent par sharp dans assetService, mais on scanne quand même
-    // les magic bytes pour détecter les fichiers déguisés (ex: EXE renommé en .jpg)
+    // Scan magic bytes pour détecter les fichiers déguisés
     const imgScan = scanBuffer(fileBuffer, data.mimetype)
     if (!imgScan.ok) {
       return reply.code(400).send({ error: `Fichier rejeté : ${imgScan.reason}` })
+    }
+
+    // Vérifier les dimensions (protection contre decompression bomb)
+    try {
+      const meta = await sharp(fileBuffer).metadata()
+      if ((meta.width ?? 0) > IMAGE_MAX_WIDTH || (meta.height ?? 0) > IMAGE_MAX_HEIGHT) {
+        return reply.code(400).send({ error: `Image trop grande (max ${IMAGE_MAX_WIDTH}×${IMAGE_MAX_HEIGHT}px)` })
+      }
+    } catch {
+      return reply.code(400).send({ error: 'Impossible de lire les dimensions de l\'image' })
     }
 
     const ext     = data.mimetype.split('/')[1].replace('jpeg', 'jpg')

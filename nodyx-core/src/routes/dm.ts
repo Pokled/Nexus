@@ -124,6 +124,9 @@ export default async function dmRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string }
     const { limit = '50', before } = request.query as { limit?: string; before?: string }
     const lim = Math.min(Number(limit), 100)
+    if (before !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(before)) {
+      return reply.code(400).send({ error: 'Invalid before parameter' })
+    }
 
     // Vérifier que l'user est participant
     const { rows: [part] } = await db.query(

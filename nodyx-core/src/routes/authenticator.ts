@@ -20,6 +20,7 @@ import jwt from 'jsonwebtoken'
 import { db, redis } from '../config/database'
 import { requireAuth } from '../middleware/auth'
 import { adminOnly }  from '../middleware/adminOnly'
+import { trackSession } from './auth'
 
 // JwkPublicKey n'est pas dans lib ES2022 sans DOM — on définit le minimum nécessaire
 type JwkPublicKey = Record<string, unknown>
@@ -293,21 +294,23 @@ export default async function authenticatorRoutes(app: FastifyInstance) {
     }
 
     const challengeBytes = crypto.randomBytes(32).toString('base64url')
+    const pollNonce = crypto.randomBytes(16).toString('hex')
     const expiresAt = new Date(Date.now() + CHALLENGE_TTL_SEC * 1000)
     const sourceIp = request.ip
 
     const { rows } = await db.query(
       `INSERT INTO authenticator_challenges
-         (challenge, device_id, user_id, source_ip, hub_url, expires_at)
-       VALUES ($1, $2, $3, $4, $5, $6)
+         (challenge, device_id, user_id, source_ip, hub_url, expires_at, poll_nonce)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id, challenge, issued_at, expires_at`,
-      [challengeBytes, resolvedDeviceId, userId, sourceIp, hubUrl, expiresAt]
+      [challengeBytes, resolvedDeviceId, userId, sourceIp, hubUrl, expiresAt, pollNonce]
     )
 
     const row = rows[0]
     return reply.code(201).send({
       challengeId: row.id,
       challenge:   row.challenge,
+      pollNonce,
       issuedAt:    row.issued_at.getTime(),
       expiresAt:   row.expires_at.getTime(),
       ttl:         CHALLENGE_TTL_SEC,
@@ -392,6 +395,7 @@ export default async function authenticatorRoutes(app: FastifyInstance) {
     const token = signToken(device.user_id, device.username)
     const sessionKey = `session:${token}`
     await redis.setex(sessionKey, SESSION_TTL, device.user_id)
+    await trackSession(device.user_id, token)
 
     // Marquer le challenge comme approuvé + stocker le token de session
     await db.query(
@@ -433,14 +437,20 @@ export default async function authenticatorRoutes(app: FastifyInstance) {
   /** Statut d'un challenge — le browser poll cet endpoint après avoir créé le challenge */
   app.get('/challenges/status/:challengeId', async (request: FastifyRequest, reply: FastifyReply) => {
     const { challengeId } = request.params as { challengeId: string }
+    const { nonce } = request.query as { nonce?: string }
+
+    if (!nonce) return reply.code(400).send({ error: 'nonce required' })
 
     const { rows } = await db.query(
-      `SELECT id, status, session_token, expires_at
+      `SELECT id, status, session_token, expires_at, poll_nonce
        FROM authenticator_challenges
        WHERE id = $1`,
       [challengeId]
     )
     if (!rows[0]) return reply.code(404).send({ error: 'Challenge not found' })
+    if (rows[0].poll_nonce && rows[0].poll_nonce !== nonce) {
+      return reply.code(403).send({ error: 'Forbidden' })
+    }
 
     const row = rows[0]
 

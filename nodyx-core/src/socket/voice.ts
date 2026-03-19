@@ -1,6 +1,12 @@
 import { Server, Socket } from 'socket.io'
 import * as crypto from 'crypto'
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+function isUuid(v: unknown): v is string { return typeof v === 'string' && UUID_RE.test(v) }
+
+// Max size for jukebox state payload (10 KB)
+const JUKEBOX_STATE_MAX = 10_240
+
 // ── TURN credentials ─────────────────────────────────────────────────────────
 // Dynamic time-limited credentials (nexus-turn / coturn use-auth-secret style).
 // TURN_SECRET + TURN_PUBLIC_IP env vars — set by install.sh.
@@ -101,7 +107,7 @@ export function registerVoiceHandlers(socket: Socket, server: Server): void {
 
   // ── voice:join ────────────────────────────────────────────────────────────
   socket.on('voice:join', async (channelId: string) => {
-    if (!channelId) return
+    if (!isUuid(channelId)) return
 
     const room = voiceRoom(channelId)
 
@@ -160,7 +166,7 @@ export function registerVoiceHandlers(socket: Socket, server: Server): void {
 
   // ── voice:leave ───────────────────────────────────────────────────────────
   socket.on('voice:leave', async (channelId: string) => {
-    if (!channelId) return
+    if (!isUuid(channelId)) return
     const room = voiceRoom(channelId)
     socket.leave(room)
     freeSeat(channelId, socket.id)
@@ -169,15 +175,27 @@ export function registerVoiceHandlers(socket: Socket, server: Server): void {
   })
 
   // ── WebRTC signaling — forwarded to target socket only ───────────────────
-  socket.on('voice:offer', ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+  // Vérifie que l'émetteur ET le destinataire sont bien dans la même room vocale
+  async function inSameVoiceRoom(channelId: string, targetSocketId: string): Promise<boolean> {
+    if (!isUuid(channelId)) return false
+    const room = voiceRoom(channelId)
+    if (!socket.rooms.has(room)) return false
+    const sockets = await server.in(room).fetchSockets()
+    return sockets.some(s => s.id === targetSocketId)
+  }
+
+  socket.on('voice:offer', async ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+    if (!await inSameVoiceRoom(channelId, to)) return
     server.to(to).emit('voice:offer', { from: socket.id, sdp, channelId })
   })
 
-  socket.on('voice:answer', ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+  socket.on('voice:answer', async ({ to, sdp, channelId }: { to: string; sdp: unknown; channelId: string }) => {
+    if (!await inSameVoiceRoom(channelId, to)) return
     server.to(to).emit('voice:answer', { from: socket.id, sdp, channelId })
   })
 
-  socket.on('voice:ice', ({ to, candidate, channelId }: { to: string; candidate: unknown; channelId: string }) => {
+  socket.on('voice:ice', async ({ to, candidate, channelId }: { to: string; candidate: unknown; channelId: string }) => {
+    if (!await inSameVoiceRoom(channelId, to)) return
     server.to(to).emit('voice:ice', { from: socket.id, candidate, channelId })
   })
 
@@ -200,7 +218,10 @@ export function registerVoiceHandlers(socket: Socket, server: Server): void {
 
   // ── jukebox:update — relay jukebox state to all voice room peers ──────────
   socket.on('jukebox:update', ({ channelId, state }: { channelId: string; state: unknown }) => {
-    if (!channelId) return
+    if (!isUuid(channelId)) return
+    if (!socket.rooms.has(voiceRoom(channelId))) return
+    const serialized = JSON.stringify(state)
+    if (serialized.length > JUKEBOX_STATE_MAX) return
     socket.to(voiceRoom(channelId)).emit('jukebox:update', { from: socket.id, state })
   })
 

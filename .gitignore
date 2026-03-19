@@ -28,6 +28,12 @@ nodyx-core/uploads/avatars/*
 nodyx-core/uploads/banners/*
 nodyx-core/uploads/logos/*
 nodyx-core/uploads/assets/*
+nodyx-core/uploads/fonts/*
 !nodyx-core/uploads/avatars/.gitkeep
 !nodyx-core/uploads/banners/.gitkeep
 !nodyx-core/uploads/logos/.gitkeep
+
+# Hub runtime files
+nodyx-hub/.env
+nodyx-hub/hub.db
+nodyx-hub/build/

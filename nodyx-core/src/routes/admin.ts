@@ -13,6 +13,7 @@ import { rateLimit } from '../middleware/rateLimit'
 import * as ChannelModel from '../models/channel'
 import { generateCategorySlug } from '../models/community'
 import { io } from '../socket/io'
+import { invalidateUserSessions } from './auth'
 import { isSmtpConfigured, sendPasswordResetEmail } from '../services/emailService'
 import { randomUUID, createHash, randomBytes } from 'crypto'
 import { createWriteStream, mkdirSync } from 'fs'
@@ -442,26 +443,9 @@ export default async function adminRoutes(app: FastifyInstance) {
     // Mark user as banned in Redis — blocks requireAuth immediately
     await redis.set(`banned:${userId}`, '1')
 
-    // Delete all existing sessions for this user so cached tokens stop working.
-    // Sessions are stored as session:<token> with value = userId.
-    // We scan all session:* keys and delete those belonging to the banned user.
+    // Invalider toutes les sessions Redis de l'utilisateur banni (via index inversé)
     try {
-      const stream = redis.scanStream({ match: 'session:*', count: 100 })
-      const sessionKeysToDelete: string[] = []
-      await new Promise<void>((resolve, reject) => {
-        stream.on('data', (keys: string[]) => {
-          // ioredis strips keyPrefix from scanStream results, so keys are 'session:<token>'
-          for (const key of keys) sessionKeysToDelete.push(key)
-        })
-        stream.on('end', resolve)
-        stream.on('error', reject)
-      })
-      if (sessionKeysToDelete.length > 0) {
-        // Fetch values in batch and delete sessions belonging to bannedUser
-        const values = await redis.mget(...sessionKeysToDelete)
-        const toDelete = sessionKeysToDelete.filter((_, i) => values[i] === userId)
-        if (toDelete.length > 0) await redis.del(...toDelete)
-      }
+      await invalidateUserSessions(userId)
     } catch { /* non-critical */ }
 
     // Kick active socket connections for this user immediately
@@ -530,6 +514,7 @@ export default async function adminRoutes(app: FastifyInstance) {
        ON CONFLICT (ip) DO UPDATE SET reason = EXCLUDED.reason, banned_by = EXCLUDED.banned_by, banned_at = now()`,
       [body.ip, body.reason ?? null, adminUser.userId]
     )
+    logAction(adminUser.userId, 'ip_ban_add', 'ip', body.ip, body.ip, { reason: body.reason })
     return reply.send({ ok: true })
   })
 
@@ -537,8 +522,10 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.delete('/ip-bans/:ip', {
     preHandler: [rateLimit, adminOnly],
   }, async (request, reply) => {
+    const adminUser = (request as any).user as { userId: string }
     const { ip } = request.params as { ip: string }
     await db.query(`DELETE FROM ip_bans WHERE ip = $1::inet`, [ip])
+    logAction(adminUser.userId, 'ip_ban_remove', 'ip', ip, ip, {})
     return reply.send({ ok: true })
   })
 
@@ -570,6 +557,7 @@ export default async function adminRoutes(app: FastifyInstance) {
        ON CONFLICT (email) DO UPDATE SET reason = EXCLUDED.reason, banned_by = EXCLUDED.banned_by, banned_at = now()`,
       [body.email, body.reason ?? null, adminUser.userId]
     )
+    logAction(adminUser.userId, 'email_ban_add', 'email', body.email, body.email, { reason: body.reason })
     return reply.send({ ok: true })
   })
 
@@ -577,8 +565,11 @@ export default async function adminRoutes(app: FastifyInstance) {
   app.delete('/email-bans/:email', {
     preHandler: [rateLimit, adminOnly],
   }, async (request, reply) => {
+    const adminUser = (request as any).user as { userId: string }
     const { email } = request.params as { email: string }
-    await db.query(`DELETE FROM email_bans WHERE email = $1`, [decodeURIComponent(email)])
+    const decoded = decodeURIComponent(email)
+    await db.query(`DELETE FROM email_bans WHERE email = $1`, [decoded])
+    logAction(adminUser.userId, 'email_ban_remove', 'email', decoded, decoded, {})
     return reply.send({ ok: true })
   })
 
@@ -963,6 +954,7 @@ export default async function adminRoutes(app: FastifyInstance) {
 
   // PATCH /admin/announcements/:id — toggle active / update
   app.patch('/announcements/:id', { preHandler: [adminOnly] }, async (request, reply) => {
+    const adminUser = (request as any).user as { userId: string }
     const { id } = request.params as { id: string }
     const { is_active, message, color } = request.body as {
       is_active?: boolean; message?: string; color?: string
@@ -986,6 +978,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       vals
     )
     if (!rows[0]) return reply.code(404).send({ error: 'not found' })
+    logAction(adminUser.userId, 'update_announcement', 'announcement', id,
+      rows[0].message?.slice(0, 60) ?? null, { is_active, color })
     return reply.send({ announcement: rows[0] })
   })
 

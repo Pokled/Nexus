@@ -377,9 +377,13 @@ export default async function pollRoutes(app: FastifyInstance) {
       const { rows: [poll] } = await db.query(`SELECT * FROM polls WHERE id = $1`, [id])
       if (!poll) return reply.code(404).send({ error: 'Poll not found' })
 
-      // Autorisation : créateur ou admin
-      const { rows: [user] } = await db.query(`SELECT role FROM users WHERE id = $1`, [userId])
-      if (String(poll.created_by) !== String(userId) && user?.role !== 'admin') {
+      // Autorisation : créateur ou admin/owner
+      const communityId = await getCommunityId()
+      const { rows: [member] } = await db.query(
+        `SELECT role FROM community_members WHERE community_id = $1 AND user_id = $2 LIMIT 1`,
+        [communityId, userId]
+      )
+      if (String(poll.created_by) !== String(userId) && member?.role !== 'admin' && member?.role !== 'owner') {
         return reply.code(403).send({ error: 'Forbidden' })
       }
 
@@ -534,8 +538,12 @@ export default async function pollRoutes(app: FastifyInstance) {
       const { rows: [poll] } = await db.query(`SELECT * FROM polls WHERE id = $1`, [id])
       if (!poll) return reply.code(404).send({ error: 'Poll not found' })
 
-      const { rows: [user] } = await db.query(`SELECT role FROM users WHERE id = $1`, [userId])
-      if (String(poll.created_by) !== String(userId) && user?.role !== 'admin') {
+      const communityId = await getCommunityId()
+      const { rows: [member] } = await db.query(
+        `SELECT role FROM community_members WHERE community_id = $1 AND user_id = $2 LIMIT 1`,
+        [communityId, userId]
+      )
+      if (String(poll.created_by) !== String(userId) && member?.role !== 'admin' && member?.role !== 'owner') {
         return reply.code(403).send({ error: 'Forbidden' })
       }
 
