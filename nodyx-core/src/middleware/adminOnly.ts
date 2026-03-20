@@ -36,8 +36,12 @@ export async function adminOnly(request: FastifyRequest, reply: FastifyReply): P
     return reply.code(401).send({ error: 'Invalid or expired token', code: 'UNAUTHORIZED' })
   }
 
-  const alive = await redis.exists(`session:${token}`)
-  if (!alive) {
+  // Accept both Node.js-issued (session:) and Rust-issued (nodyx:session:) sessions
+  const [nodeSession, nodyx_session] = await Promise.all([
+    redis.exists(`session:${token}`),
+    redis.exists(`nodyx:session:${token}`),
+  ])
+  if (!nodeSession && !nodyx_session) {
     return reply.code(401).send({ error: 'Session expired', code: 'SESSION_EXPIRED' })
   }
 

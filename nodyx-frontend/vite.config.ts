@@ -4,6 +4,26 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+
+	build: {
+		rollupOptions: {
+			output: {
+				manualChunks: (id) => {
+					// TipTap (éditeur WYSIWYG) — ~500KB, chargé uniquement sur les pages forum/chat
+					if (id.includes('@tiptap')) return 'vendor-tiptap'
+					// Socket.IO client — chargé dynamiquement, mais on isole le vendor
+					if (id.includes('socket.io-client') || id.includes('engine.io-client')) return 'vendor-socket'
+					// Lowlight (syntax highlighting code blocks) — rarement utilisé
+					if (id.includes('lowlight') || id.includes('highlight.js')) return 'vendor-highlight'
+					// QRCode — utilisé uniquement dans settings (Nodyx Signet)
+					if (id.includes('qrcode')) return 'vendor-misc'
+					// RNNoise WASM (débruitage voix) — très lourd, isolé
+					if (id.includes('rnnoise') || id.includes('@jitsi')) return 'vendor-audio'
+				},
+			},
+		},
+	},
+
 	server: {
 		host: true,
 		allowedHosts: true,

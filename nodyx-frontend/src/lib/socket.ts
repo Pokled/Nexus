@@ -158,11 +158,26 @@ export function getSocket(): Socket | null {
 }
 
 export async function tryAutoConnect(): Promise<void> {
-  if (!browser) return;
-  const savedToken = localStorage.getItem('nodyx_token');
-  if (savedToken && !_socket) {
-    // On relance le socket avec le token stocké
-    // Tu peux mettre 0 pour initialCount ou faire un petit fetch rapide avant
-    await initSocket(savedToken, 0);
+  if (!browser) return
+  const savedToken = localStorage.getItem('nodyx_token')
+  if (!savedToken || _socket) return
+
+  // Vérifier que le token est encore valide avant de se reconnecter
+  // Évite de se reconnecter avec un token expiré/révoqué
+  try {
+    const { PUBLIC_API_URL } = await import('$env/static/public')
+    const res = await fetch(`${PUBLIC_API_URL}/api/v1/notifications/unread-count`, {
+      headers: { Authorization: `Bearer ${savedToken}` },
+    })
+    if (res.status === 401) {
+      // Token expiré ou révoqué — nettoyer le localStorage
+      localStorage.removeItem('nodyx_token')
+      return
+    }
+    const data = res.ok ? await res.json() : { count: 0 }
+    await initSocket(savedToken, data.count ?? 0)
+  } catch {
+    // Réseau indisponible — tenter quand même (le socket gérera l'erreur)
+    await initSocket(savedToken, 0)
   }
 }

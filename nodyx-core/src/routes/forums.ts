@@ -97,13 +97,13 @@ const ThreadsQuery = z.object({
 const CreateThreadBody = z.object({
   category_id: z.string().min(1), // accepts UUID or slug — resolved server-side
   title:       z.string().min(3).max(300),
-  content:     z.string().min(1), // first post content
+  content:     z.string().min(1).max(500_000), // ~500 KB max
   tag_ids:     z.array(z.string().uuid()).max(5).optional(),
 })
 
 const CreatePostBody = z.object({
   thread_id: z.string().min(1), // accepts UUID or slug — resolved server-side
-  content:   z.string().min(1),
+  content:   z.string().min(1).max(500_000),
 })
 
 const ReactionBody = z.object({

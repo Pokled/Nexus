@@ -308,6 +308,36 @@ async function gossipToPeers(payload: {
   }))
 }
 
+// ── Purge tokens de vérification email expirés ───────────────────────────────
+
+async function purgeExpiredEmailTokens() {
+  try {
+    const { rowCount } = await db.query(
+      `DELETE FROM email_verification_tokens WHERE expires_at < NOW()`
+    )
+    if (rowCount && rowCount > 0) {
+      console.log(`[Scheduler] Email tokens — ${rowCount} token(s) expiré(s) supprimé(s)`)
+    }
+  } catch {
+    // Table may not exist on older instances — silently ignore
+  }
+}
+
+// ── Purge abonnements push inactifs (> 30 jours) ─────────────────────────────
+
+async function purgeInactivePushSubscriptions() {
+  try {
+    const { rowCount } = await db.query(
+      `DELETE FROM push_subscriptions WHERE last_used_at < NOW() - INTERVAL '30 days'`
+    )
+    if (rowCount && rowCount > 0) {
+      console.log(`[Scheduler] Push subs — ${rowCount} abonnement(s) inactif(s) supprimé(s)`)
+    }
+  } catch {
+    // Table may not exist on older instances — silently ignore
+  }
+}
+
 // ── Purge notifications lues (> 30 jours) ────────────────────────────────────
 
 async function purgeOldNotifications() {
@@ -355,6 +385,12 @@ export function startScheduler(io: Server) {
   // Purge des notifications lues de plus de 30 jours (toutes les 24h, 2min au démarrage)
   setTimeout(() => purgeOldNotifications(), 2 * 60 * 1000)
   setInterval(() => purgeOldNotifications(), NOTIF_PURGE_INTERVAL_MS)
+
+  // Purge tokens email expirés + abonnements push inactifs (toutes les 24h)
+  setTimeout(() => purgeExpiredEmailTokens(), 3 * 60 * 1000)
+  setInterval(() => purgeExpiredEmailTokens(), NOTIF_PURGE_INTERVAL_MS)
+  setTimeout(() => purgeInactivePushSubscriptions(), 4 * 60 * 1000)
+  setInterval(() => purgeInactivePushSubscriptions(), NOTIF_PURGE_INTERVAL_MS)
 
   // Global Search + Gossip — announce threads + events (60s démarrage, toutes les 10 min)
   if (process.env.NODYX_GLOBAL_INDEXING === 'true') {
