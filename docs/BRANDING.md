@@ -256,9 +256,16 @@ SELECT slug, name, cloudflare_record_id FROM directory_instances;
 - [x] `docs/en/RELAY.md` + `docs/fr/RELAY.md`
 - [x] `docs/en/DOMAIN.md` + `docs/fr/DOMAIN.md`
 - [x] `docs/ideas/NODYX-RADIO.md` + `docs/ideas/NODYX-ETHER-GUIDE.md`
+- [x] `docs/ideas/NEXUS-ETHER.md` → `NODYX-ETHER.md` (fichier renommé)
+- [x] `docs/ideas/NEXUS-ETHER-GUIDE.md` → `NODYX-ETHER-GUIDE.md` (fichier renommé)
+- [x] `docs/ideas/NEXUS-RADIO.md` → `NODYX-RADIO.md` (fichier renommé)
+- [x] `docs/en/specs/010-nexus-global-search/` → `010-nodyx-global-search/` (répertoire renommé)
+- [x] `docs/en/specs/011-nexus-event-calendar/` → `011-nodyx-event-calendar/` (répertoire renommé)
+- [x] `docs/en/specs/012-nexus-galaxy-bar/` → `012-nodyx-galaxy-bar/` (répertoire renommé)
 - [x] `CHANGELOG.md`
 - [x] `nodyx-frontend/README.md`, `nodyx-core/README.md`, `nodyx-authenticator/README.md`
 - [x] `nodyx-authenticator/src/routes/setup/+page.svelte`
+- [x] `plugins/README.md` + `plugins/table-templates/README.md`
 
 ### 12. GitHub Releases & Binaires
 

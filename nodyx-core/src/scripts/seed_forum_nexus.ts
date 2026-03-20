@@ -84,8 +84,8 @@ const THREADS: ThreadDef[] = [
 <h3>WebRTC P2P mesh complet</h3>
 <p>Les salons vocaux fonctionnent maintenant en <strong>maille directe</strong> : chaque participant est connecté à chaque autre via une connexion WebRTC chiffrée. Aucun flux audio ne passe par le serveur. Nodyx Core ne voit que la signalisation — jamais le contenu.</p>
 
-<h3>nexus-turn — notre propre serveur STUN/TURN en Rust</h3>
-<p>Pour les connexions derrière des NAT stricts, on a écrit <strong>nexus-turn</strong> : binaire Rust de 2,9 MB, credentials HMAC-SHA1 time-based, service systemd sur UDP 3478.</p>
+<h3>nodyx-turn — notre propre serveur STUN/TURN en Rust</h3>
+<p>Pour les connexions derrière des NAT stricts, on a écrit <strong>nodyx-turn</strong> : binaire Rust de 2,9 MB, credentials HMAC-SHA1 time-based, service systemd sur UDP 3478.</p>
 <pre><code class="language-bash"># Credentials time-based (RFC 5766)
 username = "{expires}:{userId}"
 password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
@@ -102,7 +102,7 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
       `<p>Magnifique release. Le NodyxCanvas c'est vraiment une <strong>killer feature</strong> — je n'ai rien vu de comparable dans les outils de chat décentralisés.</p>
 <p>Le fait que tout soit P2P sans serveur rend ça extensible à l'infini. Chaque nouveau salon vocal = tableau collaboratif gratuit.</p>`,
 
-      `<p>Je viens de tester le partage d'écran avec un ami derrière un NAT strict. Ça passe parfaitement via nexus-turn.</p>
+      `<p>Je viens de tester le partage d'écran avec un ami derrière un NAT strict. Ça passe parfaitement via nodyx-turn.</p>
 <p>Impressionnant pour un binaire Rust de <code>3MB</code>. Le TURN coton classique c'est 50x plus lourd à configurer.</p>`,
 
       `<p>La notion de CRDT pour le canvas est intéressante. <strong>LWW par élément</strong> c'est simple mais suffisant pour un tableau de brainstorm.</p>
@@ -118,11 +118,11 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
       `<h2>Le problème</h2>
 <p>Beaucoup de gens veulent héberger leur instance Nodyx depuis chez eux — mais leur FAI leur assigne une IP dynamique, bloque les ports entrants, ou met tout derrière un CGNAT.</p>
 <p>
-  <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:#6366f1;color:white;font-size:11px;font-weight:600;margin:2px 4px 2px 0;white-space:nowrap">nexus-relay</span>
+  <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:#6366f1;color:white;font-size:11px;font-weight:600;margin:2px 4px 2px 0;white-space:nowrap">nodyx-relay</span>
   <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:#6b7280;color:white;font-size:11px;font-weight:600;margin:2px 4px 2px 0;white-space:nowrap">TCP 7443</span>
 </p>
 
-<h2>La solution : nexus-relay</h2>
+<h2>La solution : nodyx-relay</h2>
 <p>Un tunnel TCP écrit en Rust, deux composants :</p>
 <ul>
   <li><strong>relay server</strong> (sur nos VPS nodyx.org) — écoute sur TCP 7443</li>
@@ -157,7 +157,7 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
   },
 
   {
-    title: 'nexus-turn v0.1.0 — serveur STUN/TURN maison en Rust',
+    title: 'nodyx-turn v0.1.0 — serveur STUN/TURN maison en Rust',
     category: '📣 Annonces',
     posts: [
       `<h2>Nodyx dispose maintenant de son propre serveur STUN/TURN</h2>
@@ -166,7 +166,7 @@ password = base64(HMAC-SHA1(TURN_SECRET, username))</code></pre>
   <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:#6366f1;color:white;font-size:11px;font-weight:600;margin:2px 4px 2px 0;white-space:nowrap">2.9MB</span>
   <span style="display:inline-block;padding:1px 8px;border-radius:4px;background:#3b82f6;color:white;font-size:11px;font-weight:600;margin:2px 4px 2px 0;white-space:nowrap">RFC 5766</span>
 </p>
-<p>On a remplacé coturn (complexe à configurer, 50+ fichiers de config) par <strong>nexus-turn</strong> — un binaire Rust de 2,9 MB qui fait exactement ce qu'il faut.</p>
+<p>On a remplacé coturn (complexe à configurer, 50+ fichiers de config) par <strong>nodyx-turn</strong> — un binaire Rust de 2,9 MB qui fait exactement ce qu'il faut.</p>
 
 <h3>Pourquoi c'était nécessaire</h3>
 <p>WebRTC fonctionne en P2P direct dans <strong>~80% des cas</strong>. Mais pour les 20% restants (NAT symétrique, réseau d'entreprise, 4G/5G avec CGNAT), il faut un relais TURN. Sans ça, ces utilisateurs ne peuvent tout simplement pas rejoindre les salons vocaux.</p>
@@ -183,7 +183,7 @@ socket.emit('voice:init', { iceServers: [
 ] })</code></pre>
 
 <h3>Configuration</h3>
-<pre><code class="language-bash"># /etc/nexus-turn.env
+<pre><code class="language-bash"># /etc/nodyx-turn.env
 TURN_PUBLIC_IP=46.225.20.193
 TURN_REALM=nodyx.org
 TURN_SECRET=your_secret_here
@@ -454,7 +454,7 @@ N participants → N*(N-1)/2 connexions</code></pre>
 <p>Je le documente ici pour que personne ne reperde ce temps.</p>
 
 <h3>Symptôme</h3>
-<p>Avec 2+ utilisateurs connectés via nexus-relay, la sidebar membres était vide. L'online count restait à 0. Les messages Socket.IO n'arrivaient pas.</p>
+<p>Avec 2+ utilisateurs connectés via nodyx-relay, la sidebar membres était vide. L'online count restait à 0. Les messages Socket.IO n'arrivaient pas.</p>
 
 <h3>Root cause — séquentialité du relay client</h3>
 <p>Socket.IO utilise du <strong>long-polling</strong> comme transport de fallback (GET bloquant pendant 8 secondes = pingInterval).</p>
@@ -772,7 +772,7 @@ const online_count = userIds.size</code></pre>
   <li>Clone du repo + build backend + frontend</li>
   <li>PM2 pour le démarrage automatique au boot</li>
   <li>Caddy avec <strong>HTTPS automatique</strong> (Let's Encrypt)</li>
-  <li>nexus-turn (serveur STUN/TURN Rust)</li>
+  <li>nodyx-turn (serveur STUN/TURN Rust)</li>
 </ul>
 
 <h3>Oracle Cloud Free Tier — le meilleur plan gratuit</h3>
@@ -815,7 +815,7 @@ bash &lt;(curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install
 <h3>Installation</h3>
 <pre><code class="language-bash">bash &lt;(curl -fsSL https://raw.githubusercontent.com/Pokled/Nodyx/main/install_tunnel.sh)</code></pre>
 <p>Ou sur une instance déjà installée :</p>
-<pre><code class="language-bash">nexus-relay client \\
+<pre><code class="language-bash">nodyx-relay client \\
   --server relay.nodyx.org:7443 \\
   --slug votre-slug \\
   --token votre-token \\

@@ -168,13 +168,13 @@
 					<input
 						type="url"
 						bind:value={hubUrl}
-						placeholder="https://ma-communaute.nexusnode.app"
+						placeholder="https://ma-communaute.nodyx.org"
 						class="w-full px-4 py-3 rounded-xl text-sm outline-none transition-colors"
 						style="background: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text)"
 						onkeydown={(e) => e.key === 'Enter' && checkHub()}
 					/>
 					<p class="text-xs" style="color: var(--color-text-muted)">
-						Exemple : <span style="color: var(--color-accent)">https://french-godot.nexusnode.app</span><br/>
+						Exemple : <span style="color: var(--color-accent)">https://french-godot.nodyx.org</span><br/>
 						C'est l'URL que vous utilisez pour vous connecter d'habitude.
 					</p>
 				</div>

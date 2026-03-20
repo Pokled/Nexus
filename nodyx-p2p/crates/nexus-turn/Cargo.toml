@@ -1,11 +1,11 @@
 [package]
-name = "nexus-turn"
+name = "nodyx-turn"
 version = "0.1.0"
 edition = "2021"
-description = "Nexus STUN/TURN relay — replaces coturn with a Rust-native implementation"
+description = "Nodyx STUN/TURN relay — replaces coturn with a Rust-native implementation"
 
 [[bin]]
-name = "nexus-turn"
+name = "nodyx-turn"
 path = "src/main.rs"
 
 [dependencies]

@@ -33,7 +33,7 @@ echo -e "${RED}${BOLD}║                                                       
 echo -e "${RED}${BOLD}║  Ce script va supprimer :                                ║${RESET}"
 echo -e "${RED}${BOLD}║  • Les processus PM2 et l'app Nodyx (/opt/nodyx)         ║${RESET}"
 echo -e "${RED}${BOLD}║  • La base de données PostgreSQL « nodyx »               ║${RESET}"
-echo -e "${RED}${BOLD}║  • Les services Caddy, Redis, nexus-turn, nexus-relay    ║${RESET}"
+echo -e "${RED}${BOLD}║  • Les services Caddy, Redis, nodyx-turn, nodyx-relay    ║${RESET}"
 echo -e "${RED}${BOLD}║  • Les fichiers de configuration générés                 ║${RESET}"
 echo -e "${RED}${BOLD}║                                                          ║${RESET}"
 echo -e "${RED}${BOLD}║  TOUTES LES DONNÉES SERONT PERDUES DÉFINITIVEMENT.       ║${RESET}"
@@ -82,11 +82,11 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
-#  SERVICES SYSTEMD — nexus-turn, nexus-relay-client
+#  SERVICES SYSTEMD — nodyx-turn, nodyx-relay-client
 # ═══════════════════════════════════════════════════════════════════════════════
 step "Suppression des services Nodyx (systemd)"
 
-for _svc in nexus-turn nexus-relay-client; do
+for _svc in nodyx-turn nodyx-relay-client; do
   if systemctl list-unit-files 2>/dev/null | grep -q "^${_svc}.service"; then
     systemctl stop    "$_svc" 2>/dev/null || true
     systemctl disable "$_svc" 2>/dev/null || true
@@ -97,11 +97,11 @@ for _svc in nexus-turn nexus-relay-client; do
   fi
 done
 
-for _bin in /usr/local/bin/nexus-turn /usr/local/bin/nexus-relay; do
+for _bin in /usr/local/bin/nodyx-turn /usr/local/bin/nodyx-relay; do
   [[ -f "$_bin" ]] && { rm -f "$_bin"; ok "Binaire $_bin supprimé"; } || skip "$_bin non trouvé"
 done
 
-[[ -f /etc/nexus-turn.env ]] && { rm -f /etc/nexus-turn.env; ok "/etc/nexus-turn.env supprimé"; }
+[[ -f /etc/nodyx-turn.env ]] && { rm -f /etc/nodyx-turn.env; ok "/etc/nodyx-turn.env supprimé"; }
 
 systemctl daemon-reload 2>/dev/null || true
 

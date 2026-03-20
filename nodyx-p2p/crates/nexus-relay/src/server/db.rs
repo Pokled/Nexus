@@ -6,7 +6,7 @@
 ///
 /// This wrapper stores the database URL and retries the connection on every
 /// failed query, so the relay server survives PostgreSQL restarts without
-/// needing a manual `systemctl restart nexus-relay`.
+/// needing a manual `systemctl restart nodyx-relay`.
 
 use std::sync::Arc;
 use tokio::sync::Mutex;

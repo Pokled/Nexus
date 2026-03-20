@@ -5,7 +5,7 @@
 > **En bref :** Clone le repo sur un serveur Linux, lance `bash install.sh`, réponds à quelques questions. C'est tout. ☕
 >
 > **Nouveau — Nodyx Relay :** Tu n'as pas de domaine et aucun port ouvert ? Raspberry Pi, vieux PC, box maison ?
-> **Choisis l'option `[2] Nodyx Relay`** au moment de l'installation → ton instance est en ligne sous `ton-slug.nexusnode.app` sans rien configurer.
+> **Choisis l'option `[2] Nodyx Relay`** au moment de l'installation → ton instance est en ligne sous `ton-slug.nodyx.org` sans rien configurer.
 > [→ Guide complet Nodyx Relay](RELAY.md)
 
 ---
@@ -135,7 +135,7 @@ Tu peux faire tourner Nodyx sur Windows 10/11 via WSL2 (Sous-système Windows po
 
 ## 🌐 Ai-je besoin d'un nom de domaine ?
 
-**Réponse courte : Non !** Pour un VPS avec `install.sh`, l'installateur crée automatiquement un domaine gratuit `46-225-20-193.sslip.io` + un alias mémorable `ton-slug.nexusnode.app`. HTTPS fonctionne sans rien acheter.
+**Réponse courte : Non !** Pour un VPS avec `install.sh`, l'installateur crée automatiquement un domaine gratuit `46-225-20-193.sslip.io` + un alias mémorable `ton-slug.nodyx.org`. HTTPS fonctionne sans rien acheter.
 
 **Pour `install_tunnel.sh` (Cloudflare Tunnel)**, un vrai domaine à toi est obligatoire — les sous-domaines gratuits de type No-IP ou DuckDNS ne fonctionnent pas.
 
@@ -147,7 +147,7 @@ Tu peux faire tourner Nodyx sur Windows 10/11 via WSL2 (Sous-système Windows po
 
 | Situation | Solution |
 |---|---|
-| VPS, ports 80/443 ouverts, pas de domaine | `install.sh` → sslip.io + nexusnode.app gratuits |
+| VPS, ports 80/443 ouverts, pas de domaine | `install.sh` → sslip.io + nodyx.org gratuits |
 | VPS, ports 80/443 ouverts, domaine perso | `install.sh` → entre ton domaine |
 | Maison, pas de ports ouverts, domaine CF | `install_tunnel.sh` |
 | Maison, pas de ports ouverts, No-IP/DuckDNS | ❌ non compatible — [voir DOMAIN.md](DOMAIN.md) |
@@ -405,7 +405,7 @@ Si tu ne veux pas ouvrir ces portes, il faut passer par un **tunnel** — un int
 |---|---|---|
 | Compte tiers requis | ❌ Non | ✅ Cloudflare |
 | Domaine requis | ❌ Non | ✅ Oui (~1€/an) |
-| URL obtenue | `slug.nexusnode.app` | `slug.ton-domaine.com` |
+| URL obtenue | `slug.nodyx.org` | `slug.ton-domaine.com` |
 | Intégré dans `install.sh` | ✅ Oui (option 2) | 🔧 Script séparé |
 | Open source | ✅ Oui | ❌ Non |
 
@@ -423,7 +423,7 @@ Cloudflare Tunnel crée une connexion **sortante** depuis ton serveur vers les s
 - Un compte Cloudflare gratuit → [dash.cloudflare.com](https://dash.cloudflare.com)
 - Un nom de domaine (~1€/an chez [Porkbun](https://porkbun.com) ou [Namecheap](https://namecheap.com))
 
-> 💡 Tu n'as pas de domaine ? Nodyx t'en offre un gratuitement : lors de l'installation, ton instance reçoit automatiquement un sous-domaine **`ton-slug.nexusnode.app`**. Aucun achat nécessaire.
+> 💡 Tu n'as pas de domaine ? Nodyx t'en offre un gratuitement : lors de l'installation, ton instance reçoit automatiquement un sous-domaine **`ton-slug.nodyx.org`**. Aucun achat nécessaire.
 
 ---
 

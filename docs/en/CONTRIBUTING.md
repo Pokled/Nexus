@@ -198,9 +198,6 @@ git log --oneline
 
 Your name will be there.
 
-https://threatroad.substack.com/p/fake-job-interviews-are-installing
-YOLO ! 
-
 ---
 
 *"The network is the people."*

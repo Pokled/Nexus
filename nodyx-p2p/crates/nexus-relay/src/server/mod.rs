@@ -10,7 +10,7 @@ use db::DbPool;
 use registry::Registry;
 
 pub async fn run(tcp_port: u16, http_port: u16, database_url: &str, main_slug: &str) -> anyhow::Result<()> {
-    info!("Starting nexus-relay server");
+    info!("Starting nodyx-relay server");
     info!("  TCP relay port  : {tcp_port}");
     info!("  HTTP proxy port : {http_port}");
     info!("  Main slug       : {main_slug}");

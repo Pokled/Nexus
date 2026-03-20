@@ -1,4 +1,4 @@
-// ── nexus-turn Server (UDP + TCP) ─────────────────────────────────────────────
+// ── nodyx-turn Server (UDP + TCP) ─────────────────────────────────────────────
 // Handles STUN Binding + full TURN Allocate/Relay flow.
 // RFC 5389 (STUN) + RFC 5766 (TURN) + RFC 6062 (TURN-over-TCP) + RFC 5245 (ICE).
 //
@@ -113,7 +113,7 @@ pub async fn run(socket: Arc<UdpSocket>, cfg: Arc<TurnConfig>, registry: Registr
         addr   = %socket.local_addr()?,
         realm  = %cfg.realm,
         pub_ip = %cfg.public_ip,
-        "nexus-turn UDP listening"
+        "nodyx-turn UDP listening"
     );
 
     let mut buf = vec![0u8; 65535];
@@ -146,7 +146,7 @@ pub async fn run_tcp(port: u16, cfg: Arc<TurnConfig>, registry: Registry) -> any
     let listener = TcpListener::bind(bind_addr).await
         .map_err(|e| anyhow::anyhow!("Failed to bind TCP {bind_addr}: {e}"))?;
 
-    info!(addr = %bind_addr, "nexus-turn TCP listening");
+    info!(addr = %bind_addr, "nodyx-turn TCP listening");
 
     loop {
         let (stream, peer_addr) = match listener.accept().await {
@@ -254,7 +254,7 @@ async fn handle_packet(
 async fn handle_binding(sink: &ResponseSink, msg: StunMessage, src: SocketAddr) {
     let mut resp = msg.response(MSG_BINDING_RESPONSE);
     resp.add_attr(ATTR_XOR_MAPPED_ADDRESS, encode_xor_address(src, &msg.transaction_id));
-    resp.add_attr(ATTR_SOFTWARE, b"nexus-turn/0.1".to_vec());
+    resp.add_attr(ATTR_SOFTWARE, b"nodyx-turn/0.1".to_vec());
     sink.send(&resp.encode()).await;
     debug!("STUN Binding: {src} → {src}");
 }
@@ -386,7 +386,7 @@ async fn send_allocate_success(
     resp.add_attr(ATTR_XOR_MAPPED_ADDRESS,
                   encode_xor_address(alloc.client_addr, &msg.transaction_id));
     resp.add_attr(ATTR_LIFETIME, encode_u32(lifetime));
-    resp.add_attr(ATTR_SOFTWARE, b"nexus-turn/0.1".to_vec());
+    resp.add_attr(ATTR_SOFTWARE, b"nodyx-turn/0.1".to_vec());
     // RFC 5389 §10.3: MUST include MI in response to authenticated request
     sink.send(&sign_response(&mut resp, username, realm, password)).await;
 }

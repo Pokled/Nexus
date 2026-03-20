@@ -9,16 +9,16 @@ function isUuid(v: unknown): v is string { return typeof v === 'string' && UUID_
 const JUKEBOX_STATE_MAX = 10_240
 
 // ── TURN credentials ─────────────────────────────────────────────────────────
-// Dynamic time-limited credentials (nexus-turn / coturn use-auth-secret style).
+// Dynamic time-limited credentials (nodyx-turn / coturn use-auth-secret style).
 // TURN_SECRET + TURN_PUBLIC_IP env vars — set by install.sh.
 
 function buildIceServers(userId: string): object[] {
   const secret   = process.env.TURN_SECRET
   const ip       = process.env.TURN_PUBLIC_IP
   const port     = process.env.TURN_PORT || '3478'
-  const fallback = process.env.STUN_FALLBACK_URLS  // relay mode: no nexus-turn
+  const fallback = process.env.STUN_FALLBACK_URLS  // relay mode: no nodyx-turn
 
-  // No nexus-turn configured — use fallback STUN URLs if provided
+  // No nodyx-turn configured — use fallback STUN URLs if provided
   if (!ip) {
     if (!fallback) return []
     return fallback.split(',').map(url => ({ urls: url.trim() }))

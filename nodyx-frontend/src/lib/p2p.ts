@@ -47,7 +47,7 @@ class P2PManager {
   private incomingChunks = new Map<string, { total: number; chunks: string[]; received: number }>()
 
   // ── ICE configuration ────────────────────────────────────────────────────
-  // Dynamic ICE servers injected from voice:init (same nexus-turn credentials as voice WebRTC)
+  // Dynamic ICE servers injected from voice:init (same nodyx-turn credentials as voice WebRTC)
   private _iceServers: RTCIceServer[] = []
 
   setIceServers(servers: RTCIceServer[]): void {

@@ -44,7 +44,7 @@ Instances discover each other through the **nodyx-directory** — the global reg
 
 ## Project status
 
-**v1.7.2 — Production**
+**v1.8.2 — Production**
 
 ```
 Forum                       ✓  Categories, threads, posts, reactions, thanks, tags, slugs

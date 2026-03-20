@@ -1,15 +1,15 @@
-// ── nexus-turn ────────────────────────────────────────────────────────────────
+// ── nodyx-turn ────────────────────────────────────────────────────────────────
 // STUN/TURN server — replaces coturn in the Nodyx P2P stack.
 // RFC 5389 (STUN) + RFC 5766 (TURN) + RFC 6062 (TURN-over-TCP)
 //
 // Usage:
-//   nexus-turn server --udp-port 3478 --realm nexusnode.app --public-ip 1.2.3.4
+//   nodyx-turn server --udp-port 3478 --realm nodyx.org --public-ip 1.2.3.4
 //                     --secret $TURN_SECRET
 //
 // Credentials (coturn use-auth-secret compatible):
 //   username = "{expires_unix_ts}:{user_id}"
 //   password = BASE64(HMAC-SHA1(secret, username))
-//   → nexus-core generates these per user and sends them via voice:init
+//   → nodyx-core generates these per user and sends them via voice:init
 
 mod allocation;
 mod auth;
@@ -32,7 +32,7 @@ use server::{run, run_tcp, TurnConfig};
 // ── CLI ───────────────────────────────────────────────────────────────────────
 
 #[derive(Parser)]
-#[command(name = "nexus-turn", about = "Nodyx STUN/TURN server (replaces coturn)")]
+#[command(name = "nodyx-turn", about = "Nodyx STUN/TURN server (replaces coturn)")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -50,7 +50,7 @@ enum Commands {
         #[arg(long, env = "TURN_PUBLIC_IP")]
         public_ip: IpAddr,
 
-        /// TURN realm (e.g. nexusnode.app or your domain)
+        /// TURN realm (e.g. nodyx.org or your domain)
         #[arg(long, env = "TURN_REALM", default_value = "nodyx")]
         realm: String,
 
@@ -106,7 +106,7 @@ async fn main() -> Result<()> {
             });
 
             info!(
-                "nexus-turn v{} — STUN/TURN on udp:{udp_port} + tcp:{udp_port} | public_ip={}",
+                "nodyx-turn v{} — STUN/TURN on udp:{udp_port} + tcp:{udp_port} | public_ip={}",
                 env!("CARGO_PKG_VERSION"),
                 cfg.public_ip
             );

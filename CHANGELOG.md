@@ -395,7 +395,7 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
   - `seed_waters` — vote unique par utilisateur (409 si double vote)
   - Page `/garden` — propositions, barre de progression, arrosage one-shot, toast "déjà voté"
   - Routes `POST/GET /api/v1/garden/seeds` + `POST /api/v1/garden/seeds/:id/water`
-- **Fédération d'assets** — snapshot des assets vers le directory nexusnode.app
+- **Fédération d'assets** — snapshot des assets vers le directory nodyx.org
   - Migration 021 — `directory_assets`
   - Route `POST /api/directory/assets` + `GET /api/directory/assets/search`
   - Onglet "🌐 Toutes les instances" dans `/library`
@@ -421,12 +421,12 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **nodyx-relay** — Rust P2P relay infrastructure (Phase 3.0-A ✅)
   - `nodyx-relay server` — deployed on VPS: TCP:7443 (relay clients) + HTTP:7001 (Caddy proxy), tokio async, DashMap in-memory registry
   - `nodyx-relay client` — 9MB static binary, outbound TCP connection only — **zero open ports, zero domain required**
-  - Automatic `slug.nexusnode.app` provisioning — slug reserved in DB at registration, DNS wildcard served by relay proxy
+  - Automatic `slug.nodyx.org` provisioning — slug reserved in DB at registration, DNS wildcard served by relay proxy
   - Exponential backoff reconnection (1s → 2s → 4s → max 30s)
   - `install.sh` — option 2 "Nodyx Relay (recommended)" → auto-downloads binary, generates systemd service, full URL without touching a router
   - `nodyx-relay-client.service` — systemd unit, auto-restart, enabled on boot
   - GitHub Releases `v0.1.0-relay` + `v0.1.1-relay` — amd64 + arm64 static binaries
-  - **Validated:** Raspberry Pi 4, zero open ports, zero Cloudflare account → `https://test.nexusnode.app` live ✅
+  - **Validated:** Raspberry Pi 4, zero open ports, zero Cloudflare account → `https://test.nodyx.org` live ✅
 - **Voice channel member interaction panel**
   - Click any member in the voice channel sidebar → opens their real-time stats in VoicePanel (RTT, jitter, packet loss, volume slider)
   - Click yourself ("vous") → green self-monitoring panel: live audio level meter, muted / deafened / PTT status badges
@@ -441,17 +441,17 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **online_count off-by-default** — `/info` and `/admin/stats` counted `redis.keys('nodyx:heartbeat:*')` (set on API calls, 15 min TTL). Active Socket.IO session ≠ recent API call → count dropped to 0 after 15 min of browse-only activity. Fixed: `io.in('presence').fetchSockets()` — Socket.IO presence room as the source of truth, deduplicated by `userId`
 
 ### Infrastructure
-- `relay.nexusnode.app` — DNS A record (grey cloud, no Cloudflare proxy) for direct TCP:7443 relay client connections
+- `relay.nodyx.org` — DNS A record (grey cloud, no Cloudflare proxy) for direct TCP:7443 relay client connections
 - UFW: port 7443/tcp opened on the VPS for relay client inbound connections
 - `nodyx-relay.service` — systemd unit active on VPS, ~1.3MB RAM, Restart=on-failure
-- Caddy: `*.nexusnode.app` now routes to `localhost:7001` (nodyx-relay HTTP proxy) instead of `localhost:3000` — relay handles routing (tunnel → active relay, 302 → DB URL, 404 → unknown)
+- Caddy: `*.nodyx.org` now routes to `localhost:7001` (nodyx-relay HTTP proxy) instead of `localhost:3000` — relay handles routing (tunnel → active relay, 302 → DB URL, 404 → unknown)
 
 ---
 
 ## [0.4.0] — 2026-02-28
 
 ### Added
-- **Production deployment** — full stack live on [nexusnode.app](https://nexusnode.app) (Hetzner CPX42, Ubuntu 24.04, PM2, Caddy, Cloudflare)
+- **Production deployment** — full stack live on [nodyx.org](https://nodyx.org) (Hetzner CPX42, Ubuntu 24.04, PM2, Caddy, Cloudflare)
 - **Directory API** — instance registry with automatic Cloudflare DNS subdomain provisioning
   - `GET /api/directory` — list active instances
   - `POST /api/directory/register` — register an instance, triggers URL check + DNS creation
@@ -463,8 +463,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ### Infrastructure
 - Caddy reverse proxy with Cloudflare Origin Certificate (Full Strict SSL)
-- `*.nexusnode.app` wildcard block — all registered subdomains routed to the same stack
-- `code.nexusnode.app` — code-server (VS Code in browser) for remote development
+- `*.nodyx.org` wildcard block — all registered subdomains routed to the same stack
+- `code.nodyx.org` — code-server (VS Code in browser) for remote development
 - Claude Code CLI installed on VPS for remote AI-assisted development
 
 ### Fixed
@@ -629,7 +629,8 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 - **AI assistant** — local Ollama integration (no cloud dependency)
 - **13 SQL migrations** — complete schema from users to voice channels
 
-[Unreleased]: https://github.com/Pokled/Nodyx/compare/v1.8.1...HEAD
+[Unreleased]: https://github.com/Pokled/Nodyx/compare/v1.8.2...HEAD
+[1.8.2]: https://github.com/Pokled/Nodyx/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/Pokled/Nodyx/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/Pokled/Nodyx/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/Pokled/Nodyx/compare/v1.6.0...v1.7.0

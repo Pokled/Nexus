@@ -51,7 +51,7 @@ Environment variables expected at runtime:
 PORT=4173
 ORIGIN=https://your-domain.com
 PUBLIC_API_URL=https://your-domain.com
-PUBLIC_SIGNET_URL=https://signet.nexusnode.app
+PUBLIC_SIGNET_URL=https://signet.nodyx.org
 ```
 
 With PM2:

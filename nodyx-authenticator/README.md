@@ -4,7 +4,7 @@
 
 Nodyx Signet is a Progressive Web App (PWA) that acts as a hardware security key for your browser. It generates an **ECDSA P-256 keypair** per device, stores it encrypted (AES-GCM) in IndexedDB, and signs login challenges from any Nodyx instance — no password ever leaves your device.
 
-Live at **[signet.nexusnode.app](https://signet.nexusnode.app)**
+Live at **[signet.nodyx.org](https://signet.nodyx.org)**
 
 ---
 
@@ -13,7 +13,7 @@ Live at **[signet.nexusnode.app](https://signet.nexusnode.app)**
 ```
 1. Admin generates an enrollment token in Settings → Nodyx Signet
 2. Admin shares a QR code (or link) with the user
-3. User opens signet.nexusnode.app, scans the QR → lands on setup
+3. User opens signet.nodyx.org, scans the QR → lands on setup
 4. User chooses a passphrase (encrypts the private key locally)
 5. Keypair generated: public key sent to Hub, private key stays on device
 
@@ -64,7 +64,7 @@ Login flow:
 The Nodyx settings page generates a QR code encoding:
 
 ```
-https://signet.nexusnode.app/setup?hub=https://your-instance.com&token=xxxx
+https://signet.nodyx.org/setup?hub=https://your-instance.com&token=xxxx
 ```
 
 Scanning from mobile opens Signet directly on the passphrase step — no manual URL or token entry.
@@ -79,7 +79,7 @@ npm install
 npm run dev       # port 5174
 ```
 
-Requires a running `nodyx-core` instance with `SIGNET_URL=https://signet.nexusnode.app` set in `.env` (or `http://localhost:5174` for local dev).
+Requires a running `nodyx-core` instance with `SIGNET_URL=https://signet.nodyx.org` set in `.env` (or `http://localhost:5174` for local dev).
 
 ---
 
@@ -90,7 +90,7 @@ npm run build
 node build/index.js
 ```
 
-Hosted separately from the main Nodyx instance — `signet.nexusnode.app` is the official shared instance. Each Nodyx community can optionally self-host their own Signet.
+Hosted separately from the main Nodyx instance — `signet.nodyx.org` is the official shared instance. Each Nodyx community can optionally self-host their own Signet.
 
 ---
 

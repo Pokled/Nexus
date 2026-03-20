@@ -1,5 +1,5 @@
 -- Migration 021: Cross-instance asset federation (v0.7)
--- Stores assets announced by remote Nexus instances to the nexusnode.app directory
+-- Stores assets announced by remote Nexus instances to the nodyx.org directory
 
 CREATE TABLE IF NOT EXISTS directory_assets (
   id                  UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS directory_assets (
 
   -- Remote file references (served by the remote instance)
   file_hash           CHAR(64) NOT NULL,            -- SHA-256, used for deduplication
-  file_url            TEXT NOT NULL,                -- e.g. https://monio.nexusnode.app/uploads/assets/abc.webp
-  thumbnail_url       TEXT,                         -- e.g. https://monio.nexusnode.app/uploads/assets/abc_thumb.webp
+  file_url            TEXT NOT NULL,                -- e.g. https://monio.nodyx.org/uploads/assets/abc.webp
+  thumbnail_url       TEXT,                         -- e.g. https://monio.nodyx.org/uploads/assets/abc_thumb.webp
   file_size           INTEGER,
   mime_type           VARCHAR(50),
 

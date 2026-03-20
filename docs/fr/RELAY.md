@@ -2,7 +2,7 @@
 
 > **Le problème :** Tu veux héberger Nodyx chez toi — sur un Raspberry Pi, un vieux PC, ta Freebox — mais tu n'as pas de domaine, et ton FAI bloque les ports entrants.
 >
-> **La solution :** Nodyx Relay. Un binaire Rust de 9 Mo qui établit une connexion **sortante** vers notre infrastructure, et rend ton instance accessible sous `ton-slug.nexusnode.app` — sans rien configurer.
+> **La solution :** Nodyx Relay. Un binaire Rust de 9 Mo qui établit une connexion **sortante** vers notre infrastructure, et rend ton instance accessible sous `ton-slug.nodyx.org` — sans rien configurer.
 
 ---
 
@@ -31,18 +31,18 @@
                     │  nodyx-relay-client  ──────────┼──── connexion TCP sortante ────►
                     └────────────────────────────────┘                                │
                                                                                       │
-                                                               relay.nexusnode.app:7443
+                                                               relay.nodyx.org:7443
                                                                ┌────────────────────────────┐
                                                                │  nodyx-relay-server        │
                                                                │                            │
-                    ◄─────── HTTPS via Caddy ────────────────  │  *.nexusnode.app → :7001   │
-                    Browser → ton-slug.nexusnode.app            └────────────────────────────┘
+                    ◄─────── HTTPS via Caddy ────────────────  │  *.nodyx.org → :7001       │
+                    Browser → ton-slug.nodyx.org               └────────────────────────────┘
 ```
 
 1. **Tu lances `bash install.sh`** et tu choisis l'option `[2] Nodyx Relay`
 2. **`nodyx-relay-client`** démarre en tant que service systemd sur ta machine
-3. Il établit une **connexion TCP sortante** (port 7443) vers `relay.nexusnode.app` — comme ouvrir un site web, pas comme ouvrir un port
-4. Quand quelqu'un visite `ton-slug.nexusnode.app`, la requête HTTPS arrive sur notre VPS, le relay server la fait transiter par le tunnel, et ta machine répond
+3. Il établit une **connexion TCP sortante** (port 7443) vers `relay.nodyx.org` — comme ouvrir un site web, pas comme ouvrir un port
+4. Quand quelqu'un visite `ton-slug.nodyx.org`, la requête HTTPS arrive sur notre VPS, le relay server la fait transiter par le tunnel, et ta machine répond
 5. **Ta machine n'a aucun port ouvert.** Ton routeur n'a rien à rediriger. Ton FAI ne voit que du trafic sortant.
 
 ---
@@ -51,7 +51,7 @@
 
 | Élément | Requis ? | Notes |
 |---|---|---|
-| Domaine personnel | ❌ Non | Le relay fournit `ton-slug.nexusnode.app` gratuitement |
+| Domaine personnel | ❌ Non | Le relay fournit `ton-slug.nodyx.org` gratuitement |
 | Ports 80/443 ouverts | ❌ Non | Le relay utilise uniquement du trafic **sortant** |
 | Compte Cloudflare | ❌ Non | Indépendance totale |
 | Connexion Internet | ✅ Oui | N'importe quelle connexion fonctionne (fibre, 4G, satellite) |
@@ -83,11 +83,11 @@ Quand l'installeur te demande le mode réseau, choisis **`2`** :
 
 **L'installeur s'occupe de tout :**
 - Télécharge le binaire `nodyx-relay` (amd64 ou arm64 détecté automatiquement)
-- Enregistre ton slug auprès de l'annuaire nexusnode.app
+- Enregistre ton slug auprès de l'annuaire nodyx.org
 - Crée et démarre le service systemd `nodyx-relay-client`
 - Configure Caddy en mode HTTP local (pas de ports à ouvrir)
 
-**Résultat :** `ton-slug.nexusnode.app` en ligne en ~5 minutes.
+**Résultat :** `ton-slug.nodyx.org` en ligne en ~5 minutes.
 
 ---
 
@@ -113,7 +113,7 @@ After=network.target
 
 [Service]
 ExecStart=/usr/local/bin/nodyx-relay client \
-  --server relay.nexusnode.app:7443 \
+  --server relay.nodyx.org:7443 \
   --slug TON_SLUG \
   --token TON_TOKEN \
   --local-port 80
@@ -129,7 +129,7 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now nodyx-relay-client
 ```
 
-> 💡 Le token est disponible dans `/root/nodyx-credentials.txt` si tu as utilisé `install.sh`, ou dans la réponse JSON de l'API d'enregistrement nexusnode.app.
+> 💡 Le token est disponible dans `/root/nodyx-credentials.txt` si tu as utilisé `install.sh`, ou dans la réponse JSON de l'API d'enregistrement nodyx.org.
 
 ---
 
@@ -158,7 +158,7 @@ sudo systemctl status nodyx-relay-client
 sudo journalctl -u nodyx-relay-client -f
 
 # Ce que tu dois voir dans les logs :
-# → Connected to relay.nexusnode.app:7443
+# → Connected to relay.nodyx.org:7443
 # → Registered as slug "ton-slug" — OK
 # → Forwarding GET / → HTTP 200
 ```
@@ -166,7 +166,7 @@ sudo journalctl -u nodyx-relay-client -f
 **Depuis l'extérieur :**
 
 ```bash
-curl -I https://ton-slug.nexusnode.app/
+curl -I https://ton-slug.nodyx.org/
 # HTTP/2 200
 ```
 
@@ -182,7 +182,7 @@ sudo journalctl -u nodyx-relay-client --no-pager -n 50
 
 | Erreur | Cause | Solution |
 |---|---|---|
-| `Connection refused` | relay.nexusnode.app injoignable | Vérifie ta connexion Internet |
+| `Connection refused` | relay.nodyx.org injoignable | Vérifie ta connexion Internet |
 | `Registration rejected: Invalid slug or token` | Token incorrect | Vérifie `/root/nodyx-credentials.txt` |
 | `Binary not found` | Binaire non installé | Réinstalle avec `install.sh` ou méthode 2 |
 | `Address already in use` (port 80) | Un autre service écoute sur :80 | `sudo ss -tlnp | grep :80` |
@@ -210,11 +210,11 @@ sudo systemctl restart nodyx-relay-client
 
 **Q : Mes données transitent-elles par votre serveur ?**
 
-Oui, les requêtes HTTP transitent par `relay.nexusnode.app`. Mais le contenu reste chiffré en TLS bout en bout (HTTPS entre le navigateur et notre serveur Caddy). Nous ne stockons pas le contenu des requêtes. Les données de ta communauté (posts, messages, fichiers) restent **exclusivement sur ta machine**.
+Oui, les requêtes HTTP transitent par `relay.nodyx.org`. Mais le contenu reste chiffré en TLS bout en bout (HTTPS entre le navigateur et notre serveur Caddy). Nous ne stockons pas le contenu des requêtes. Les données de ta communauté (posts, messages, fichiers) restent **exclusivement sur ta machine**.
 
-**Q : Que se passe-t-il si nexusnode.app est indisponible ?**
+**Q : Que se passe-t-il si nodyx.org est indisponible ?**
 
-Ton instance locale continue de fonctionner normalement. Seul l'accès depuis Internet via `ton-slug.nexusnode.app` est interrompu. Si tu as un domaine propre, tu peux basculer dessus à tout moment.
+Ton instance locale continue de fonctionner normalement. Seul l'accès depuis Internet via `ton-slug.nodyx.org` est interrompu. Si tu as un domaine propre, tu peux basculer dessus à tout moment.
 
 **Q : Est-ce que les salons vocaux fonctionnent en mode Relay ?**
 
@@ -226,7 +226,7 @@ Oui, sans limite pendant la période beta. Nous nous réservons le droit d'intro
 
 **Q : Comment changer mon slug ?**
 
-Le slug est enregistré à l'installation. Pour le changer, contacte le support nexusnode.app ou supprime et re-enregistre ton instance.
+Le slug est enregistré à l'installation. Pour le changer, contacte le support nodyx.org ou supprime et re-enregistre ton instance.
 
 **Q : Est-ce que le relay fonctionne avec Docker ?**
 
@@ -236,7 +236,7 @@ Oui. Le binaire `nodyx-relay client` peut tourner en dehors du container Docker 
 
 ## 🏗️ Pour les curieux — Architecture technique
 
-### Le serveur relay (nexusnode.app)
+### Le serveur relay (nodyx.org)
 
 ```
 Port 7443 (TCP public)
@@ -255,7 +255,7 @@ Port 7001 (HTTP, local seulement — reçoit les requêtes de Caddy)
 
 ```
 nodyx-relay client
-└── Connexion TCP vers relay.nexusnode.app:7443
+└── Connexion TCP vers relay.nodyx.org:7443
     └── Envoi: Register { slug, token }
     └── Réception: ServerMessage::Request { id, method, path, headers, body_b64 }
         └── Exécute: reqwest → http://127.0.0.1:80{path}

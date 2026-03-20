@@ -59,10 +59,10 @@ qui parle à un nœud HF qui parle à n'importe où sur la planète.
 
 ```bash
 # Flash le firmware nodyx-mesh sur ton TTGO LoRa32
-curl -L nexusnode.app/firmware/nodyx-mesh-lora32.bin | esptool.py flash -
+curl -L nodyx.org/firmware/nodyx-mesh-lora32.bin | esptool.py flash -
 
 # Ou sur un Raspberry Pi :
-wget nexusnode.app/releases/nodyx-mesh-rpi
+wget nodyx.org/releases/nodyx-mesh-rpi
 chmod +x nodyx-mesh-rpi
 ./nodyx-mesh-rpi --token TON_TOKEN_INSTANCE --freq 868mhz
 ```
@@ -366,4 +366,4 @@ C'est la même règle que pour le reste de Nodyx.
 *"Les ondes radio n'ont pas besoin de permission.*
 *Les communautés non plus."*
 
-*AGPL-3.0 — nexusnode.app — Mars 2026*
+*AGPL-3.0 — nodyx.org — Mars 2026*

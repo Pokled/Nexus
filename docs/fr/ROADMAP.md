@@ -75,7 +75,7 @@
 - [x] Formulaire inscription / connexion
 - [x] Profils utilisateurs complets (bio, tags, links, GitHub widget)
 - [x] Système de grades (CRUD admin + badge coloré)
-- [x] Annuaire des instances (/communities — alimenté par nexusnode.app)
+- [x] Annuaire des instances (/communities — alimenté par nodyx.org)
 - [x] Panneau admin complet (/admin — 9 pages dont Tags)
 - [x] Navbar adaptive (loupe recherche, cloche notifications, lien Admin)
 - [x] Page /search — onglets Threads/Posts, extraits surlignés
@@ -112,17 +112,17 @@ Une personne non-développeur peut :
 - [x] Notifications temps réel (WebSocket — remplace le polling 30s)
 - [x] Historique des messages persisté en PostgreSQL
 
-### 2.2 nexusnode.app — Directory ✅
+### 2.2 nodyx.org — Directory ✅
 - [x] Service d'annuaire global réel — API d'enregistrement des instances
 - [x] Page /communities alimentée par l'annuaire réel (fin du mock)
 - [x] Enregistrement automatique d'une instance au premier démarrage
 - [x] Ping automatique toutes les 5 minutes (membres live, stats en ligne)
 
-### 2.3 Identité réseau — `slug.nexusnode.app` ✅
+### 2.3 Identité réseau — `slug.nodyx.org` ✅
 - [x] Chaque instance choisit un slug unique à l'installation
-- [x] Le slug est réservé auprès du nexusnode.app directory (API REST)
-- [x] DNS wildcard `*.nexusnode.app` géré par notre Cloudflare
-- [x] Caddy route `slug.nexusnode.app → IP du nœud` (Cloudflare Origin Certificate)
+- [x] Le slug est réservé auprès du nodyx.org directory (API REST)
+- [x] DNS wildcard `*.nodyx.org` géré par notre Cloudflare
+- [x] Caddy route `slug.nodyx.org → IP du nœud` (Cloudflare Origin Certificate)
 - [x] L'admin n'a aucun DNS à configurer — URL propre en 1 clic
 
 ### 2.4 Salons vocaux — Couche réseau ✅
@@ -159,7 +159,7 @@ Une personne non-développeur peut :
 - [x] Migration 022 — `whisper_rooms` + `whisper_messages` (salons éphémères)
 - [x] Route `POST /api/directory/assets` — push d'assets vers le répertoire (Bearer token)
 - [x] Route `GET /api/directory/assets/search` — recherche publique multi-instances
-- [x] Scheduler — push assets toutes les heures vers `nexusnode.app`
+- [x] Scheduler — push assets toutes les heures vers `nodyx.org`
 - [x] Scheduler — nettoyage des whispers expirés toutes les 10 minutes
 - [x] Onglet "🌐 Toutes les instances" dans `/library` — assets fédérés depuis le répertoire
 - [x] Routes `/api/v1/whispers` — création, récupération, suppression de salons éphémères
@@ -233,15 +233,15 @@ nodyx-core    (Fastify/Node.js) ────────────────
 > **Testé en conditions réelles : Raspberry Pi 4, aucun port ouvert, aucun compte Cloudflare.**
 
 - [x] Binaire Rust statique (9MB) — `tokio` + `hyper` + `tokio-postgres` + `clap` + `dashmap`
-- [x] Connexion TCP sortante vers `relay.nexusnode.app:7443` (notre infra)
+- [x] Connexion TCP sortante vers `relay.nodyx.org:7443` (notre infra)
 - [x] Forward HTTP bidirectionnel (JSON framing 4-byte length prefix)
-- [x] Enregistrement automatique `slug.nexusnode.app` sans DNS ni CF account
+- [x] Enregistrement automatique `slug.nodyx.org` sans DNS ni CF account
 - [x] Reconnexion automatique avec backoff exponentiel (1s → 2s → 4s → max 30s)
 - [x] GitHub Release `v0.1.2-p2p` — binaires amd64 + arm64 (rate limiting auth + fix traitement concurrent)
 - [x] Intégration dans `install.sh` : option 2 "Nodyx Relay (recommandé)"
 - [x] Service systemd côté client (`nodyx-relay-client.service`)
 
-**Résultat utilisateur :** `bash install.sh` → choisir "Relay" → obtenir `moncommunaute.nexusnode.app` **sans aucune configuration réseau**.
+**Résultat utilisateur :** `bash install.sh` → choisir "Relay" → obtenir `moncommunaute.nodyx.org` **sans aucune configuration réseau**.
 
 #### Phase 3.0-B — Browser P2P Nodes (WebRTC DataChannels) ✅ POC VALIDÉ — 2 mars 2026
 
@@ -301,7 +301,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [ ] Gossip protocol — propagation naturelle de l'état du réseau
 - [ ] CRDTs — données sans conflit entre nœuds (compteurs de likes, présence distribuée)
 - [ ] Réplication facteur 3 — auto-guérison si un nœud tombe
-- [ ] Si `nexusnode.app` est inaccessible, les nœuds se trouvent via DHT (résilience)
+- [ ] Si `nodyx.org` est inaccessible, les nœuds se trouvent via DHT (résilience)
 
 ---
 
@@ -371,7 +371,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [ ] WireGuard mesh entre instances volontaires — tunnel chiffré bout en bout
 - [ ] DHT pour découverte des pairs sans serveur central
 - [ ] Gossip protocol — synchronisation légère de métadonnées entre nœuds
-- [ ] Annuaire de secours distribué — si `nexusnode.app` tombe, les nœuds maintiennent l'annuaire
+- [ ] Annuaire de secours distribué — si `nodyx.org` tombe, les nœuds maintiennent l'annuaire
 - [ ] Transition automatique vers connexion P2P directe quand disponible
 - [ ] Fédération légère — un membre de la communauté A peut interagir avec la communauté B
 
@@ -446,7 +446,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 
 - Publicité
 - Vente de données
-- Fonctionnalité qui nécessite un serveur central **obligatoire** (`nexusnode.app` est optionnel — sans lui, l'instance reste pleinement fonctionnelle sur son propre domaine)
+- Fonctionnalité qui nécessite un serveur central **obligatoire** (`nodyx.org` est optionnel — sans lui, l'instance reste pleinement fonctionnelle sur son propre domaine)
 - Backdoor de quelque nature que ce soit
 - Dépendance permanente à un service propriétaire tiers
 - Remplacement de Node.js ou SvelteKit par Rust (chaque outil à sa place)
@@ -536,11 +536,11 @@ Mais 200 stations Nodyx-Radio avec 80 auditeurs chacune = **16 000 auditeurs loc
 Un artisan, un boulanger, un événement régional paie pour cette portée.
 
 ```
-nexusnode.app/radio
+nodyx.org/radio
   → régie publicitaire coopérative
   → annonceurs locaux/régionaux déposent leurs spots audio
   → spots distribués aux stations de la région ciblée
-  → revenus partagés : 80% station / 20% infrastructure nexusnode.app
+  → revenus partagés : 80% station / 20% infrastructure nodyx.org
 ```
 
 Pas de tracking. Pas de profils utilisateurs. Ciblage géographique uniquement.

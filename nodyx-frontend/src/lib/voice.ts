@@ -12,9 +12,9 @@ export { voiceSettingsStore } from './voiceSettings'
 export type { VoiceSettings } from './voiceSettings'
 
 // ── ICE Configuration ─────────────────────────────────────────────
-// Priority: dynamic servers from voice:init (nexus-turn) > static env vars (legacy coturn).
+// Priority: dynamic servers from voice:init (nodyx-turn) > static env vars (legacy coturn).
 
-// Fallback STUN servers used only when nexus-turn is not configured.
+// Fallback STUN servers used only when nodyx-turn is not configured.
 import {
   PUBLIC_TURN_URL,
   PUBLIC_TURN_USERNAME,
@@ -22,11 +22,11 @@ import {
 } from '$env/static/public'
 
 // Dynamic ICE servers received from nexus-core via voice:init.
-// null = not received yet. [] = received but nexus-turn not configured.
+// null = not received yet. [] = received but nodyx-turn not configured.
 let _dynamicIceServers: RTCIceServer[] | null = null
 
 function getIceServers(): RTCIceServer[] {
-  // Dynamic creds from nexus-turn (set on voice:init)
+  // Dynamic creds from nodyx-turn (set on voice:init)
   if (_dynamicIceServers !== null && _dynamicIceServers.length > 0) {
     return _dynamicIceServers
   }

@@ -76,7 +76,7 @@
 - [x] Registration / login form
 - [x] Complete user profiles (bio, tags, links, GitHub widget)
 - [x] Grade system (admin CRUD + colored badge)
-- [x] Instance directory (/communities — powered by nexusnode.app)
+- [x] Instance directory (/communities — powered by nodyx.org)
 - [x] Full admin panel (/admin — 9 pages including Tags)
 - [x] Adaptive navbar (search, notifications bell, Admin link)
 - [x] /search page — Threads/Posts tabs, highlighted excerpts
@@ -113,17 +113,17 @@ A non-developer can:
 - [x] Real-time notifications (WebSocket — replaces 30s polling)
 - [x] Message history persisted in PostgreSQL
 
-### 2.2 nexusnode.app — Directory ✅
+### 2.2 nodyx.org — Directory ✅
 - [x] Real global directory service — instance registration API
 - [x] /communities page fed by the real directory (end of mock)
 - [x] Automatic instance registration on first startup
 - [x] Automatic ping every 5 minutes (live member count, online stats)
 
-### 2.3 Network identity — `slug.nexusnode.app` ✅
+### 2.3 Network identity — `slug.nodyx.org` ✅
 - [x] Each instance chooses a unique slug at installation
-- [x] The slug is reserved with the nexusnode.app directory (REST API)
-- [x] Wildcard DNS `*.nexusnode.app` managed by our Cloudflare
-- [x] Caddy routes `slug.nexusnode.app → node IP` (Cloudflare Origin Certificate)
+- [x] The slug is reserved with the nodyx.org directory (REST API)
+- [x] Wildcard DNS `*.nodyx.org` managed by our Cloudflare
+- [x] Caddy routes `slug.nodyx.org → node IP` (Cloudflare Origin Certificate)
 - [x] Admin has no DNS to configure — clean URL in 1 click
 
 ### 2.4 Voice channels — Network layer ✅
@@ -160,7 +160,7 @@ A non-developer can:
 - [x] Migration 022 — `whisper_rooms` + `whisper_messages` (ephemeral rooms)
 - [x] Route `POST /api/directory/assets` — push assets to registry (Bearer token)
 - [x] Route `GET /api/directory/assets/search` — public multi-instance search
-- [x] Scheduler — push assets to `nexusnode.app` every hour
+- [x] Scheduler — push assets to `nodyx.org` every hour
 - [x] Scheduler — clean up expired whisper rooms every 10 minutes
 - [x] "🌐 All instances" tab in `/library` — federated assets from the directory
 - [x] `/api/v1/whispers` routes — create, retrieve, delete ephemeral rooms
@@ -233,15 +233,15 @@ nodyx-core    (Fastify/Node.js) ────────────────
 > **Tested in real conditions: Raspberry Pi 4, no open ports, no Cloudflare account.**
 
 - [x] Static Rust binary (9MB) — `tokio` + `hyper` + `tokio-postgres` + `clap` + `dashmap`
-- [x] Outbound TCP connection to `relay.nexusnode.app:7443` (our infrastructure)
+- [x] Outbound TCP connection to `relay.nodyx.org:7443` (our infrastructure)
 - [x] Bidirectional HTTP forwarding (JSON framing, 4-byte length prefix)
-- [x] Automatic `slug.nexusnode.app` registration without DNS or CF account
+- [x] Automatic `slug.nodyx.org` registration without DNS or CF account
 - [x] Automatic reconnection with exponential backoff (1s → 2s → 4s → max 30s)
 - [x] GitHub Release `v0.1.1-relay` — amd64 + arm64 binaries (fix: concurrent request handling)
 - [x] Integration in `install.sh`: option 2 "Nodyx Relay (recommended)"
 - [x] Client-side systemd service (`nodyx-relay-client.service`)
 
-**User result:** `bash install.sh` → choose "Relay" → get `mycommunity.nexusnode.app` **with zero network configuration**.
+**User result:** `bash install.sh` → choose "Relay" → get `mycommunity.nodyx.org` **with zero network configuration**.
 
 #### Phase 3.0-B — Browser P2P Nodes (WebRTC DataChannels) ✅ POC VALIDATED — March 2, 2026
 
@@ -299,7 +299,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [ ] Gossip protocol — natural state propagation across the network
 - [ ] CRDTs — conflict-free distributed data (like counters, presence)
 - [ ] Replication factor 3 — auto-healing if a node goes down
-- [ ] If `nexusnode.app` is unreachable, nodes find each other via DHT (resilience)
+- [ ] If `nodyx.org` is unreachable, nodes find each other via DHT (resilience)
 
 ---
 
@@ -369,7 +369,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [ ] WireGuard mesh between voluntary instances — end-to-end encrypted tunnel
 - [ ] DHT for peer discovery without a central server
 - [ ] Gossip protocol — lightweight metadata synchronization between nodes
-- [ ] Distributed backup directory — if `nexusnode.app` goes down, nodes maintain the directory
+- [ ] Distributed backup directory — if `nodyx.org` goes down, nodes maintain the directory
 - [ ] Automatic transition to direct P2P connection when available
 - [ ] Lightweight federation — a member of community A can interact with community B
 
@@ -485,7 +485,7 @@ nodyx-core    (Fastify/Node.js) ────────────────
 
 - Advertising
 - Data selling
-- Features that require a **mandatory** central server (`nexusnode.app` is optional — without it, the instance remains fully functional on its own domain)
+- Features that require a **mandatory** central server (`nodyx.org` is optional — without it, the instance remains fully functional on its own domain)
 - Backdoors of any kind
 - Permanent dependency on a proprietary third-party service
 - Replacing Node.js or SvelteKit with Rust (every tool in its place)
@@ -574,11 +574,11 @@ But 200 Nodyx-Radio stations with 80 listeners each = **16,000 local listeners**
 A local baker, artisan, or event can pay for that reach.
 
 ```
-nexusnode.app/radio
+nodyx.org/radio
   → cooperative advertising network
   → local/regional advertisers deposit audio spots
   → spots distributed to stations in the targeted region
-  → revenue split: 80% station / 20% nexusnode.app infrastructure
+  → revenue split: 80% station / 20% nodyx.org infrastructure
 ```
 
 No tracking. No user profiling. Geographic targeting only.

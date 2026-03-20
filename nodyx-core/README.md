@@ -110,7 +110,7 @@ See [`.env.example`](./.env.example) for the full annotated list.
 | `DB_HOST/PORT/NAME/USER/PASSWORD` | Yes | PostgreSQL connection |
 | `REDIS_HOST/PORT` | No | Redis (default: localhost:6379) |
 | `FRONTEND_URL` | Yes | Frontend origin for CORS |
-| `SIGNET_URL` | No | Nodyx Signet PWA origin for CORS (e.g. `https://signet.nexusnode.app`) |
+| `SIGNET_URL` | No | Nodyx Signet PWA origin for CORS (e.g. `https://signet.nodyx.org`) |
 | `NODYX_COMMUNITY_NAME/SLUG/LANGUAGE` | Yes | Community identity |
 | `NODYX_MAX_MEMBERS` | No | Member cap (excluded banned users) |
 | `NODYX_GLOBAL_INDEXING` | No | `true` to opt into cross-instance search |

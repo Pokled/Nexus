@@ -28,7 +28,7 @@ You **buy** this domain from a registrar (Namecheap, OVH, Porkbun…). You own i
 
 - ✅ Compatible with `install.sh`
 - ✅ Compatible with `install_tunnel.sh` (Cloudflare Tunnel)
-- ✅ Compatible with nexusnode.app
+- ✅ Compatible with nodyx.org
 - ✅ Stable, professional, portable
 - 💰 ~$1/year (`.xyz`, `.site`) to ~$15/year (`.com`, `.org`)
 
@@ -49,13 +49,13 @@ You get a **subdomain** of a domain that belongs to No-IP, DuckDNS, etc. You do 
 
 ### Type 3 — Subdomain Offered by Nodyx
 
-> `mycommunity.nexusnode.app` (via the Nodyx directory)
+> `mycommunity.nodyx.org` (via the Nodyx directory)
 > `46-225-20-193.sslip.io` (via the server's public IP)
 
 These subdomains are provided **automatically** by `install.sh`. No setup required.
 
 - ✅ Compatible with `install.sh` (ports 80/443 open)
-- ❌ **Incompatible with `install_tunnel.sh`** — `nexusnode.app` is our DNS zone, not yours
+- ❌ **Incompatible with `install_tunnel.sh`** — `nodyx.org` is our DNS zone, not yours
 - ✅ Automatic HTTPS certificate via Let's Encrypt (Caddy)
 - 🆓 100% free, zero configuration
 
@@ -66,7 +66,7 @@ These subdomains are provided **automatically** by `install.sh`. No setup requir
 | Solution | `install.sh` | `install_tunnel.sh` | Auto HTTPS | Prod stable |
 |---|:---:|:---:|:---:|:---:|
 | **Paid real domain** (~$1/year) | ✅ | ✅ | ✅ | ✅ |
-| **nexusnode.app** (provided by Nodyx) | ✅ | ❌ | ✅ | ✅ |
+| **nodyx.org** (provided by Nodyx) | ✅ | ❌ | ✅ | ✅ |
 | **sslip.io** (auto from IP) | ✅ | ❌ | ✅ | ✅ (static IP) |
 | **No-IP / DuckDNS / Afraid** | ⚠️ manual | ❌ | ⚠️ manual | ⚠️ dynamic IP |
 | **Freenom (.tk, .ml, .ga…)** | ❌ service dead | ❌ | ❌ | ❌ |
@@ -89,7 +89,7 @@ I want to install Nodyx on my server
 │   ├── YES → bash install.sh
 │   │          │
 │   │          ├── I have a domain → enter it during install
-│   │          └── No domain → sslip.io + nexusnode.app free
+│   │          └── No domain → sslip.io + nodyx.org free
 │   │                         → fully automatic ✅
 │   │
 │   └── NO → bash install_tunnel.sh
@@ -137,9 +137,9 @@ Imagine you have `mycommunity.duckdns.org`.
 
 It's that simple: **you must own the root domain** for Cloudflare to write DNS records into it.
 
-### The Same Problem with nexusnode.app
+### The Same Problem with nodyx.org
 
-`nexusnode.app` is our domain. Its DNS is managed by our Cloudflare instance, not yours. Even if you tried to add a tunnel route to it, Cloudflare would tell you that you don't own it.
+`nodyx.org` is our domain. Its DNS is managed by our Cloudflare instance, not yours. Even if you tried to add a tunnel route to it, Cloudflare would tell you that you don't own it.
 
 ### Why sslip.io Doesn't Work with CF Tunnel Either
 

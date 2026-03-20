@@ -28,7 +28,7 @@ module.exports = {
       interpreter: 'none',
     },
     {
-      name: 'nexus-turn',
+      name: 'nodyx-turn',
       script: 'server.js',
       cwd: './turn-server',
       watch: false,

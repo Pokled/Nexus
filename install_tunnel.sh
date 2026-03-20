@@ -9,7 +9,7 @@
 #    • Cloudflare Tunnel gère le HTTPS — Caddy écoute en HTTP local (port 80)
 #    • Ports 80 et 443 non exposés — CF Tunnel se connecte en SORTIE
 #    • cloudflared installé et démarré comme service systemd
-#    • Sous-domaine nexusnode.app ignoré (incompatible avec CF Tunnel)
+#    • Sous-domaine nodyx.org ignoré (incompatible avec CF Tunnel)
 # ═══════════════════════════════════════════════════════════════════════════════
 set -euo pipefail
 
@@ -199,7 +199,7 @@ while ! $_domain_ok; do
     echo -e "  ${YELLOW}${BOLD}│${RESET}                                                              ${YELLOW}${BOLD}│${RESET}"
     echo -e "  ${YELLOW}${BOLD}│${RESET}  CF Tunnel crée un ${BOLD}CNAME dans ta zone DNS Cloudflare${RESET}.      ${YELLOW}${BOLD}│${RESET}"
     echo -e "  ${YELLOW}${BOLD}│${RESET}  Il a besoin d'accès à un domaine ${BOLD}que tu possèdes${RESET}.         ${YELLOW}${BOLD}│${RESET}"
-    echo -e "  ${YELLOW}${BOLD}│${RESET}  ${CYAN}nexusnode.app${RESET} est notre zone — tu n'y as pas accès.       ${YELLOW}${BOLD}│${RESET}"
+    echo -e "  ${YELLOW}${BOLD}│${RESET}  ${CYAN}nodyx.org${RESET} est notre zone — tu n'y as pas accès.       ${YELLOW}${BOLD}│${RESET}"
     echo -e "  ${YELLOW}${BOLD}│${RESET}                                                              ${YELLOW}${BOLD}│${RESET}"
     echo -e "  ${YELLOW}${BOLD}│${RESET}  ${BOLD}Tes options :${RESET}                                                ${YELLOW}${BOLD}│${RESET}"
     echo -e "  ${YELLOW}${BOLD}│${RESET}  ${GREEN}1.${RESET} Achète un domaine (~1€/an) chez ${CYAN}porkbun.com${RESET}            ${YELLOW}${BOLD}│${RESET}"

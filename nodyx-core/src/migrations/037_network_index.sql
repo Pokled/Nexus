@@ -1,6 +1,6 @@
 -- Migration 037 — Global Search network index (SPEC 010)
 -- Stores thread metadata announced by remote instances for cross-instance search.
--- Active only on the directory instance (nexusnode.app), harmless elsewhere.
+-- Active only on the directory instance (nodyx.org), harmless elsewhere.
 
 CREATE TABLE IF NOT EXISTS network_index (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -486,46 +486,46 @@ ok "Redis démarré"
 #  NODYX-TURN (STUN/TURN Rust natif — remplace coturn) — ignoré en mode Relay
 # ═══════════════════════════════════════════════════════════════════════════════
 if ! $RELAY_MODE; then
-  step "Installation de nexus-turn (relay vocal WebRTC)"
+  step "Installation de nodyx-turn (relay vocal WebRTC)"
 
   _ARCH=$(uname -m)
   case "$_ARCH" in
     x86_64)  _TURN_ARCH="amd64" ;;
     aarch64) _TURN_ARCH="arm64" ;;
-    *) die "Architecture non supportée pour nexus-turn : $_ARCH" ;;
+    *) die "Architecture non supportée pour nodyx-turn : $_ARCH" ;;
   esac
 
   _TURN_VERSION="v0.1.2-p2p"
-  _TURN_URL="https://github.com/Pokled/Nodyx/releases/download/${_TURN_VERSION}/nexus-turn-linux-${_TURN_ARCH}"
-  info "Téléchargement nexus-turn ${_TURN_VERSION} (${_TURN_ARCH})..."
-  if ! curl -fsSL --max-time 60 "$_TURN_URL" -o /usr/local/bin/nexus-turn; then
-    die "Impossible de télécharger nexus-turn.\nURL : ${_TURN_URL}\nVérifie ta connexion et que la release ${_TURN_VERSION} existe sur GitHub."
+  _TURN_URL="https://github.com/Pokled/Nodyx/releases/download/${_TURN_VERSION}/nodyx-turn-linux-${_TURN_ARCH}"
+  info "Téléchargement nodyx-turn ${_TURN_VERSION} (${_TURN_ARCH})..."
+  if ! curl -fsSL --max-time 60 "$_TURN_URL" -o /usr/local/bin/nodyx-turn; then
+    die "Impossible de télécharger nodyx-turn.\nURL : ${_TURN_URL}\nVérifie ta connexion et que la release ${_TURN_VERSION} existe sur GitHub."
   fi
-  if ! file /usr/local/bin/nexus-turn 2>/dev/null | grep -q ELF; then
-    rm -f /usr/local/bin/nexus-turn
+  if ! file /usr/local/bin/nodyx-turn 2>/dev/null | grep -q ELF; then
+    rm -f /usr/local/bin/nodyx-turn
     die "Le fichier téléchargé n'est pas un binaire valide.\nURL : ${_TURN_URL}"
   fi
-  chmod +x /usr/local/bin/nexus-turn
+  chmod +x /usr/local/bin/nodyx-turn
 
   # Fichier de configuration (secret partagé avec nodyx-core)
-  cat > /etc/nexus-turn.env <<TURNENV
+  cat > /etc/nodyx-turn.env <<TURNENV
 TURN_PUBLIC_IP=${PUBLIC_IP}
 TURN_REALM=${DOMAIN}
 TURN_SECRET=${TURN_SECRET}
 TURN_PORT=3478
 TURN_TTL=86400
 TURNENV
-  chmod 600 /etc/nexus-turn.env
+  chmod 600 /etc/nodyx-turn.env
 
   # Service systemd
-  cat > /etc/systemd/system/nexus-turn.service <<SVC
+  cat > /etc/systemd/system/nodyx-turn.service <<SVC
 [Unit]
 Description=Nodyx TURN Server (WebRTC relay)
 After=network.target
 
 [Service]
-EnvironmentFile=/etc/nexus-turn.env
-ExecStart=/usr/local/bin/nexus-turn server \
+EnvironmentFile=/etc/nodyx-turn.env
+ExecStart=/usr/local/bin/nodyx-turn server \
   --udp-port \${TURN_PORT} \
   --public-ip \${TURN_PUBLIC_IP} \
   --realm \${TURN_REALM} \
@@ -540,9 +540,9 @@ WantedBy=multi-user.target
 SVC
 
   systemctl daemon-reload
-  systemctl enable nexus-turn --quiet
-  systemctl restart nexus-turn
-  ok "nexus-turn démarré (IP: ${PUBLIC_IP}, port UDP 3478)"
+  systemctl enable nodyx-turn --quiet
+  systemctl restart nodyx-turn
+  ok "nodyx-turn démarré (IP: ${PUBLIC_IP}, port UDP 3478)"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -647,7 +647,7 @@ REDIS_PORT=6379
 # Frontend (CORS)
 FRONTEND_URL=https://${DOMAIN}
 
-# TURN relay (nexus-turn) — credentials dynamiques par utilisateur
+# TURN relay (nodyx-turn) — credentials dynamiques par utilisateur
 TURN_PUBLIC_IP=${PUBLIC_IP:-}
 TURN_SECRET=${TURN_SECRET:-}
 TURN_PORT=3478
@@ -660,9 +660,9 @@ SMTP_USER=${SMTP_USER}
 SMTP_PASS=${SMTP_PASS}
 SMTP_FROM=${SMTP_FROM:-noreply@${DOMAIN}}
 COREENV
-# En mode Relay, ajouter des STUN publics en fallback (pas de nexus-turn)
+# En mode Relay, ajouter des STUN publics en fallback (pas de nodyx-turn)
 if $RELAY_MODE; then
-  printf "\n# Fallback STUN (relay mode — nexus-turn non installé)\nSTUN_FALLBACK_URLS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302\n" \
+  printf "\n# Fallback STUN (relay mode — nodyx-turn non installé)\nSTUN_FALLBACK_URLS=stun:stun.l.google.com:19302,stun:stun1.l.google.com:19302\n" \
     >> "${NODYX_DIR}/nodyx-core/.env"
 fi
 
@@ -686,7 +686,7 @@ cat > "${NODYX_DIR}/nodyx-frontend/.env" <<FEENV
 PUBLIC_API_URL=https://${DOMAIN}
 # Nodyx Signet (authentificateur optionnel) — laisser vide si non utilisé
 PUBLIC_SIGNET_URL=
-# Les credentials TURN sont désormais générés dynamiquement par nodyx-core (nexus-turn).
+# Les credentials TURN sont désormais générés dynamiquement par nodyx-core (nodyx-turn).
 # Ces variables sont conservées pour compatibilité avec d'éventuelles instances existantes.
 PUBLIC_TURN_URL=
 PUBLIC_TURN_USERNAME=
@@ -1011,7 +1011,7 @@ CREDS_FILE="/root/nodyx-credentials.txt"
 # Prépare les blocs conditionnels pour le fichier credentials
 _CREDS_TURN=""
 if ! $RELAY_MODE; then
-  _CREDS_TURN="TURN relay       : turn:${PUBLIC_IP}:3478 (nexus-turn)
+  _CREDS_TURN="TURN relay       : turn:${PUBLIC_IP}:3478 (nodyx-turn)
 TURN secret      : ${TURN_SECRET}"
 fi
 _CREDS_RELAY=""
@@ -1132,7 +1132,7 @@ _wait_https() {
 # ── Services système ──────────────────────────────────────────────────────────
 _hc_sect "Services système"
 _HC_SVCS="postgresql redis-server caddy"
-if ! $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nexus-turn"; fi
+if ! $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nodyx-turn"; fi
 if $RELAY_MODE; then _HC_SVCS="$_HC_SVCS nodyx-relay-client"; fi
 for _svc in $_HC_SVCS; do
   if systemctl is-active --quiet "$_svc" 2>/dev/null; then
@@ -1242,7 +1242,7 @@ if ! $RELAY_MODE && [[ -n "$NODYX_SUBDOMAIN" ]]; then
 fi
 echo -e "     ${BOLD}Admin      ${RESET}${ADMIN_USERNAME}  ·  ${ADMIN_EMAIL}"
 if ! $RELAY_MODE; then
-  echo -e "     ${BOLD}Vocal      ${RESET}stun/turn:${PUBLIC_IP}:3478 (nexus-turn)"
+  echo -e "     ${BOLD}Vocal      ${RESET}stun/turn:${PUBLIC_IP}:3478 (nodyx-turn)"
 fi
 if $RELAY_MODE; then
   echo -e "     ${BOLD}Relay      ${RESET}tunnel → relay.nodyx.org:7443"
