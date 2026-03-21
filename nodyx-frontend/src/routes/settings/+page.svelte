@@ -474,6 +474,9 @@
                         >{totpLoading ? '…' : 'Activer le 2FA'}</button>
                     {/if}
                 </div>
+                {#if totpError}
+                    <p class="text-xs text-red-400 mt-3">{totpError}</p>
+                {/if}
 
             {:else if totpStep === 'setup'}
                 <div class="rounded-xl border border-indigo-700/30 bg-indigo-900/5 p-5 space-y-5">
