@@ -61,7 +61,7 @@ impl FromRequestParts<AppState> for AuthUser {
         .map_err(|_| ApiError::Unauthorized)?;
 
         // 2 — Verify Redis session is still active
-        let session_key = format!("session:{}", token);
+        let session_key = format!("nodyx:session:{}", token);
         let exists: bool = state
             .redis
             .clone()
@@ -109,7 +109,7 @@ pub async fn optional_auth(headers: &HeaderMap, state: &AppState) -> Option<Uuid
     let exists: bool = state
         .redis
         .clone()
-        .exists(format!("session:{}", token))
+        .exists(format!("nodyx:session:{}", token))
         .await
         .unwrap_or(false);
 

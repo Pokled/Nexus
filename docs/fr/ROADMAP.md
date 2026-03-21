@@ -1,5 +1,5 @@
 # NODYX — Roadmap
-### Version 1.4 — Le chemin réaliste
+### Version 1.9 — La plateforme souveraine
 
 ---
 
@@ -419,6 +419,52 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [ ] Ollama IA locale — assistant de savoir (indexe le forum local)
 - [ ] **Nodyx Guard Protocol** — middleware scoring toxicité dans `chat:send`, seuil configurable, logs DB
 - [ ] Marketplace plugins — API stable pour extensions tierces (fondations dans `plugins/`)
+
+---
+
+---
+
+## PHASE 4.5 — Durcissement sécurité ✅ COMPLÈTE
+### Objectif : rendre chaque surface imperméable avant que la Phase 5 n'ouvre la plateforme à un usage plus large
+
+> *"Livré vite. Maintenant, blindons."*
+> Audit sécurité complet conduit en mars 2026 — avant tout travail sur la Phase 5.
+
+- [x] **Injection SQL** — requêtes paramétrées dans `gardenService` et les routes `notifications`
+- [x] **JWT** — `algorithms: ['HS256']` explicite sur tous les appels `jwt.verify()`
+- [x] **SSRF / DNS Rebinding** — blocklist plages IP privées (RFC 1918 + loopback + link-local) dans l'unfurl Open Graph
+- [x] **IDOR Socket.IO** — vérification appartenance/ownership sur `chat:react`, `chat:delete`, `voice:stats`, événements `jukebox`
+- [x] **Injection CSS / XSS** — valeurs de variables CSS sanitisées (pas de `url()` / `expression()` / `javascript:`) ; `font-family` restreint à une allowlist
+- [x] **Auth** — rate limiting enrollment Nodyx Signet ; nettoyage JWT Redis au logout ; validation assigné tâche = membre communauté
+- [x] **Crypto / Input** — validation magic bytes WebP (RIFF) ; stripping saut de ligne sur les headers email (SMTP header injection)
+
+---
+
+## PHASE 4.6 — Défense active & sécurité runtime ✅ COMPLÈTE
+### Objectif : transformer la plateforme en défenseur actif — détecter, dissuader et alerter en temps réel
+
+> *"Le meilleur pare-feu est celui qui pense."*
+> La Phase 4.6 s'appuie sur le durcissement statique de la 4.5 pour construire des systèmes de sécurité dynamiques et runtime.
+
+- [x] **Honeypot** — 25+ chemins scanner piégés (`.env`, `.git`, `wp-admin`, `phpmyadmin`, shells, backups…) ; tarpit 3–7s ; géolocalisation ; page scare terminal ; DB logging + fail2ban auto-ban
+- [x] **fail2ban** — 5 jails : SSH, récidivistes SSH (permanent), brute force auth HTTP, honeypot (7 jours), liste noire permanente
+- [x] **`nodyx-auth.log`** — la route auth alimente désormais le jail fail2ban à chaque tentative échouée
+- [x] **Liste noire permanente** — jail `nodyx-permban` (`bantime = -1`) + DB `ip_bans` pour les acteurs connus malveillants
+- [x] **Surveillance Discord** — embeds temps réel : hits honeypot, brute force, connexion admin, nouvelle IP, nouvelles inscriptions
+- [x] **Argon2id** — standard de hachage OWASP 2026 ; migration bcrypt transparente à la prochaine connexion
+- [x] **Anti-spam chat** — double fenêtre glissante (burst + soutenu) ; UI cooldown côté client
+- [x] **Filtre contenu** — symboles nazis/haineux (6 codepoints Unicode), allowlist images (Tenor/Giphy uniquement), blocklist domaines configurable
+- [x] **Scan NSFW optionnel** — `nsfwjs` + TensorFlow.js sur upload image (`NSFW_SCAN=true`)
+- [x] **Rate limiting upload** — 10 uploads / 10 minutes / utilisateur
+- [x] **Vérification e-mail** — obligatoire si SMTP configuré ; connexion bloquée pour les comptes non vérifiés
+- [x] **Rotation des logs** — rotation quotidienne, rétention 90 jours, compression
+- [x] **Pixel de tracking** (v1.9.2) — PNG 1×1 dans la scary page (`GET /_hp_px/:incidentId`) ; loggé dans `honeypot_pixel_hits` ; alerte Discord au retour de l'attaquant (>30s) ; corrélation IP pixel / IP originale
+- [x] **Pièges de collecte credentials** (v1.9.2) — 12 chemins login déclenchent un faux formulaire WordPress convaincant ; credentials loggés dans `honeypot_credential_attempts` ; embed Discord "🔑 Credential Harvest" à la soumission
+- [x] **Fichiers canari** (v1.9.2) — 11 patterns (`.env`, dumps SQL, `id_rsa`, `wp-config.php`…) servent de fausses credentials réalistes ; PRNG déterministe par IP — même attaquant = mêmes fausses données ; embed Discord "📄 Canary"
+- [x] **Empreinte canvas** (v1.9.2) — JS dans la scary page POSTs le hash fingerprint vers `/_hp_fp` ; upsert dans `honeypot_fingerprints` ; Discord "🔍 Fingerprint Reconnu" si visits > 1 (même cross-IP)
+- [x] **Honeytokens** (v1.9.2) — 3 liens invisibles + 1 quasi-invisible dans le HTML de la scary page ; clic → Discord "🎯 HONEYTOKEN CLICKED" ; signal haute confiance d'attaquant humain
+- [x] **Slowloris inverse** (v1.9.2) — `reply.hijack()` stream la scary page octet par octet (96B/180ms navigateurs, 256B/80ms bots) ; bloque les threads attaquants 45–90s
+- [x] **Olympus Hub** (v1.9.2) — centre de commandement sécurité : stats globales, timeline 48h, top IPs, "PIÈGES ACTIFS", table "CREDENTIAL HARVEST", "ATTAQUANTS RÉCURRENTS" (fingerprints), section pixel, blocklist distribuée fédérée
 
 ---
 

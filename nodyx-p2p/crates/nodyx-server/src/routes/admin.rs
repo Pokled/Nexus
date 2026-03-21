@@ -145,7 +145,7 @@ async fn invalidate_user_sessions(redis: &redis::aio::ConnectionManager, user_id
     let index_key = format!("user_sessions:{}", user_id);
     let tokens: Vec<String> = r.smembers(&index_key).await.unwrap_or_default();
     for token in &tokens {
-        let _: i64 = r.del(format!("session:{}", token)).await.unwrap_or(0);
+        let _: i64 = r.del(format!("nodyx:session:{}", token)).await.unwrap_or(0);
     }
     let _: i64 = r.del(&index_key).await.unwrap_or(0);
 }

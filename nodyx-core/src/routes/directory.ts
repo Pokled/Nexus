@@ -636,6 +636,52 @@ export default async function directoryRoutes(app: FastifyInstance) {
     }
   );
 
+  // ── Distributed blocklist ─────────────────────────────────────────────────
+
+  // POST /api/directory/report-ip — instance signals a suspicious IP (honeypot hit)
+  // Auth: instance registration token in body
+  app.post<{ Body: { token: string; ip: string; reason?: string; path?: string } }>(
+    '/directory/report-ip',
+    async (req, reply) => {
+      const { token, ip, reason = 'honeypot', path } = req.body ?? {}
+      if (!token || !ip) return reply.status(400).send({ error: 'token and ip required' })
+
+      // Basic IP format check (INET cast in PG will reject invalid ones too)
+      if (ip.length > 45 || !/^[\d.a-f:]+$/i.test(ip)) {
+        return reply.status(400).send({ error: 'invalid ip format' })
+      }
+
+      // Validate token against active instances
+      const { rows: [inst] } = await db.query(
+        `SELECT slug FROM directory_instances WHERE token = $1 AND status = 'active' LIMIT 1`,
+        [token]
+      )
+      if (!inst) return reply.status(403).send({ error: 'invalid token' })
+
+      await db.query(
+        `INSERT INTO reported_ips (ip, reason, path, instance_slug)
+         VALUES ($1::inet, $2, $3, $4)`,
+        [ip, String(reason).slice(0, 100), String(path ?? '').slice(0, 500), inst.slug]
+      )
+
+      return reply.send({ ok: true })
+    }
+  )
+
+  // GET /api/directory/blocklist — public feed of confirmed malicious IPs
+  // Threshold: reported by ≥2 distinct instances OR ≥3 honeypot hits (last 30 days)
+  app.get('/directory/blocklist', async (_req, reply) => {
+    const { rows } = await db.query(
+      `SELECT ip::text
+       FROM reported_ips
+       WHERE reported_at > NOW() - INTERVAL '30 days'
+       GROUP BY ip
+       HAVING COUNT(DISTINCT instance_slug) >= 2
+           OR COUNT(*) >= 3`
+    )
+    return reply.send({ ips: rows.map(r => r.ip), count: rows.length })
+  })
+
   // GET /api/directory/search?q=&type=&upcoming=&page=&limit= — cross-instance search
   // type: 'all' | 'thread' | 'event'  (défaut: 'all')
   // upcoming: 'true' — filtre événements futurs uniquement

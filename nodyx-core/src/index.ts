@@ -88,6 +88,34 @@ server.get('/api/v1/health', async (request, reply) => {
   }
 })
 
+// ── Blocklist check ──────────────────────────────────────────
+// Rejects IPs confirmed malicious by the distributed honeypot network.
+// Checked before any route handler — no auth overhead for known bad actors.
+
+server.addHook('onRequest', async (request, reply) => {
+  // Skip: honeypot itself + health + directory blocklist feed
+  const url = request.url
+  if (
+    url.startsWith('/api/v1/_hp') ||
+    url === '/api/v1/health' ||
+    url.startsWith('/api/directory/blocklist')
+  ) return
+
+  const ip = request.ip
+  if (!ip || ip === '127.0.0.1' || ip === '::1' ||
+      ip.startsWith('192.168.') || ip.startsWith('10.') ||
+      ip.startsWith('::ffff:127.') || ip.startsWith('172.16.')) return
+
+  try {
+    const blocked = await redis.sismember('nodyx:blocklist', ip)
+    if (blocked) {
+      return reply.code(403).send({ error: 'Access denied' })
+    }
+  } catch {
+    // Redis unavailable — fail open (never block legit traffic)
+  }
+})
+
 // ── Routes ───────────────────────────────────────────────────
 
 server.register(authRoutes,      { prefix: '/api/v1/auth' })

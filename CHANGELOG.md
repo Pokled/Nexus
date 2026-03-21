@@ -9,6 +9,56 @@ Format based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), versio
 
 ---
 
+## [1.9.2] — 2026-03-21
+
+### Security — Advanced Honeypot Suite
+
+**Tracking pixel (spy detection)**
+- 1×1 transparent PNG pixel embedded in the scary page (`GET /api/v1/_hp_px/:incidentId`)
+- Every load logged to `honeypot_pixel_hits` (migration 059): incident_id, IP, user_agent, referer, viewed_at
+- Discord "👁 Pixel Spy" alert on revisits (>30s threshold) — detects attackers who bookmark or revisit via proxy
+- Linked to original honeypot hit for full correlation
+
+**Fake login traps — credential harvesting**
+- 12 login paths trapped: `/wp-admin`, `/phpmyadmin`, `/wp-login.php`, `/admin/login`, `/user/login`, `/panel`, etc.
+- Convincing fake WordPress-style HTML form served to attackers (no artificial delay — immediately convincing)
+- Credentials captured in `honeypot_credential_attempts` (migration 060): IP, username, password, login_path, geolocation
+- After submission: Discord "🔑 Credential Harvest" embed, then scary page streamed to attacker
+
+**Canary files — realistic fake credentials**
+- 11 file patterns trapped: `.env`, `backup.sql`, `dump.sql`, `id_rsa`, `config.json`, `credentials.json`, `database.yml`, `wp-config.php`, `config.php`, `database.sql`, `db.sql`
+- Content generated per file type: env vars, SQL dump, RSA private key, JSON config, YAML database, PHP config
+- Deterministic PRNG seeded by IP (`fakeSeed`) — same attacker always receives the same fake credentials
+- Discord "📄 Canary File Accessed" embed — single notification (no double-fire)
+
+**Persistent canvas fingerprint**
+- Browser JS in scary page generates a canvas fingerprint hash, POSTs to `POST /api/v1/_hp_fp`
+- Upserted in `honeypot_fingerprints` (migration 060): `fp_hash TEXT PK`, `visits INT`, `ip_list TEXT[]`, `incident_ids TEXT[]`, `first_seen`, `last_seen`
+- Discord "🔍 Fingerprint Reconnu" if same attacker seen more than once, even across different IPs
+
+**Honeytokens (invisible + quasi-invisible links)**
+- 3 invisible `<a>` tags (`position:absolute; top:-9999px; opacity:0`) embedded in the scary page HTML
+- 1 quasi-invisible "Dispute this automated report" link (`color:#1a2a1a`) — visible only when reading source
+- All links redirect to `/_ht` — logged as honeytoken click, Discord "🎯 HONEYTOKEN CLICKED" (green embed)
+
+**Slowloris inverse (bandwidth drain)**
+- Non-canary, non-login paths stream the scary page byte-by-byte via `reply.hijack()` / raw Node.js response
+- Browser: 96 bytes every 180ms (~45–90s total transfer)
+- Bot/scanner: 256 bytes every 80ms — ties up connection pool, burns attacker threads
+- Checks `raw.destroyed` before every write to prevent crashes on early disconnect
+
+**Olympus Hub — new security sections**
+- "PIÈGES ACTIFS" — aggregated trap stats (login/canary/honeytoken) with type-colored rows (🎯/🔑/📄)
+- "CREDENTIAL HARVEST" — full table with masked passwords (reveal on click), IP, geolocation, path, timestamp
+- "ATTAQUANTS RÉCURRENTS" — persistent fingerprint hashes, IP badge list (max 4 + overflow), visit count with color coding
+
+**Bug fix — single Discord notification per hit**
+- Canary files and login paths were triggering both a generic "🚨 Honeypot Hit" AND a type-specific embed
+- Fixed: type detection (honeytoken → canary → login → generic) now runs before Discord webhook call — exactly one embed per hit
+- Login paths produce no Discord from the main handler; notification fires only on credential submission
+
+---
+
 ## [1.9.1] — 2026-03-21
 
 ### Security — 2FA & Nodyx Signet

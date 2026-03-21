@@ -1,18 +1,19 @@
 <script lang="ts">
   import '../app.css';
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 
   let { children } = $props();
 
   const navLinks = [
     { href: '/',             label: 'Dashboard',   icon: '⬡' },
     { href: '/instances',    label: 'Instances',   icon: '◎' },
+    { href: '/security',     label: 'Sécurité',    icon: '⚠' },
     { href: '/newsletter',   label: 'Newsletter',  icon: '◈' },
     { href: '/logs',         label: 'Logs',        icon: '▸' },
   ];
 </script>
 
-{#if !$page.url.pathname.startsWith('/auth')}
+{#if !page.url.pathname.startsWith('/auth')}
   <!-- Top nav -->
   <nav style="
     background: rgba(2,4,8,0.97);
@@ -34,7 +35,7 @@
     <!-- Nav links -->
     <div style="display: flex; align-items: center; gap: 0.25rem; flex: 1;">
       {#each navLinks as link}
-        {@const active = $page.url.pathname === link.href || ($page.url.pathname.startsWith(link.href) && link.href !== '/')}
+        {@const active = page.url.pathname === link.href || (page.url.pathname.startsWith(link.href) && link.href !== '/')}
         <a href={link.href} style="
           display: flex; align-items: center; gap: 0.4rem;
           padding: 0.375rem 0.875rem;

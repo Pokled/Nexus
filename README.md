@@ -5,7 +5,7 @@
 
   <p><strong>The community platform that no one can take from you.<br/>Forum + Chat + Voice + P2P Canvas — on your server, under your control, forever.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v1.8.2-7c3aed)](CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v1.9.2-7c3aed)](CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](docs/en/ARCHITECTURE.md)
@@ -364,7 +364,27 @@ Database migrations are applied automatically on startup — no manual SQL neede
 | **Update alert** — admin banner when a new GitHub release is available (Redis-cached 6h) | v1.8 |
 | **Instance version display** — "Nodyx v1.8.x" shown on home page from `NODYX_VERSION` env | v1.8 |
 | **Security audit** — PATCH /cards permission fix, health 503, HOST binding, enrollment adminOnly, rate limit on /announcement, moderators can manage tags | v1.8.1 |
-| **Full paranoid security audit** — 38 vulnerabilities fixed: SQLi (gardenService, notifications), JWT algorithm confusion, SSRF/DNS rebinding (unfurl), Socket.IO IDOR (chat:react, chat:delete, voice:stats, jukebox), CSS/XSS injection (profile themes, font CSS, GIF URLs), auth hardening (enrollment rate limit, logout session cleanup, ban checks), crypto (WebP RIFF validation, SMTP header injection), DB SSL support | v1.8.2 |
+| **Full paranoid security audit** — 38 vulnerabilities fixed: SQLi, JWT algorithm confusion, SSRF/DNS rebinding, Socket.IO IDOR, CSS/XSS injection, auth hardening, WebP RIFF validation, SMTP header injection | v1.8.2 |
+
+### v1.9
+
+| Feature | Version |
+|---|---|
+| **Honeypot** — 25+ scanner paths trapped; tarpit 3–7s; geolocation; terminal scare page; DB logging + fail2ban auto-ban | v1.9.0 |
+| **fail2ban** — 5 jails: SSH, brute force, honeypot (7d), permanent blacklist | v1.9.0 |
+| **Discord security alerts** — real-time embeds for honeypot hits, brute force, admin logins, new registrations | v1.9.0 |
+| **Argon2id** — OWASP 2026 password hashing; transparent bcrypt migration on next login | v1.9.0 |
+| **Chat anti-spam + content filter** — dual sliding window rate limiter, hate symbol filter, NSFW image scan (optional) | v1.9.0 |
+| **Email verification** — mandatory when SMTP configured; login blocked for unverified accounts | v1.9.0 |
+| **2FA TOTP (RFC 6238)** — compatible with any authenticator app; QR code setup; Redis-backed pending session | v1.9.1 |
+| **2FA via Nodyx Signet** — ECDSA P-256 as 2nd factor; Signet > TOTP > direct login priority chain | v1.9.1 |
+| **Tracking pixel** — 1×1 PNG in scary page detects revisits; Discord alert on return visits | v1.9.2 |
+| **Credential harvesting traps** — fake WordPress/phpMyAdmin/admin login forms; captured to DB + Discord | v1.9.2 |
+| **Canary files** — realistic fake `.env`, SQL dumps, `id_rsa`, `wp-config.php` etc. with deterministic PRNG per IP | v1.9.2 |
+| **Canvas fingerprint** — persistent attacker fingerprint across IPs; visit counter; recurring attacker detection | v1.9.2 |
+| **Honeytokens** — invisible + quasi-invisible links in scary page HTML; high-confidence human attacker signal | v1.9.2 |
+| **Slowloris inverse** — byte-by-byte streaming via `reply.hijack()` burns attacker threads for 45–90s | v1.9.2 |
+| **Olympus Hub security dashboard** — Pièges actifs, Credential harvest table, Attaquants récurrents (fingerprints) | v1.9.2 |
 
 ### Coming
 

@@ -136,7 +136,7 @@ pub async fn invalidate_user_sessions(
     if !tokens.is_empty() {
         let session_keys: Vec<String> = tokens
             .iter()
-            .map(|t| format!("session:{}", t))
+            .map(|t| format!("nodyx:session:{}", t))
             .collect();
         // DEL all session keys + the index key in one call
         let mut all_keys = session_keys;
@@ -357,7 +357,7 @@ async fn register_handler(
 
     // No SMTP — issue token directly
     let token = sign_token(&user_id, &username, &state.jwt_secret)?;
-    let _: () = redis.set_ex(format!("session:{}", token), user_id.to_string(), SESSION_TTL).await?;
+    let _: () = redis.set_ex(format!("nodyx:session:{}", token), user_id.to_string(), SESSION_TTL).await?;
     track_session(&mut redis, &user_id, &token).await?;
 
     Ok((
@@ -464,7 +464,7 @@ async fn login_handler(
     }
 
     let token = sign_token(&user.id, &user.username, &state.jwt_secret)?;
-    let _: () = redis.set_ex(format!("session:{}", token), user.id.to_string(), SESSION_TTL).await?;
+    let _: () = redis.set_ex(format!("nodyx:session:{}", token), user.id.to_string(), SESSION_TTL).await?;
     track_session(&mut redis, &user.id, &token).await?;
 
     Ok(Json(serde_json::json!({
@@ -480,7 +480,7 @@ async fn logout_handler(
     State(state): State<AppState>,
 ) -> Result<impl IntoResponse, ApiError> {
     let mut redis = state.redis.clone();
-    let _: i64 = redis.del(format!("session:{}", auth.token)).await?;
+    let _: i64 = redis.del(format!("nodyx:session:{}", auth.token)).await?;
     Ok(Json(serde_json::json!({ "message": "Logged out" })))
 }
 
@@ -649,7 +649,7 @@ async fn verify_email_handler(
 
     let jwt_token = sign_token(&user_id, &username, &state.jwt_secret)?;
     let mut redis = state.redis.clone();
-    let _: () = redis.set_ex(format!("session:{}", jwt_token), user_id.to_string(), SESSION_TTL).await?;
+    let _: () = redis.set_ex(format!("nodyx:session:{}", jwt_token), user_id.to_string(), SESSION_TTL).await?;
     track_session(&mut redis, &user_id, &jwt_token).await?;
 
     Ok(Json(serde_json::json!({ "token": jwt_token })))

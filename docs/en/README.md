@@ -44,7 +44,7 @@ Instances discover each other through the **nodyx-directory** — the global reg
 
 ## Project status
 
-**v1.8.2 — Production**
+**v1.9.2 — Production**
 
 ```
 Forum                       ✓  Categories, threads, posts, reactions, thanks, tags, slugs
@@ -68,8 +68,11 @@ Global Search               ✓  Cross-instance FTS index, /discover UI
 Federation                  ✓  Instance directory, Galaxy Bar (multi-instance switcher)
 Gossip Protocol             ✓  Cross-instance event/thread indexing
 Nodyx Signet                ✓  Passwordless ECDSA P-256 auth PWA
+2FA (TOTP + Signet)         ✓  RFC 6238 TOTP + Signet as 2nd factor, priority chain
 nodyx-relay                 ✓  Rust TCP tunnel — home server, no open ports
 nodyx-turn                  ✓  Rust STUN/TURN — replaces coturn, voice through VPNs
+Honeypot suite              ✓  Tarpit, canary files, fake logins, pixel, fingerprint, honeytokens, slowloris
+Olympus Hub                 ✓  Security command center — live dashboard, credential harvest, distributed blocklist
 ```
 
 ---

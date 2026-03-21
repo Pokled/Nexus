@@ -21,6 +21,12 @@ export const GET: RequestHandler = async ({ url }) => {
   const stream = new ReadableStream({
     start(controller) {
       let offset = 0;
+      let closed = false;
+
+      const enqueue = (data: string) => {
+        if (closed) return;
+        try { controller.enqueue(data); } catch { closed = true; }
+      };
 
       // Seed last 50 lines from existing log
       if (existsSync(logPath)) {
@@ -35,7 +41,7 @@ export const GET: RequestHandler = async ({ url }) => {
             const seedLines = buf.split('\n').filter(Boolean).slice(-50);
             for (const line of seedLines) {
               const payload = JSON.stringify({ text: line.trim(), level: detectLevel(line), ts: new Date().toISOString() });
-              controller.enqueue(`data: ${payload}\n\n`);
+              enqueue(`data: ${payload}\n\n`);
             }
           });
         } catch { /* ignore */ }
@@ -43,7 +49,7 @@ export const GET: RequestHandler = async ({ url }) => {
 
       // Poll for new lines every 1s
       const interval = setInterval(() => {
-        if (!existsSync(logPath)) return;
+        if (closed || !existsSync(logPath)) return;
         try {
           const { size } = statSync(logPath);
           if (size <= offset) return;
@@ -54,7 +60,7 @@ export const GET: RequestHandler = async ({ url }) => {
             offset = size;
             for (const line of buf.split('\n').filter(Boolean)) {
               const payload = JSON.stringify({ text: line.trim(), level: detectLevel(line), ts: new Date().toISOString() });
-              controller.enqueue(`data: ${payload}\n\n`);
+              enqueue(`data: ${payload}\n\n`);
             }
           });
         } catch { /* ignore */ }
@@ -62,11 +68,12 @@ export const GET: RequestHandler = async ({ url }) => {
 
       // Keepalive ping every 15s
       const ping = setInterval(() => {
-        controller.enqueue(': ping\n\n');
+        enqueue(': ping\n\n');
       }, 15000);
 
-      return () => { clearInterval(interval); clearInterval(ping); };
-    }
+      return () => { closed = true; clearInterval(interval); clearInterval(ping); };
+    },
+    cancel() { /* handled via closed flag in start() */ }
   });
 
   return new Response(stream, {

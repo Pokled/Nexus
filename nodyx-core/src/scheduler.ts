@@ -4,7 +4,7 @@
  * - Push assets publics locaux → directory toutes les heures (v0.7 fédération)
  * - Announce threads au Global Search toutes les 10 min (SPEC 010, opt-in)
  */
-import { db } from './config/database'
+import { db, redis } from './config/database'
 import { Server } from 'socket.io'
 
 const PING_INTERVAL_MS         = 5  * 60 * 1000        // 5 minutes
@@ -12,6 +12,7 @@ const ASSET_PUSH_INTERVAL_MS   = 60 * 60 * 1000        // 1 heure
 const WHISPER_CLEANUP_MS       = 10 * 60 * 1000        // 10 minutes
 const GLOBAL_INDEX_INTERVAL_MS = 10 * 60 * 1000        // 10 minutes
 const NOTIF_PURGE_INTERVAL_MS  = 24 * 60 * 60 * 1000  // 24 heures
+const BLOCKLIST_INTERVAL_MS    = 30 * 60 * 1000        // 30 minutes
 
 // ── Ping directory ────────────────────────────────────────────────────────────
 
@@ -308,6 +309,44 @@ async function gossipToPeers(payload: {
   }))
 }
 
+// ── Pull blocklist distribuée ─────────────────────────────────────────────────
+
+async function pullBlocklist() {
+  const directoryUrl = (process.env.DIRECTORY_API_URL ?? 'https://nodyx.org').replace(/\/$/, '')
+  try {
+    const res = await fetch(`${directoryUrl}/api/directory/blocklist`, {
+      signal: AbortSignal.timeout(10_000),
+    })
+    if (!res.ok) {
+      console.warn(`[Scheduler] Blocklist pull failed: HTTP ${res.status}`)
+      return
+    }
+    const json = await res.json() as { ips: string[]; count: number }
+    if (!Array.isArray(json.ips)) return
+
+    if (json.ips.length === 0) {
+      await redis.del('nodyx:blocklist')
+      return
+    }
+
+    // Rebuild atomically: write to temp key then rename
+    const tmpKey = `nodyx:blocklist:tmp`
+    await redis.del(tmpKey)
+    const CHUNK = 500
+    for (let i = 0; i < json.ips.length; i += CHUNK) {
+      await redis.sadd(tmpKey, ...json.ips.slice(i, i + CHUNK))
+    }
+    await redis.rename(tmpKey, 'nodyx:blocklist')
+    await redis.expire('nodyx:blocklist', 35 * 60)  // 35 min TTL (buffer over 30 min pull)
+
+    if (json.count > 0) {
+      console.log(`[Scheduler] Blocklist sync — ${json.count} IP(s) bloquée(s)`)
+    }
+  } catch (err: any) {
+    console.warn('[Scheduler] Blocklist pull error:', err.message)
+  }
+}
+
 // ── Purge tokens de vérification email expirés ───────────────────────────────
 
 async function purgeExpiredEmailTokens() {
@@ -401,9 +440,13 @@ export function startScheduler(io: Server) {
     setInterval(() => announceEventsToDirectory(), GLOBAL_INDEX_INTERVAL_MS)
   }
 
+  // Blocklist distribuée — pull toutes les 30min (45s au démarrage)
+  setTimeout(() => pullBlocklist(), 45_000)
+  setInterval(() => pullBlocklist(), BLOCKLIST_INTERVAL_MS)
+
   const hasPeers = (process.env.GOSSIP_PEERS ?? '').trim().length > 0
   console.log(
-    '[Scheduler] Démarré — ping 5min, assets 1h, whisper 10min, global search 10min, notif purge 24h' +
+    '[Scheduler] Démarré — ping 5min, assets 1h, whisper 10min, global search 10min, notif purge 24h, blocklist 30min' +
     (hasPeers ? `, gossip peers: ${process.env.GOSSIP_PEERS}` : '')
   )
 }

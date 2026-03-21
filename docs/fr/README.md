@@ -5,7 +5,7 @@
 
   <p><strong>La plateforme communautaire que personne ne peut te prendre.<br/>Forum + Chat + Voix + Canvas P2P — sur ton serveur, sous ton contrôle, pour toujours.</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-v1.8.2-7c3aed)](../../CHANGELOG.md)
+  [![Version](https://img.shields.io/badge/version-v1.9.2-7c3aed)](../../CHANGELOG.md)
   [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
   [![CI](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml/badge.svg)](https://github.com/Pokled/Nodyx/actions/workflows/ci.yml)
   [![Stack](https://img.shields.io/badge/stack-Fastify%20%2B%20SvelteKit%20%2B%20PostgreSQL%20%2B%20Rust-green)](ARCHITECTURE.md)
@@ -363,8 +363,28 @@ Les migrations de base de données sont appliquées automatiquement au démarrag
 | **Tâches / Kanban** — tableaux par communauté, drag & drop, assignés, priorités, échéances | v1.8 |
 | **Alerte de mise à jour** — bannière admin quand une nouvelle release GitHub est disponible (cache Redis 6h) | v1.8 |
 | **Affichage de la version** — "Nodyx v1.8.x" affiché sur la page d'accueil via la variable `NODYX_VERSION` | v1.8 |
-| **Audit de sécurité** — correctif permissions PATCH /cards, health 503, binding HOST, enrollment adminOnly, rate limit sur /announcement, modérateurs peuvent gérer les tags | v1.8.1 |
+| **Audit de sécurité** — correctifs permissions PATCH /cards, health 503, binding HOST, enrollment adminOnly, rate limit /announcement | v1.8.1 |
 | **Audit de sécurité complet** — 38 vulnérabilités corrigées (SQLi, XSS, JWT, SSRF, IDOR, CSS injection, Socket.IO) | v1.8.2 |
+
+### v1.9
+
+| Fonctionnalité | Version |
+|---|---|
+| **Honeypot** — 25+ chemins scanner piégés ; tarpit 3–7s ; géolocalisation ; page scare terminal ; DB + fail2ban auto-ban | v1.9.0 |
+| **fail2ban** — 5 jails : SSH, brute force, honeypot (7j), liste noire permanente | v1.9.0 |
+| **Alertes Discord sécurité** — embeds temps réel : hits honeypot, brute force, connexions admin, nouvelles inscriptions | v1.9.0 |
+| **Argon2id** — hachage OWASP 2026 ; migration bcrypt transparente à la prochaine connexion | v1.9.0 |
+| **Anti-spam chat + filtre contenu** — double fenêtre glissante, filtre symboles haineux, scan NSFW optionnel | v1.9.0 |
+| **Vérification e-mail** — obligatoire si SMTP configuré ; connexion bloquée pour les comptes non vérifiés | v1.9.0 |
+| **2FA TOTP (RFC 6238)** — compatible avec toutes les apps ; setup QR code ; session pending Redis | v1.9.1 |
+| **2FA via Nodyx Signet** — ECDSA P-256 comme second facteur ; chaîne Signet > TOTP > connexion directe | v1.9.1 |
+| **Pixel de tracking** — PNG 1×1 dans la scary page détecte les revisites ; alerte Discord au retour de l'attaquant | v1.9.2 |
+| **Pièges de collecte de credentials** — faux formulaires WordPress/phpMyAdmin/admin ; capturés en DB + Discord | v1.9.2 |
+| **Fichiers canari** — faux `.env`, dumps SQL, `id_rsa`, `wp-config.php` réalistes avec PRNG déterministe par IP | v1.9.2 |
+| **Empreinte canvas** — fingerprint attaquant persistant cross-IP ; compteur de visites ; détection d'attaquant récurrent | v1.9.2 |
+| **Honeytokens** — liens invisibles + quasi-invisibles dans la scary page ; signal haute confiance d'attaquant humain | v1.9.2 |
+| **Slowloris inverse** — streaming octet par octet via `reply.hijack()` bloque les threads de l'attaquant 45–90s | v1.9.2 |
+| **Olympus Hub — tableau de bord sécurité** — Pièges actifs, table Credential harvest, Attaquants récurrents (fingerprints) | v1.9.2 |
 
 ### À venir
 

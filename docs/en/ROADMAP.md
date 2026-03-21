@@ -473,6 +473,13 @@ nodyx-core    (Fastify/Node.js) ────────────────
 - [x] **Upload rate limiting** — 10 uploads / 10 minutes / user
 - [x] **Email verification** — mandatory when SMTP configured; login blocked for unverified accounts
 - [x] **Log rotation** — daily rotation, 90-day retention, compressed
+- [x] **Tracking pixel** (v1.9.2) — 1×1 transparent PNG embedded in scare page (`GET /_hp_px/:incidentId`); logged to `honeypot_pixel_hits`; Discord alert on revisits (>30s threshold); cross-correlates pixel IP with original attacker IP
+- [x] **Credential harvesting traps** (v1.9.2) — 12 login paths trigger a convincing fake WordPress login form; credentials logged to `honeypot_credential_attempts`; Discord "🔑 Credential Harvest" embed on submission
+- [x] **Canary files** (v1.9.2) — 11 file patterns (`.env`, SQL dumps, `id_rsa`, `wp-config.php`…) serve realistic fake credentials; deterministic PRNG seeded by IP — same attacker always sees the same fake data; Discord "📄 Canary" embed
+- [x] **Canvas fingerprint** (v1.9.2) — browser JS in scare page POSTs fingerprint hash to `/_hp_fp`; upserted in `honeypot_fingerprints`; Discord "🔍 Fingerprint Reconnu" if visits > 1 (across different IPs)
+- [x] **Honeytokens** (v1.9.2) — 3 invisible + 1 quasi-invisible link embedded in scare page HTML; click → Discord "🎯 HONEYTOKEN CLICKED"; high-confidence human attacker signal
+- [x] **Slowloris inverse** (v1.9.2) — `reply.hijack()` streams scare page byte-by-byte (96B/180ms browsers, 256B/80ms bots); ties up attacker threads for 45–90s; `raw.destroyed` guard prevents crashes
+- [x] **Olympus Hub** (v1.9.2) — security command center: global stats, 48h timeline, top IPs, "PIÈGES ACTIFS" trap aggregation, "CREDENTIAL HARVEST" masked table, "ATTAQUANTS RÉCURRENTS" fingerprint list, tracking pixel section, federated distributed blocklist
 
 ---
 
