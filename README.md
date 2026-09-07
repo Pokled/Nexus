@@ -412,6 +412,10 @@ cd /var/www/nexus && git pull && \
 
 Database migrations are applied automatically on startup, no manual SQL needed.
 
+## ☁️ One-Click Deploy
+
+[![Deploy on RepoCloud](https://d16t0pc4846x52.cloudfront.net/deploylobe.svg)](https://repocloud.io/details/Nodyx/)
+
 ---
 
 ## Architecture
