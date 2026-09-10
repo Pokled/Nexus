@@ -121,7 +121,7 @@ The script automatically installs and configures:
 
 ### Option C, Manual installation (Linux/Mac/Windows)
 
-**Prerequisites:** Node.js 20+, PostgreSQL 16+, Redis 7+
+**Prerequisites:** Node.js 22+, PostgreSQL 16+, Redis 7+
 
 ```bash
 git clone https://github.com/Pokled/Nodyx

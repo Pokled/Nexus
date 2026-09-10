@@ -121,7 +121,7 @@ El script instala y configura automáticamente:
 
 ### Opción C — Instalación manual (Linux/Mac/Windows)
 
-**Requisitos previos:** Node.js 20+, PostgreSQL 16+, Redis 7+
+**Requisitos previos:** Node.js 22+, PostgreSQL 16+, Redis 7+
 
 ```bash
 git clone https://github.com/Pokled/Nodyx

@@ -3,6 +3,7 @@ import {
   validateManifest, collectMessageKeys, parseSize, isSafePackagePath,
   type ExtensionManifest,
 } from '../extensions/manifest'
+import { requestedCapabilities, sensitiveCapabilities } from '../extensions/capabilities'
 
 // Manifeste minimal valide : le socle de tous les cas négatifs ci dessous.
 function base(): Record<string, unknown> {
@@ -144,6 +145,31 @@ describe('identité et forme', () => {
   })
 })
 
+describe('vitrine : tagline + captures', () => {
+  it('accepte tagline + jusqu à 6 captures empaquetées', () => {
+    const r = validateManifest({
+      ...base(),
+      tagline: '@tagline',
+      screenshots: ['media/1.png', 'media/2.webp', 'shots/3.jpg'],
+    })
+    expect(r.ok).toBe(true)
+  })
+
+  it('collecte la tagline comme clé de message', () => {
+    const r = validateManifest({ ...base(), tagline: '@game.tagline' })
+    if (!r.ok) throw new Error('refusé')
+    expect(collectMessageKeys(r.manifest)).toContain('game.tagline')
+  })
+
+  it('refuse une capture qui remonte hors du paquet', () => {
+    expect(issues({ ...base(), screenshots: ['../secret.png'] }).length).toBeGreaterThan(0)
+  })
+
+  it('refuse plus de 6 captures', () => {
+    expect(issues({ ...base(), screenshots: Array(7).fill('media/x.png') }).length).toBeGreaterThan(0)
+  })
+})
+
 describe('i18n : toute chaîne visible est une clé', () => {
   it('refuse un libellé écrit en dur', () => {
     expect(issues({ ...base(), label: 'Mon widget' }).length).toBeGreaterThan(0)
@@ -201,6 +227,82 @@ describe('surfaces', () => {
     const m = base()
     ;(m.surfaces as Record<string, unknown>[])[0].schema = [{ key: 'a', type: 'select', label: '@a' }]
     expect(issues(m)).toContain('SELECT_WITHOUT_OPTIONS')
+  })
+})
+
+describe('surface activity + bundle applicatif', () => {
+  const SHA = 'a'.repeat(64)
+  const APP = { url: 'https://github.com/Pokled/nodyx-battle/releases/download/v0.3.0/app.zip', sha256: SHA, bytes: 54_000_000 }
+  const activity = (over: Record<string, unknown> = {}, appOver: Record<string, unknown> | null = {}) => {
+    const m: Record<string, unknown> = {
+      ...base(),
+      surfaces: [{ type: 'activity', id: 'battle', entry: 'index.html', label: '@label', ...over }],
+    }
+    if (appOver !== null) m.app = { ...APP, ...appOver }
+    return m
+  }
+
+  it('accepte une activité avec un bundle app https/public', () => {
+    const r = validateManifest(activity())
+    if (!r.ok) throw new Error('refusé à tort : ' + JSON.stringify(r.issues, null, 2))
+    expect(r.manifest.surfaces[0].type).toBe('activity')
+    expect(r.manifest.app?.sha256).toBe(SHA)
+  })
+
+  it('refuse un entry qui ne finit pas par .html', () => {
+    expect(issues(activity({ entry: 'main.js' })).length).toBeGreaterThan(0)
+  })
+
+  it('refuse un entry remontant', () => {
+    expect(issues(activity({ entry: '../escape.html' })).length).toBeGreaterThan(0)
+  })
+
+  it('refuse une activité SANS champ app', () => {
+    expect(issues(activity({}, null))).toContain('ACTIVITY_WITHOUT_APP')
+  })
+
+  it('refuse un champ app SANS surface activity', () => {
+    expect(issues({ ...base(), app: APP })).toContain('APP_WITHOUT_ACTIVITY')
+  })
+
+  it('refuse app.url non-https', () => {
+    expect(issues(activity({}, { url: 'http://evil.example/app.zip' })).length).toBeGreaterThan(0)
+  })
+
+  it('refuse app.url loopback', () => {
+    expect(issues(activity({}, { url: 'https://127.0.0.1/app.zip' })).length).toBeGreaterThan(0)
+  })
+
+  it('refuse une empreinte sha256 mal formée', () => {
+    expect(issues(activity({}, { sha256: 'pas-hex' })).length).toBeGreaterThan(0)
+  })
+
+  it('refuse deux activités de même identifiant', () => {
+    const s = { type: 'activity', id: 'battle', entry: 'index.html', label: '@label' }
+    expect(issues({ ...base(), app: APP, surfaces: [s, { ...s }] })).toContain('DUPLICATE_SURFACE_ID')
+  })
+
+  it('collecte les clés de message de l\'activité', () => {
+    const r = validateManifest(activity({ label: '@a.title', description: '@a.blurb' }))
+    if (!r.ok) throw new Error('refusé')
+    expect(collectMessageKeys(r.manifest)).toEqual(expect.arrayContaining(['a.title', 'a.blurb']))
+  })
+
+  it('realtime accepté avec activity, refusé sans', () => {
+    expect(validateManifest({ ...activity(), permissions: { realtime: true } }).ok).toBe(true)
+    expect(issues({ ...base(), permissions: { realtime: true } })).toContain('REALTIME_WITHOUT_ACTIVITY')
+  })
+
+  it('accepte le stockage (records perso + classement) sur une activité', () => {
+    const r = validateManifest({
+      ...activity(),
+      permissions: { storage: { user: '16kb', instance: '64kb', instance_write: true } },
+    })
+    if (!r.ok) throw new Error('refusé : ' + JSON.stringify(r.issues))
+    expect(requestedCapabilities(r.manifest)).toEqual(expect.arrayContaining([
+      'storage.user', 'storage.instance.read', 'storage.instance.write',
+    ]))
+    expect(sensitiveCapabilities(r.manifest)).toContain('storage.instance.write')
   })
 })
 

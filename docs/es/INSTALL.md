@@ -82,7 +82,7 @@ sudo apt-get update && sudo apt-get install -y git
 
 No necesitas instalar nada más manualmente. El script se encarga de:
 
-- **Node.js 20 LTS** — Entorno de ejecución JavaScript
+- **Node.js 22 LTS** — Entorno de ejecución JavaScript
 - **PostgreSQL 16** — Base de datos principal
 - **Redis 7** — Caché y sesiones en tiempo real
 - **Coturn** — Relay TURN/STUN para salas de voz (NAT traversal con WebRTC)

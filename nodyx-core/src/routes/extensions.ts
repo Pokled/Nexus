@@ -28,7 +28,7 @@ import type { GrantedNetwork } from '../extensions/net'
 import { PACKAGE, SURFACE }      from '../extensions/limits'
 
 const RE_ID      = /^[a-z][a-z0-9-]{2,38}$/
-const RE_SURFACE = /^(page|widget:[a-z][a-z0-9-]{0,30})$/
+const RE_SURFACE = /^(page|(widget|activity):[a-z][a-z0-9-]{0,30})$/
 
 interface InstalledRow {
   id:       string
@@ -257,11 +257,16 @@ export async function extensionRoutes(app: FastifyInstance) {
           version:     row.version,
           label:       tr(m.label),
           description: tr(m.description),
+          tagline:     tr(m.tagline) ?? null,
           icon:        m.icon ? `/api/v1/extensions/${m.id}/${row.version}/assets/${m.icon}` : null,
+          screenshots: (m.screenshots ?? []).map((p) => `/api/v1/extensions/${m.id}/${row.version}/assets/${p}`),
+          author:      m.author ?? null,
+          source:      m.source ?? null,
           family:      m.family ?? 'content',
           messages:    dict,
-          surfaces:    m.surfaces.map((s) => s.type === 'widget'
-            ? {
+          surfaces:    m.surfaces.map((s) => {
+            if (s.type === 'widget') {
+              return {
                 type:  'widget' as const,
                 id:    s.id,
                 entry: s.entry,
@@ -275,13 +280,30 @@ export async function extensionRoutes(app: FastifyInstance) {
                   options: f.options?.map((o) => ({ ...o, label: tr(o.label) })),
                 })),
               }
-            : {
-                type:  'page' as const,
-                path:  s.path,
-                entry: s.entry,
-                label: tr(s.label) ?? tr(m.label),
-                nav:   s.nav ? { label: tr(s.nav.label), icon: s.nav.icon ?? null } : null,
-              }),
+            }
+            if (s.type === 'activity') {
+              return {
+                type:        'activity' as const,
+                id:          s.id,
+                // Servi par l'instance elle-même : plus aucune dépendance externe.
+                // `?v=` : le chemin porte déjà la version, mais le paramètre
+                // garantit qu'un navigateur qui aurait mis en cache une ancienne
+                // réponse (en-têtes compris) refait la requête sur une nouvelle
+                // version.
+                appUrl:      `/api/v1/extensions/${m.id}/${row.version}/app/${s.entry}?v=${row.version}`,
+                label:       tr(s.label) ?? tr(m.label),
+                description: tr(s.description),
+                aspect:      s.default_aspect ?? '16:9',
+              }
+            }
+            return {
+              type:  'page' as const,
+              path:  s.path,
+              entry: s.entry,
+              label: tr(s.label) ?? tr(m.label),
+              nav:   s.nav ? { label: tr(s.nav.label), icon: s.nav.icon ?? null } : null,
+            }
+          }),
         }
       })
       .filter((e) => e !== null)
@@ -461,7 +483,9 @@ export async function extensionRoutes(app: FastifyInstance) {
     if (!parsed.ok) return reply.code(500).send({ error: 'Manifeste installé invalide', code: 'MANIFEST_CORRUPT' })
 
     const known = parsed.manifest.surfaces.some(s =>
-      s.type === 'page' ? surface === 'page' : surface === `widget:${s.id}`,
+      s.type === 'page'     ? surface === 'page'
+      : s.type === 'activity' ? surface === `activity:${s.id}`
+      :                         surface === `widget:${s.id}`,
     )
     if (!known) return reply.code(404).send({ error: 'Surface inconnue', code: 'SURFACE_NOT_FOUND' })
 

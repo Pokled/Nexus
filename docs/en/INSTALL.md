@@ -82,7 +82,7 @@ sudo apt-get update && sudo apt-get install -y git
 
 You don't need to install anything else manually. The script handles:
 
-- **Node.js 20 LTS**: JavaScript runtime
+- **Node.js 22 LTS**: JavaScript runtime
 - **PostgreSQL 16**: Main database
 - **Redis 7**: Cache & real-time sessions
 - **Coturn**: TURN/STUN relay for voice channels (WebRTC NAT traversal)

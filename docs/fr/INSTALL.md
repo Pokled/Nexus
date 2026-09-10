@@ -72,7 +72,7 @@ sudo apt-get update && sudo apt-get install -y git
 
 Tu n'as rien d'autre à installer manuellement. Le script s'occupe de tout :
 
-- **Node.js 20 LTS** — Runtime JavaScript
+- **Node.js 22 LTS** — Runtime JavaScript
 - **PostgreSQL 16** — Base de données principale
 - **Redis 7** — Cache et sessions temps réel
 - **Coturn** — Relais TURN/STUN pour les salons vocaux (WebRTC, traversée NAT)

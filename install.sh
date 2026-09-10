@@ -505,8 +505,8 @@ T_EN[step_install_deps]='Installing system dependencies'
 T_FR[step_install_deps]='Installation des dépendances système'
 T_EN[deps_installed]='System packages installed'
 T_FR[deps_installed]='Paquets système installés'
-T_EN[node_installing]='Installing Node.js 20 LTS...'
-T_FR[node_installing]='Installation de Node.js 20 LTS...'
+T_EN[node_installing]='Installing Node.js 22 LTS...'
+T_FR[node_installing]='Installation de Node.js 22 LTS...'
 T_EN[node_installed]='Node.js %s installed'
 T_FR[node_installed]='Node.js %s installé'
 T_EN[node_present]='Node.js %s already present'
@@ -2029,11 +2029,11 @@ _SYS_PKGS="curl wget gnupg2 ca-certificates lsb-release openssl ufw build-essent
 apt-get install -y -q $_SYS_PKGS 2>/dev/null
 ok "$(t deps_installed)"
 
-# Node.js 20 LTS
+# Node.js 22 LTS — mediasoup-client/awaitqueue (voice) require >=22 (#642)
 _NODE_MAJOR=$(node --version 2>/dev/null | sed 's/v//;s/\..*//' || echo 0)
-if ! command -v node &>/dev/null || [[ "$_NODE_MAJOR" -lt 20 ]]; then
+if ! command -v node &>/dev/null || [[ "$_NODE_MAJOR" -lt 22 ]]; then
   info "$(t node_installing)"
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
+  curl -fsSL https://deb.nodesource.com/setup_22.x | bash - >/dev/null 2>&1
   apt-get install -y -q nodejs >/dev/null 2>&1
   ok "$(printf "$(t node_installed)" "$(node -v)")"
 else
@@ -3116,7 +3116,7 @@ SVC
 
   systemctl daemon-reload
   systemctl enable nodyx-relay-client --quiet
-  systemctl start nodyx-relay-client
+  systemctl restart nodyx-relay-client
   ok "$(printf "$(t relay_client_started)" "${RELAY_SERVER:-relay.nodyx.org:7443}")"
   info "$(printf "$(t relay_client_url_soon)" "${DOMAIN}")"
 fi

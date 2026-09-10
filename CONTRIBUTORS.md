@@ -106,6 +106,21 @@ One merged PR = one star. Typos count. Translations count. Bug reports that turn
       <br/>
       <sub><strong>First Vietnamese contributor 🇻🇳</strong></sub>
     </td>
+    <td align="center" width="200">
+      <a href="https://github.com/oorpheas">
+        <img src="https://github.com/oorpheas.png?size=120" width="120" height="120" style="border-radius:50%;" alt="orfeu"/>
+        <br/>
+        <sub><b>orfeu</b></sub>
+      </a>
+      <br/>
+      <sub>🌟 × 4</sub>
+      <br/>
+      <sub><a href="https://github.com/Pokled/nodyx/pull/626">PR #626</a> · <a href="https://github.com/Pokled/nodyx/issues/642">#642</a> · <a href="https://github.com/Pokled/nodyx/pull/644">PR #644</a> · <a href="https://github.com/Pokled/nodyx/pull/647">PR #647</a></sub>
+      <br/>
+      <sub><em>Brazilian Portuguese: the whole interface, 0% → 100%. Plus a precisely diagnosed installer bug (Node 20 vs mediasoup's Node 22 requirement)</em></sub>
+      <br/>
+      <sub><strong>First pt-BR translator 🇧🇷</strong></sub>
+    </td>
   </tr>
 </table>
 
@@ -172,6 +187,11 @@ Sometimes a contribution isn't a PR. Sometimes it's just being there at exactly 
 
 | Contributor | Contribution | Type | Issue / PR | Fix / polish | Date |
 |---|---|---|---|---|---|
+| [@oorpheas](https://github.com/oorpheas) | Finished the Brazilian Portuguese interface: the last ~1,500 strings, bringing `pt-BR` from 67% to full parity with the source (4,567 / 4,567 keys). First non-source locale to reach 100%. Documentation and a real-world test with a small group are planned for September. | `feat(i18n)` | [#647](https://github.com/Pokled/nodyx/pull/647) | _follow-up: 2 malformed keys (`aset. saving`, `canvas_r.canvas_r.loading`) corrected so coverage reads a true 100%_ | 2026-08-29 |
+| [@oorpheas](https://github.com/oorpheas) | Second Brazilian Portuguese translation pass: ~1,050 new/fixed strings, coverage jumped from 23% to 67%. Also corrected an earlier mistranslation (`"Stream Deck"` → `"Painel de Transmissão"` instead of the literal `"Conjunto de Stream"`). | `feat(i18n)` | [#644](https://github.com/Pokled/nodyx/pull/644) | _merged as-is, 0 placeholder errors_ | 2026-08-25 |
+| [@oorpheas](https://github.com/oorpheas) | Reported the frontend install failure on a clean machine: `install.sh` pinned Node 20, but `mediasoup-client`/`awaitqueue` (voice frontend) require Node ≥22, so `npm install` always failed with `EBADENGINE`. Included the full install log and traced it to the exact dependency. | `bug(installer)` | [#642](https://github.com/Pokled/nodyx/issues/642) | [#643](https://github.com/Pokled/nodyx/pull/643) | 2026-08-24 |
+| [@oorpheas](https://github.com/oorpheas) | Brazilian Portuguese translation: ~1,999 strings (44% coverage), with a deliberate approach to gender-neutral phrasing explained in the PR description, and only 2 entries honestly flagged `(*revisar)` where context was missing rather than guessed. | `feat(i18n)` | [#626](https://github.com/Pokled/nodyx/pull/626) | _merged as-is, 0 placeholder errors_ | 2026-08-22 |
+| [@oorpheas](https://github.com/oorpheas) | Requested a `pt-BR` locale, distinct from `pt-PT`. First real end-to-end test of the "request a language" process promised by the issue template: language added to the picker with a seeded starter file, then translated by the requester. | `feat(i18n)` | [#601](https://github.com/Pokled/nodyx/issues/601) | [`c2e4f2d`](https://github.com/Pokled/nodyx/commit/c2e4f2d) | 2026-08-19 |
 | [@JoeJoeflyn](https://github.com/JoeJoeflyn) | Unified the dark theme across login, register and forgot-password with a responsive split layout, and made the side panels resizable: drag handles, collapse, cookie persistence, and server side reads so the first paint is already correct. | `feat(auth)` | [#344](https://github.com/Pokled/nodyx/pull/344) | [#458](https://github.com/Pokled/nodyx/pull/458), polish below | 2026-08-06 |
 | [@JoeJoeflyn](https://github.com/JoeJoeflyn) | Collapsible members sidebar with a spring/swipe toggle and a shared collapse store, plus an SSR fetch of the channel list so channels show on first paint. Tidied inline styles into Tailwind along the way. | `feat(ui)` | [#324](https://github.com/Pokled/nodyx/pull/324) | [`1142b2e`](https://github.com/Pokled/nodyx/commit/1142b2e) + i18n polish below | 2026-07-20 |
 | [@JoeJoeflyn](https://github.com/JoeJoeflyn) | Reported the SSR 500 on Node 22.4+ / 25+: the new global `localStorage` proxy makes `typeof localStorage === 'undefined'` return false while its methods still throw, breaking the guard in `voiceSettings.ts` and 4 other files. Pinpointed the exact lines and the upstream Node issue. | `bug(ssr)` | [#327](https://github.com/Pokled/nodyx/issues/327) | browser-guard fix (this PR) | 2026-07-20 |

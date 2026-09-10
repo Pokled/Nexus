@@ -438,7 +438,7 @@ L'installateur propose **trois modes réseau** :
 > **Nodyx Relay** est la valeur par défaut recommandée, fonctionne sur un Raspberry Pi derrière un routeur domestique.
 > Sans domaine. Sans redirection de ports. Sans compte cloud. Lancez simplement le script.
 
-Installe automatiquement : **Node.js 20, PostgreSQL 16, Redis 7, Caddy (HTTPS), PM2, nodyx-turn** (Rust STUN/TURN).  
+Installe automatiquement : **Node.js 22, PostgreSQL 16, Redis 7, Caddy (HTTPS), PM2, nodyx-turn** (Rust STUN/TURN).  
 Génère les secrets, exécute toutes les migrations de la base de données, crée votre compte administrateur. **Sans Docker. Sans configuration manuelle.**
 
 > Pris en charge : Ubuntu 22.04 / 24.04, Debian 11 / 12 / 13.

@@ -36,7 +36,7 @@ const isCoreKey = (key: string) => key.startsWith('common.') || key.startsWith('
  */
 const bundle = twemoji as { width?: number; height?: number; icons: Record<string, { body: string; width?: number; height?: number }> }
 
-function flagSvg(flagIcon: string): string {
+export function flagSvg(flagIcon: string): string {
 	const icon = bundle.icons[flagIcon.replace(/^twemoji:/, '')]
 	if (!icon) return ''
 	const w = icon.width ?? bundle.width ?? 36

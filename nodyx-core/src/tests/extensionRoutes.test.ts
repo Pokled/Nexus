@@ -167,6 +167,78 @@ describe('frappe du jeton de surface', () => {
   })
 })
 
+// ── Surface activity : jeton + stockage (records, classement) ──────────────
+// Cf SPECS/NODYX_ACTIVITIES_CDC.md §10. Une activité est une surface de
+// stockage de plein droit : `RE_SURFACE` accepte `activity:<id>`, `/session`
+// lui frappe un jeton, `/storage` marche tel quel.
+
+describe('surface activity : jeton + stockage', () => {
+  const MANIFEST_ACTIVITY = {
+    ...MANIFEST,
+    icon: 'icon.svg',
+    surfaces: [{ type: 'activity', id: 'battle', entry: 'index.html', label: '@label' }],
+    app: { url: 'https://github.com/x/y/releases/download/v1.0.0/app.zip', sha256: 'a'.repeat(64), bytes: 5000 },
+    permissions: { storage: { user: '16kb', instance: '64kb', instance_write: true } },
+  }
+
+  const storeCall = (token: string, body: unknown) => app.inject({
+    method: 'POST', url: '/api/v1/extensions/demo-ext/storage',
+    headers: { authorization: `Bearer ${token}`, 'x-nodyx-surface': 'activity:battle' },
+    payload: body,
+  })
+
+  async function activityToken(granted: string[]) {
+    dbQuery.mockResolvedValue({ rows: [installedRow({ manifest: MANIFEST_ACTIVITY, granted })] })
+    const r = await session({ surface: 'activity:battle' }, 'Bearer membre')
+    return JSON.parse(r.body).token as string
+  }
+
+  it('frappe un jeton pour la surface activity du manifeste, lié à l utilisateur', async () => {
+    const token = await activityToken(['storage.user'])
+    const v = verifyExtensionToken(token, { instanceId: ORIGIN, extensionId: 'demo-ext', surface: 'activity:battle' }, SECRET)
+    expect(v.ok).toBe(true)
+    if (v.ok) expect(v.claims.sub).toBe('user-42')
+  })
+
+  it('refuse une surface activity absente du manifeste', async () => {
+    dbQuery.mockResolvedValue({ rows: [installedRow({ manifest: MANIFEST_ACTIVITY })] })
+    const r = await session({ surface: 'activity:inconnu' }, 'Bearer membre')
+    expect(r.statusCode).toBe(404)
+    expect(JSON.parse(r.body).code).toBe('SURFACE_NOT_FOUND')
+  })
+
+  it('écrit un record perso (scope user)', async () => {
+    const token = await activityToken(['storage.user'])
+    dbQuery.mockReset()
+    dbQuery
+      .mockResolvedValueOnce({ rows: [{ manifest: MANIFEST_ACTIVITY, enabled: true }] })
+      .mockResolvedValueOnce({ rows: [{ n: 0, total: 0 }] })
+      .mockResolvedValueOnce({ rows: [] })
+    const r = await storeCall(token, { op: 'set', key: 'stats', value: { games: 1, wins: 1 }, scope: 'user' })
+    expect(r.statusCode).toBe(200)
+  })
+
+  it('refuse le classement partagé sans storage.instance.write', async () => {
+    const token = await activityToken(['storage.user'])
+    dbQuery.mockReset()
+    dbQuery.mockResolvedValue({ rows: [{ manifest: MANIFEST_ACTIVITY, enabled: true }] })
+    const r = await storeCall(token, { op: 'set', key: 'leaderboard', value: [], scope: 'instance' })
+    expect(r.statusCode).toBe(403)
+    expect(JSON.parse(r.body).code).toBe('PERMISSION_DENIED')
+  })
+
+  it('accepte le classement partagé avec storage.instance.write (écriture de l arbitre)', async () => {
+    const token = await activityToken(['storage.instance.read', 'storage.instance.write'])
+    dbQuery.mockReset()
+    dbQuery
+      .mockResolvedValueOnce({ rows: [{ manifest: MANIFEST_ACTIVITY, enabled: true }] })
+      .mockResolvedValueOnce({ rows: [{ n: 0, total: 0 }] })
+      .mockResolvedValueOnce({ rows: [] })
+    const r = await storeCall(token, { op: 'set', key: 'leaderboard', value: [{ id: 'u-1', wins: 3 }], scope: 'instance' })
+    expect(r.statusCode).toBe(200)
+  })
+})
+
 describe('administration', () => {
   it('exige une authentification sur la liste', async () => {
     const r = await app.inject({ method: 'GET', url: '/api/v1/admin/extensions' })
@@ -372,6 +444,21 @@ describe('liste publique', () => {
     expect(e.icon).toBe('/api/v1/extensions/demo-ext/1.0.0/assets/icon.svg')
   })
 
+  it('resout tagline + captures pour la vitrine, jamais le chemin brut', async () => {
+    dbQuery.mockResolvedValue({ rows: [{
+      id: 'demo-ext', version: '1.0.0',
+      messages: { en: { label: 'Demo', desc: 'A demo.', tag: 'Un jeu de folie' } },
+      manifest: { ...M, tagline: '@tag', screenshots: ['media/cover.png', 'media/shot1.webp'] },
+    }] })
+    const e = JSON.parse((await publicList()).body).extensions[0]
+    expect(e.tagline).toBe('Un jeu de folie')
+    expect(e.screenshots).toEqual([
+      '/api/v1/extensions/demo-ext/1.0.0/assets/media/cover.png',
+      '/api/v1/extensions/demo-ext/1.0.0/assets/media/shot1.webp',
+    ])
+    expect((await publicList()).body).not.toContain('"media/cover.png"')
+  })
+
   it('ne liste que les extensions activees', async () => {
     await publicList()
     expect(dbQuery.mock.calls[0][0]).toContain('WHERE enabled = true')
@@ -382,6 +469,30 @@ describe('liste publique', () => {
     const r = await publicList()
     expect(r.statusCode).toBe(200)
     expect(JSON.parse(r.body).extensions).toEqual([])
+  })
+
+  it('expose une surface activity avec l URL servie par l instance, jamais le champ app', async () => {
+    dbQuery.mockResolvedValue({ rows: [{
+      id: 'kings-race', version: '0.3.0',
+      messages: { en: { label: 'King\'s Race', desc: 'A TD.' }, fr: { label: 'Course aux Rois' } },
+      manifest: {
+        ...MANIFEST, id: 'kings-race', icon: 'icon.svg', label: '@label', description: '@desc',
+        surfaces: [{ type: 'activity', id: 'battle', entry: 'index.html', label: '@label', default_aspect: '16:9' }],
+        app: { url: 'https://github.com/x/y/releases/download/v0.3.0/app.zip', sha256: 'a'.repeat(64), bytes: 54000000 },
+        permissions: { identity: ['username'], realtime: true },
+      },
+    }] })
+    const e = JSON.parse((await publicList('fr')).body).extensions[0]
+    expect(e.surfaces[0]).toMatchObject({
+      type: 'activity', id: 'battle',
+      appUrl: '/api/v1/extensions/kings-race/0.3.0/app/index.html?v=0.3.0',
+      label: 'Course aux Rois', aspect: '16:9',
+    })
+    const body = (await publicList()).body
+    // ni la capacité, ni l'URL/empreinte de récupération du bundle
+    expect(body).not.toContain('realtime')
+    expect(body).not.toContain('github.com')
+    expect(body).not.toContain('sha256')
   })
 })
 
