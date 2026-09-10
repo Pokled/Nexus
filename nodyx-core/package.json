@@ -59,7 +59,7 @@
     "@vitest/coverage-v8": "^4.1.9",
     "ts-node": "10.9.2",
     "typescript": "6.0.3",
-    "vitest": "^4.1.8"
+    "vitest": "^4.1.11"
   },
   "optionalDependencies": {
     "re2": "^1.25.0"
